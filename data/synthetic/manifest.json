@@ -1,0 +1,49 @@
+{
+  "config": {
+    "agents": 180,
+    "branches": 12,
+    "customers": 10000,
+    "policies": 30000,
+    "products": 12,
+    "seed": 202609
+  },
+  "dataset_kind": "synthetic_insurance_operations",
+  "dataset_sha256": "076771b1ccdea1ee376d2ce4a464ea1ec588acd668970a4c87a8c11b072d1d8a",
+  "document_sha256": {
+    "product_001.md": "aed2680bc565c6c2b4481b265d6f0a0aa5fb36bfc198ee3473982a70f324e0df",
+    "product_002.md": "3dd50a845b7dd361460512e76523043ca520a39bb7e1b8a292c88d03e9700724",
+    "product_003.md": "6ec52b4aa4a96744bd20a17ae22c12af3da8e24ca48bc172d27bc9c6bb504e35",
+    "product_004.md": "bcd4135cb1a8ecd4e49de13046330fc11b8af11b48e88f949b3a5c9e72ad1ba9",
+    "product_005.md": "31f62375590d6ba95616a78a9099855279dbd53cdb8575d107cc39eddbe2e794",
+    "product_006.md": "1c78e82d0213477c72ba4c1a5dc7c2c662bad3d2fe5114f3669d8c55975f19b9",
+    "product_007.md": "860e3d13046c14505f1cacd662164f9536676d7918dfa4657d775498cf15001e",
+    "product_008.md": "7f9190c14df5bf492566d6319e82962baea33ef9ff71db9e8043fe3c3789d9da",
+    "product_009.md": "09b7cf89d4d5e125f9f1dfed89dbcf2b3dfa679b0f56a03d0f029a1d4519c634",
+    "product_010.md": "4184d4ef2f5b80d28adfd7e1496129856677890656bf4ecde51ac34613d2acab",
+    "product_011.md": "5fe274c51a4dad028c588805330040697b0cad147bf99d7ca5b4fdbf05617f33",
+    "product_012.md": "49ca15eaf3550007104762479e0865820a9044c94d1cbf74a8d72cc609a6ec22"
+  },
+  "generated_at": "2026-09-26T17:02:04.083660+00:00",
+  "generator_version": "1.0.1",
+  "normalization": "rows ordered by integer id; UTF-8 canonical JSON; sorted keys; Decimal without trailing zeros; ISO dates; one newline per row",
+  "schema_revision": "20260927_01",
+  "synthetic_notice": "All operational records and product documents are fictional. No real personal data.",
+  "table_counts": {
+    "agents": 180,
+    "branches": 12,
+    "claim_payments": 5221,
+    "claims": 5179,
+    "customers": 10000,
+    "policies": 30000,
+    "products": 12
+  },
+  "table_sha256": {
+    "agents": "a1c9f1132724781c674190f42dcdac1877b285d3c0564d4173102c37f526eaa8",
+    "branches": "48c898859a47585b168d08c0afcf17d12e081d9649ab1a0927d6292e2d34bed4",
+    "claim_payments": "b3fe9624adda31249f624329f82e46b44c1200f4bb6b1133e2efac07b4f61804",
+    "claims": "823d78cb565cf3e1e9c94e64551a44c51cc76c96c64032e1dc16f3cdfe5334bf",
+    "customers": "7c071e665f7fee0762227f70089b8ed65e4aa70adf2b7c0180e0cea413b4e44f",
+    "policies": "351aeca983197ac81353e51373d2b849eab0e01b178e732d69444e46c440d0f0",
+    "products": "b4ffc87c873ca98486067255a983c329109c25c81d8b05b333abbb7ad80186b3"
+  }
+}

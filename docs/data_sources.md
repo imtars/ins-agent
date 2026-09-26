@@ -8,12 +8,14 @@
 | Insur-QA | [Hugging Face 数据集页](https://huggingface.co/datasets/FrankRin/Insur-QA) | 检索与引用评测 | `Retriever` 与 `LLM` JSON schema 不同；按文件下载 |
 | 中保协公开示范条款草案 | [2026-06 定期/终身寿险征求意见页](https://www.iachina.cn/art/2026/6/10/art_24_109080.html)、[2026-09 分红型征求意见页](https://wap.iachina.cn/art/2026/9/18/art_24_109302.html) | 真实文档解析演示 | 均标记为征求意见稿；仓库不重新分发原始附件 |
 
-InsQABench 的 `clause_train.json`、`clause_objective.json`、`clause_subjective.json`、`db_train.json`、`db_test.json` 将按文件用 `hf_hub_download` 下载并记录 revision、SHA-256 与下载日期。Insur-QA 的 `Insur-QA-Retriever.json` 和 `Insur-QA-LLM.json` 同样分文件下载。两套数据不得通过 `load_dataset()` 自动合并异构 JSON。上述数据规模以数据集卡为准，程序运行时再以文件内实测记录数校验。
+InsQABench 的 `clause_train.json`、`clause_objective.json`、`clause_subjective.json`、`db_train.json`、`db_test.json` 已按文件用 `hf_hub_download` 下载；Insur-QA 的 `Insur-QA-Retriever.json` 和 `Insur-QA-LLM.json` 同样分文件下载。两套数据不得通过 `load_dataset()` 自动合并异构 JSON。M1 实测发现：`Insur-QA-Retriever.json` 实际为 **JSON Lines**（逐行含 `query/pos/neg`），而 `Insur-QA-LLM.json` 是 JSON 数组；`clause_subjective.json` 是按文档键组织的 JSON 对象，不是数组。M2/M11 解析时必须按文件格式处理，不能只凭 `.json` 后缀或数据集卡的概括假设统一结构。
 
-原始公共文档清单将在 M1 写入 `data/manifests/public_docs.yaml`，记录出版机构、来源网页、直接文件 URL、文件类型、文件状态（草案/正式）、抓取时间、许可证或使用说明、SHA-256。只下载公开可访问的附件，下载失败和改版须显式报告。原始文件位于忽略目录 `data/raw/public/`。M0 已核验上述来源页，具体附件直链尚未逐个核验，因此当前不填占位 URL。
+两套 HF 数据的实际 repo revision、每文件大小、SHA-256、抓取时间及 endpoint 位于 `data/manifests/insqabench_download.json` 和 `data/manifests/insur_qa_download.json`。大文件保存在忽略目录 `data/raw/benchmarks/`，仓库不再分发。
+
+已核验的五份协会附件位于 `data/manifests/public_docs.yaml`，均标为 **draft**；源网页及其对应 DOCX/PDF 直链都已验证可返回预期文件头。`scripts/download_public_documents.py` 实际下载后将重定向后的 URL、SHA-256、大小与抓取时间写入 `data/manifests/public_docs_download.json`。原始附件位于忽略目录 `data/raw/public/`，不与 synthetic products 自动关联，也不随仓库再分发。
 
 [中保协 2023 年报道](https://www.iachina.cn/art/2023/8/17/art_22_107111.html) 中的 40,005 款是 **截至 2023-07-31** 的产品库数量，不能描述成当前数量。产品库是查询来源，不等于可批量下载或自由再分发的语料库。
 
-合成数据的固定种子只保证相同生成器版本与配置的确定性。M1 应给生成器版本、配置、排序规则和规范化哈希；任何修改 schema 或数据分布的提交都应更新 gold result。设计上植入客户风险、产品赔付频率与赔付金额、区域和年龄等可解释模式，避免纯随机噪声。
+合成数据使用 `SEED=202609` 和生成器版本 `1.0.1`。相同版本、配置和种子下，按表名顺序及主键顺序把行规范化为 UTF-8 JSON（金额去掉无意义尾零、日期 ISO 格式），结合文档哈希生成总哈希；`generated_at` 不进入哈希。`data/synthetic/manifest.json` 记录配置、表数、每表和每文档哈希、总哈希。规则是：risk_score 越高出险概率越高；机动车险在 south 区域概率更高；health/life 产品 55 岁及以上概率更高；四类产品有不同基础频率与赔款基数，产品变体有不同频率/金额因子。随机波动只用于个体抽样，不代表真实精算模型。任何修改 schema 或分布的提交都应更新生成器版本及后续 gold result。
 
 参考源码只学习设计，不复制实现。公开数据和文档的使用仍应遵循原始来源的许可证与使用条款。

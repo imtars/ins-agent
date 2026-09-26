@@ -1,0 +1,27 @@
+{
+  "dataset": "insur_qa",
+  "endpoint": "https://hf-mirror.com",
+  "files": [
+    {
+      "bytes": 495353820,
+      "filename": "Insur-QA-Retriever.json",
+      "local_path": "data/raw/benchmarks/insur_qa/Insur-QA-Retriever.json",
+      "sha256": "f24348f270a49f9f720e001312de7afbc3cdac58f9b64eb440f68d11cb183ac4",
+      "source_url": "https://hf-mirror.com/datasets/FrankRin/Insur-QA/resolve/b2493e3c706d47ea378545a82dea85e00cd60a48/Insur-QA-Retriever.json",
+      "upstream_sha256": "f24348f270a49f9f720e001312de7afbc3cdac58f9b64eb440f68d11cb183ac4"
+    },
+    {
+      "bytes": 685644808,
+      "filename": "Insur-QA-LLM.json",
+      "local_path": "data/raw/benchmarks/insur_qa/Insur-QA-LLM.json",
+      "sha256": "279722de87706882e2890e3beda3d70a2be9b160e8f5ec05f05a5e4f38a5066c",
+      "source_url": "https://hf-mirror.com/datasets/FrankRin/Insur-QA/resolve/b2493e3c706d47ea378545a82dea85e00cd60a48/Insur-QA-LLM.json",
+      "upstream_sha256": "279722de87706882e2890e3beda3d70a2be9b160e8f5ec05f05a5e4f38a5066c"
+    }
+  ],
+  "repo_id": "FrankRin/Insur-QA",
+  "repo_type": "dataset",
+  "retrieved_at": "2026-09-26T16:56:29.962213+00:00",
+  "revision": "b2493e3c706d47ea378545a82dea85e00cd60a48",
+  "transport": "system"
+}

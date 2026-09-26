@@ -15,3 +15,9 @@
 参考项目也已核到：[insurance-policy-rag](https://github.com/i-hridaysaha/insurance-policy-rag) 使用 Sentence-BERT/FAISS/BM25 的混合检索与引用校验；迁移其评测思路时要适配本项目的 BGE-M3/Milvus，不复制其代码。[enterprise-workflow-agent-platform](https://github.com/smlfy/enterprise-workflow-agent-platform) 有 LangGraph 持久化、HITL 和 trace replay 的设计参考。[superMEW](https://github.com/gioqnc/superMEW) 含 Redis，而本项目规格明确排除 Redis，因此只参考前后端与检索展示方式。
 
 推论：最大的交付风险不在五个 Agent 的 prompt，而在可复现数据、真实检索评测、SQL 权限和 checkpoint/job/artifact 的一致性。里程碑顺序因此先验证这些基础能力，再接入编排。
+
+## M1 实际下载补充
+
+2026-09-27 实际拉取的 `Insur-QA-Retriever.json` 是 JSON Lines，每行独立含 `query/pos/neg`；`Insur-QA-LLM.json` 是 JSON 数组；InsQABench 的 `clause_subjective.json` 是按文档键组织的 JSON 对象。文件格式与扩展名、数据集展示层的统一 schema 不完全一致，解析器应按各文件的真实结构实现。两套 HF repo 的不可变 revision 和逐文件哈希见 `data/manifests/*_download.json`。
+
+中保协两份 2026 年修订寿险草案和三份分红型草案的来源页、附件直链均已实际验证；下载后的 SHA-256、抓取时间见 `data/manifests/public_docs_download.json`。五份文件都仍标为 `draft`。

@@ -42,11 +42,10 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-本文件描述目标架构，不表示这些组件已实现。真实接口和版本约束在每个里程碑的验收中确定。
+本文件描述目标架构。M1 已实现 PostgreSQL 业务 schema、合成数据与公开数据 provenance；Agent、检索、MCP、API 和前端仍未实现。真实接口和版本约束在每个里程碑的验收中确定。
 
-## 待验证的工程问题
+## 后续待验证的工程问题
 
-- M1：PostgreSQL 业务 schema、生成器边界与稳定 hash 的规范化方式。
 - M2：Milvus 2.6 的官方 Compose 配置及资源需求；独立跑四组消融后才能选默认检索链。
 - M5/M7：LangGraph fan-out/fan-in 与 Postgres checkpointer 在目标版本的恢复语义，尤其是 `interrupt()` 节点的重放。
 - M8：worker lease、checkpoint 与 artifact 写入之间的幂等事务边界。

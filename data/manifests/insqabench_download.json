@@ -1,0 +1,51 @@
+{
+  "dataset": "insqabench",
+  "endpoint": "https://hf-mirror.com",
+  "files": [
+    {
+      "bytes": 156614620,
+      "filename": "clause_train.json",
+      "local_path": "data/raw/benchmarks/insqabench/clause_train.json",
+      "sha256": "d4a0a7d7506e976619e4d969e4a3f1c36507133881b53514a964ed34a3dfa7d6",
+      "source_url": "https://hf-mirror.com/datasets/JaneDing2025/InsQABench/resolve/5feac38b5e8fe2dec3a5deb5ffe7b7a26578018c/clause_train.json",
+      "upstream_sha256": "d4a0a7d7506e976619e4d969e4a3f1c36507133881b53514a964ed34a3dfa7d6"
+    },
+    {
+      "bytes": 1674323,
+      "filename": "clause_objective.json",
+      "local_path": "data/raw/benchmarks/insqabench/clause_objective.json",
+      "sha256": "a6da37240cd7ef7cd89e4744e5da7284e67c315bc4da96c374736ebd5c62f484",
+      "source_url": "https://hf-mirror.com/datasets/JaneDing2025/InsQABench/resolve/5feac38b5e8fe2dec3a5deb5ffe7b7a26578018c/clause_objective.json",
+      "upstream_sha256": null
+    },
+    {
+      "bytes": 249827,
+      "filename": "clause_subjective.json",
+      "local_path": "data/raw/benchmarks/insqabench/clause_subjective.json",
+      "sha256": "135d3381cd60c429584cf96d22e66774639a82f2043d2dcd841404f0c61c1919",
+      "source_url": "https://hf-mirror.com/datasets/JaneDing2025/InsQABench/resolve/5feac38b5e8fe2dec3a5deb5ffe7b7a26578018c/clause_subjective.json",
+      "upstream_sha256": null
+    },
+    {
+      "bytes": 239032723,
+      "filename": "db_train.json",
+      "local_path": "data/raw/benchmarks/insqabench/db_train.json",
+      "sha256": "e4b2f08784e384f7eacb4491b99f98ee6a9546b49f52d0e2bd7d9d25729c5276",
+      "source_url": "https://hf-mirror.com/datasets/JaneDing2025/InsQABench/resolve/5feac38b5e8fe2dec3a5deb5ffe7b7a26578018c/db_train.json",
+      "upstream_sha256": "e4b2f08784e384f7eacb4491b99f98ee6a9546b49f52d0e2bd7d9d25729c5276"
+    },
+    {
+      "bytes": 2463909,
+      "filename": "db_test.json",
+      "local_path": "data/raw/benchmarks/insqabench/db_test.json",
+      "sha256": "a4a8f7f40b2c889d2a81ce2851e7f4c9025e7a044f946d6715e13bb5d861b51d",
+      "source_url": "https://hf-mirror.com/datasets/JaneDing2025/InsQABench/resolve/5feac38b5e8fe2dec3a5deb5ffe7b7a26578018c/db_test.json",
+      "upstream_sha256": null
+    }
+  ],
+  "repo_id": "JaneDing2025/InsQABench",
+  "repo_type": "dataset",
+  "retrieved_at": "2026-09-26T16:55:30.639072+00:00",
+  "revision": "5feac38b5e8fe2dec3a5deb5ffe7b7a26578018c",
+  "transport": "system"
+}

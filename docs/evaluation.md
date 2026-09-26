@@ -1,6 +1,6 @@
 # 分层评测设计
 
-评测只报告脚本实际生成的结果，不能填写臆测数字或统一“Agent 准确率”。`evaluation/reports/` 中的报告由命令生成，连同代码版本、数据 revision、随机种子、模型 ID 与参数保留 provenance；M0 没有结果。
+评测只报告脚本实际生成的结果，不能填写臆测数字或统一“Agent 准确率”。`evaluation/reports/` 中的报告由命令生成，连同代码版本、数据 revision、随机种子、模型 ID 与参数保留 provenance；M1 尚未进行任何 AI benchmark 或生成评测数字。
 
 ## RAG（M2）
 
