@@ -1,0 +1,17 @@
+# 系统不变量
+
+| 不变量 | 运行时控制 | 最低验收 |
+| --- | --- |
+| No Valid Contract → No Handoff | 节点入口和出口按 Pydantic schema 校验；registry 检查 producer/consumer | 缺字段、错误类型、非法 tool output 被阻断 |
+| No Evidence → No Factual Claim | claim 指向 SQL artifact 或当前 RAG evidence；引用 ID 必须存在 | 数字来源与 citation 注入测试 |
+| No Approval → No Publish | `human_review` 为唯一图前驱；publish 运行时再校验批准状态与 reviewer 身份 | 直接调用 publish、伪造批准均失败 |
+
+附加约束：
+
+- Verifier 输出 `PASS / REVISE / BLOCK`；超时、异常或不合法输出一律 `BLOCK`。
+- LLM 生成的 SQL 仅允许单条只读 SELECT，并受数据库最小权限与超时保护。
+- synthetic 业务数据不得被表述为真实保险公司的生产数据。
+- 不将未经来源验证的公开条款与合成产品事实拼接。
+- 定向重跑保留未选阶段的 artifact 内容和哈希。
+
+这些是后续测试的验收目标；M0 只有文档定义，没有运行时保障。
