@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。当前完成 **M1：数据基础**；已有可重建的合成运营数据与产品文档，以及公共数据下载 provenance。尚无 RAG、Agent、API 或前端实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。当前完成 **M1.1：数据语义修正**，并冻结 M1 数据基础；已有可重建的合成运营数据与产品文档，以及公共数据下载 provenance。尚无 RAG、Agent、API 或前端实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -16,7 +16,7 @@ DATABASE_URL='postgresql+asyncpg://insurance_app:change-me-local-only@127.0.0.1:
 uv run --locked python -m scripts.generate_synthetic --database-url 'postgresql+asyncpg://insurance_app:change-me-local-only@127.0.0.1:5432/insurance_m1_demo'
 ```
 
-生成器固定 `seed=202609`、版本 `1.0.1`，默认生成 12 个分支、180 个代理、10,000 个客户、12 个产品、30,000 张保单，理赔和赔付按明确规则生成。可通过 `--branches`（4 的倍数）、`--agents`、`--customers`、`--policies` 调整规模；产品固定 12 款以对应 12 份文档。数据库表必须为空；重复运行前创建新库或重建专用数据库。文档和规范化哈希 manifest 在 `data/synthetic/`。
+生成器固定 `seed=202609`、版本 `1.1.0`，默认生成 12 个分支、180 个代理、10,000 个客户、12 个产品、30,000 张保单，理赔和赔付按明确规则生成。年度出险概率按有效观察天数缩放，产品模拟参数只写入 synthetic manifest，不写入业务产品表。可通过 `--branches`（4 的倍数）、`--agents`、`--customers`、`--policies` 调整规模；产品固定 12 款以对应 12 份文档。数据库表必须为空；重复运行前创建新库或重建专用数据库。文档和规范化哈希 manifest 在 `data/synthetic/`。
 
 下载公共数据（约 1.58 GB；原始文件被 `.gitignore` 排除）：
 
@@ -40,6 +40,7 @@ M1_TEST_DATABASE_URL='postgresql+asyncpg://insurance_app:change-me-local-only@12
 
 - [架构与阶段边界](docs/architecture.md)
 - [数据来源与许可边界](docs/data_sources.md)
+- [合成数据的语义与限制](docs/synthetic_assumptions.md)
 - [评测方法](docs/evaluation.md)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)

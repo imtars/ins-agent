@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from packages.domain.hf_download import DATASETS, verify_manifest
+from packages.domain.synthetic import PRODUCT_PROFILES
 from packages.persistence.synthetic_loader import database_snapshot
 
 
@@ -27,7 +28,13 @@ def test_counts_foreign_keys_and_manifest_hash(database_url):
         try:
             counts, hashes = await database_snapshot(engine)
             async with engine.connect() as connection:
-                assert (await connection.execute(text("SELECT version_num FROM alembic_version"))).scalar_one() == "20260927_01"
+                assert (await connection.execute(text("SELECT version_num FROM alembic_version"))).scalar_one() == "20260927_02"
+                product_columns = {row[0] for row in (await connection.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema='public' AND table_name='products'"
+                ))).all()}
+                assert product_columns == {"id", "product_code", "name", "product_type",
+                                           "annual_base_premium"}
                 orphan_queries = (
                     "SELECT count(*) FROM agents a LEFT JOIN branches b ON a.branch_id=b.id WHERE b.id IS NULL",
                     "SELECT count(*) FROM customers c LEFT JOIN branches b ON c.home_branch_id=b.id WHERE b.id IS NULL",
@@ -50,6 +57,14 @@ def test_counts_foreign_keys_and_manifest_hash(database_url):
                     "SELECT count(*) FROM claims c JOIN policies p ON c.policy_id=p.id "
                     "WHERE c.claim_date<p.start_date OR c.claim_date>=p.end_date"
                 ))).scalar_one() == 0
+                for profile in PRODUCT_PROFILES:
+                    if profile.waiting_days:
+                        assert (await connection.execute(text(
+                            "SELECT count(*) FROM claims c JOIN policies p ON c.policy_id=p.id "
+                            "JOIN products d ON p.product_id=d.id "
+                            "WHERE d.product_code=:code AND "
+                            "c.claim_date<p.start_date+CAST(:waiting AS INTEGER)"
+                        ), {"code": profile.code, "waiting": profile.waiting_days})).scalar_one() == 0
                 assert (await connection.execute(text(
                     "SELECT count(*) FROM policies p JOIN agents a ON p.agent_id=a.id "
                     "WHERE p.branch_id<>a.branch_id"
@@ -93,9 +108,8 @@ def test_check_and_foreign_key_constraints(database_url):
                 with pytest.raises(IntegrityError):
                     async with connection.begin_nested():
                         await connection.execute(text(
-                            "INSERT INTO products(id,product_code,name,product_type,annual_base_premium,"
-                            "claim_frequency_factor,claim_severity_factor) "
-                            "VALUES (999999,'INVALID-PREMIUM','invalid','motor',-1,1,1)"
+                            "INSERT INTO products(id,product_code,name,product_type,annual_base_premium) "
+                            "VALUES (999999,'INVALID-PREMIUM','invalid','motor',-1)"
                         ))
         finally:
             await engine.dispose()
@@ -139,3 +153,4 @@ def test_actual_download_provenance():
         assert path.stat().st_size == item["bytes"]
         assert hashlib.sha256(path.read_bytes()).hexdigest() == item["sha256"]
         assert item["status"] == "draft" and item["retrieved_at"]
+        assert item["license"] == "not_stated_on_source_page" and item["usage_note"]

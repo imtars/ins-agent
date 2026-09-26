@@ -52,7 +52,9 @@ def main() -> None:
         result = {"id": document["id"], "source_page": document["source_page"],
                   "file_url": url, "resolved_url": resolved_url,
                   "source_published_at": document["source_published_at"],
-                  "status": document["status"], "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                  "status": document["status"], "license": document["license"],
+                  "usage_note": document["usage_note"],
+                  "retrieved_at": datetime.now(timezone.utc).isoformat(),
                   "local_path": portable_path(target), "bytes": len(content),
                   "sha256": actual_sha}
         results.append(result)

@@ -6,16 +6,76 @@ from decimal import Decimal, ROUND_HALF_UP
 import random
 
 SEED = 202609
-GENERATOR_VERSION = "1.0.1"
+GENERATOR_VERSION = "1.1.0"
 TABLE_ORDER = (
     "branches", "agents", "customers", "products", "policies", "claims", "claim_payments"
 )
 REGIONS = ("north", "south", "east", "west")
-PRODUCT_TYPES = ("motor", "health", "accident", "life")
 BASE_PREMIUM = {"motor": 3600, "health": 3000, "accident": 1700, "life": 4400}
 BASE_SEVERITY = {"motor": 6800, "health": 9500, "accident": 4200, "life": 60000}
-BASE_FREQUENCY = {"motor": 0.22, "health": 0.19, "accident": 0.15, "life": 0.06}
+BASE_FREQUENCY = {"motor": 0.32, "health": 0.29, "accident": 0.23, "life": 0.09}
 MONEY = Decimal("0.01")
+OBSERVATION_START = date(2026, 1, 1)
+OBSERVATION_END = date(2026, 8, 31)
+
+
+@dataclass(frozen=True)
+class ProductProfile:
+    code: str
+    name: str
+    product_type: str
+    frequency_factor: Decimal
+    severity_factor: Decimal
+    covered_events: str
+    exclusions: str
+    waiting_days: int
+    deductible_yuan: int
+    copay_percent: int
+    annual_limit_yuan: int
+
+
+# These are simulator parameters, not columns in the operational database.
+# Broader illustrative cover corresponds to more eligible events and larger
+# simulated claim amounts; the values are not fitted actuarial estimates.
+PRODUCT_PROFILES = (
+    ProductProfile("product_001", "机动车基础版", "motor", Decimal("0.850"), Decimal("0.900"),
+                   "车辆意外碰撞造成的车身损失。",
+                   "盗抢、暴雨积水、故意损坏及酒后驾驶造成的损失。", 0, 3000, 0, 60000),
+    ProductProfile("product_002", "机动车优选版", "motor", Decimal("1.025"), Decimal("1.050"),
+                   "车辆意外碰撞或整车盗抢造成的直接损失。",
+                   "暴雨积水、故意损坏及酒后驾驶造成的损失。", 0, 1500, 0, 150000),
+    ProductProfile("product_003", "机动车尊享版", "motor", Decimal("1.200"), Decimal("1.200"),
+                   "车辆意外碰撞、整车盗抢或暴雨积水造成的直接损失。",
+                   "故意损坏及酒后驾驶造成的损失。", 0, 500, 0, 300000),
+    ProductProfile("product_004", "健康基础版", "health", Decimal("0.850"), Decimal("0.900"),
+                   "疾病住院产生的合规医疗费用。",
+                   "门诊、牙科、美容用途费用和未如实告知的既往疾病费用。", 60, 0, 20, 100000),
+    ProductProfile("product_005", "健康优选版", "health", Decimal("1.025"), Decimal("1.050"),
+                   "疾病住院及急诊门诊产生的合规医疗费用。",
+                   "普通门诊、牙科、美容用途费用和未如实告知的既往疾病费用。", 30, 0, 10, 300000),
+    ProductProfile("product_006", "健康尊享版", "health", Decimal("1.200"), Decimal("1.200"),
+                   "疾病住院、急诊门诊及普通门诊产生的合规医疗费用。",
+                   "牙科、美容用途费用和未如实告知的既往疾病费用。", 15, 0, 0, 1000000),
+    ProductProfile("product_007", "意外基础版", "accident", Decimal("0.850"), Decimal("0.900"),
+                   "外来突发意外造成的直接伤害治疗费用。",
+                   "救护车、康复治疗、故意自伤及疾病本身导致的费用。", 0, 500, 0, 50000),
+    ProductProfile("product_008", "意外优选版", "accident", Decimal("1.025"), Decimal("1.050"),
+                   "外来突发意外造成的直接伤害治疗及救护车费用。",
+                   "康复治疗、高风险竞技运动、故意自伤及疾病本身导致的费用。", 0, 200, 0, 150000),
+    ProductProfile("product_009", "意外尊享版", "accident", Decimal("1.200"), Decimal("1.200"),
+                   "外来突发意外造成的直接伤害治疗、救护车及康复治疗费用。",
+                   "故意自伤及疾病本身导致的费用。", 0, 0, 0, 300000),
+    ProductProfile("product_010", "寿险基础版", "life", Decimal("0.850"), Decimal("0.900"),
+                   "保险期间内的身故给付。",
+                   "全残、特定重大疾病及投保人故意造成的事故。", 0, 0, 0, 100000),
+    ProductProfile("product_011", "寿险优选版", "life", Decimal("1.025"), Decimal("1.050"),
+                   "保险期间内的身故或全残给付。",
+                   "特定重大疾病单独给付及投保人故意造成的事故。", 0, 0, 0, 300000),
+    ProductProfile("product_012", "寿险尊享版", "life", Decimal("1.200"), Decimal("1.200"),
+                   "保险期间内的身故、全残或特定重大疾病给付。",
+                   "投保人故意造成的事故。", 0, 0, 0, 600000),
+)
+PROFILES_BY_CODE = {profile.code: profile for profile in PRODUCT_PROFILES}
 
 
 @dataclass(frozen=True)
@@ -51,12 +111,19 @@ def age_on(born: date, day: date) -> int:
 
 def claim_probability(*, risk_score: int, product_type: str, frequency_factor: float,
                       region: str, age: int) -> float:
-    """Documented monotone business rules, not a fitted actuarial model."""
+    """Annual probability for a full year of eligible exposure."""
     risk_multiplier = 0.70 + risk_score / 150
     age_multiplier = 1.25 if age >= 55 and product_type in ("health", "life") else 1.0
     region_multiplier = 1.40 if region == "south" and product_type == "motor" else 1.0
     return min(0.80, BASE_FREQUENCY[product_type] * frequency_factor
                * risk_multiplier * age_multiplier * region_multiplier)
+
+
+def exposure_adjusted_probability(annual_probability: float, exposure_days: int) -> float:
+    """Scale a full-year Bernoulli risk to the eligible observation interval."""
+    if not 0 <= annual_probability <= 1 or not 0 <= exposure_days <= 365:
+        raise ValueError("annual probability and exposure days out of range")
+    return 1 - (1 - annual_probability) ** (exposure_days / 365)
 
 
 def claim_severity(*, risk_score: int, product_type: str,
@@ -68,23 +135,18 @@ def claim_severity(*, risk_score: int, product_type: str,
 
 
 def product_documents(products: list[dict]) -> dict[str, str]:
-    responsibility = {
-        "motor": "在保险期间内，约定机动车发生意外碰撞并产生经核定的车辆损失时，按本演示条款赔付。",
-        "health": "在保险期间内，被保险人因疾病住院产生符合约定的医疗费用时，按本演示条款赔付。",
-        "accident": "在保险期间内，被保险人遭受外来突发意外伤害时，按本演示条款赔付。",
-        "life": "在保险期间内发生约定身故事件时，按本演示条款赔付。",
-    }
-    exclusions = {
-        "motor": "故意损坏、酒后驾驶及未获许可的竞赛活动造成的损失不在本演示保障内。",
-        "health": "投保前已明确存在且未如实告知的疾病，以及美容用途费用不在本演示保障内。",
-        "accident": "自伤、故意犯罪及疾病本身导致的损害不在本演示保障内。",
-        "life": "投保人故意造成的保险事故不在本演示保障内。",
-    }
     documents = {}
     for product in products:
         code = product["product_code"]
         kind = product["product_type"]
-        waiting_days = 30 if kind == "health" else 0
+        profile = PROFILES_BY_CODE[code]
+        if kind != profile.product_type:
+            raise ValueError(f"product type mismatch for {code}")
+        waiting_text = (
+            f"疾病责任等待期为 {profile.waiting_days} 天，自保单起始日起计算；"
+            "等待期内的疾病事故不计入可赔责任。"
+            if profile.waiting_days else "本演示产品不设等待期。"
+        )
         text = (
             "Synthetic demo document.\n"
             "Not a real insurance product or policy.\n\n"
@@ -92,21 +154,24 @@ def product_documents(products: list[dict]) -> dict[str, str]:
             f"product_code: {code}\n"
             f"product_type: {kind}\n\n"
             "## 保险责任\n"
-            f"{responsibility[kind]}\n\n"
+            f"在保险期间内，保障以下演示事件：{profile.covered_events}\n\n"
             "## 责任免除\n"
-            f"{exclusions[kind]}\n\n"
+            f"以下情形不在本演示保障内：{profile.exclusions}\n\n"
             "## 等待期\n"
-            f"等待期为 {waiting_days} 天；等待期内发生的疾病事故不予赔付。意外事故不设等待期。\n\n"
+            f"{waiting_text}\n\n"
             "## 犹豫期\n"
             "本演示产品的犹豫期为 15 天，自签收演示保单之日起计算。\n\n"
             "## 保险期间\n"
             "保险期间为保单起始日（含）至终止日（不含），具体日期以合成保单记录为准。\n\n"
             "## 赔付条件\n"
-            "事故发生于保险期间内、符合保险责任且不属于责任免除时，按核定金额赔付。\n\n"
+            f"事故须符合保险责任且不属于责任免除。每次免赔额为 {profile.deductible_yuan} 元，"
+            f"免赔后自付比例为 {profile.copay_percent}%，演示年度赔付限额为 "
+            f"{profile.annual_limit_yuan} 元。\n\n"
             "## 理赔申请材料\n"
             "提交演示保单编号、事故说明和相关费用或事故证明材料。\n\n"
             "## 特殊约定\n"
-            "本文件仅供软件演示，与任何真实保险公司的产品、费率和合同无关。\n"
+            "本文件仅供软件演示，与任何真实保险公司的产品、费率和合同无关。"
+            "运营库理赔金额是按生成器规则产生的核定演示金额，不表示逐项执行本条款的理算结果。\n"
         )
         documents[f"{code}.md"] = text
     return documents
@@ -137,22 +202,16 @@ def generate(config: SyntheticConfig) -> SyntheticDataset:
                                     "birth_date": birth_origin + timedelta(days=rng.randrange(52 * 365)),
                                     "risk_score": rng.randint(0, 100)})
 
-    product_names = ("机动车基础", "机动车优选", "机动车高风险", "健康基础", "健康优选", "健康高保障",
-                     "意外基础", "意外优选", "意外高保障", "寿险基础", "寿险优选", "寿险高保障")
-    for i in range(1, 13):
-        kind = PRODUCT_TYPES[(i - 1) // 3]
+    for i, profile in enumerate(PRODUCT_PROFILES, start=1):
+        kind = profile.product_type
         variant = (i - 1) % 3
         tables["products"].append({
-            "id": i, "product_code": f"product_{i:03d}",
-            "name": f"Synthetic {product_names[i - 1]}", "product_type": kind,
+            "id": i, "product_code": profile.code,
+            "name": f"Synthetic {profile.name}", "product_type": kind,
             "annual_base_premium": Decimal(BASE_PREMIUM[kind]) * (Decimal(1) + Decimal(variant) / 10),
-            "claim_frequency_factor": Decimal("0.850") + Decimal(variant) * Decimal("0.175"),
-            "claim_severity_factor": Decimal("0.900") + Decimal(variant) * Decimal("0.150"),
         })
 
     policy_origin = date(2025, 7, 1)
-    claim_window_start = date(2026, 1, 1)
-    claim_window_end = date(2026, 8, 31)
     payment_id = 0
     for i in range(1, config.policies + 1):
         customer = tables["customers"][rng.randrange(config.customers)]
@@ -169,22 +228,25 @@ def generate(config: SyntheticConfig) -> SyntheticDataset:
             "agent_id": agent_id, "branch_id": branch_id, "product_id": product["id"],
             "start_date": start, "end_date": end, "annual_premium": premium,
         })
-        probability = claim_probability(
+        profile = PROFILES_BY_CODE[product["product_code"]]
+        earliest = max(start + timedelta(days=profile.waiting_days), OBSERVATION_START)
+        latest = min(end - timedelta(days=1), OBSERVATION_END)
+        if earliest > latest:
+            continue
+        annual_probability = claim_probability(
             risk_score=customer["risk_score"], product_type=product["product_type"],
-            frequency_factor=float(product["claim_frequency_factor"]),
+            frequency_factor=float(profile.frequency_factor),
             region=tables["branches"][branch_id - 1]["region"],
             age=age_on(customer["birth_date"], start),
         )
+        exposure_days = (latest - earliest).days + 1
+        probability = exposure_adjusted_probability(annual_probability, exposure_days)
         if rng.random() >= probability:
-            continue
-        earliest = max(start, claim_window_start)
-        latest = min(end - timedelta(days=1), claim_window_end)
-        if earliest > latest:
             continue
         claim_date = earliest + timedelta(days=rng.randrange((latest - earliest).days + 1))
         amount = claim_severity(
             risk_score=customer["risk_score"], product_type=product["product_type"],
-            severity_factor=product["claim_severity_factor"], jitter_percent=rng.randint(75, 135)
+            severity_factor=profile.severity_factor, jitter_percent=rng.randint(75, 135)
         )
         draw = rng.random()
         status = "settled" if draw < 0.78 else "open" if draw < 0.96 else "denied"

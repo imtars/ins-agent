@@ -21,3 +21,5 @@
 2026-09-27 实际拉取的 `Insur-QA-Retriever.json` 是 JSON Lines，每行独立含 `query/pos/neg`；`Insur-QA-LLM.json` 是 JSON 数组；InsQABench 的 `clause_subjective.json` 是按文档键组织的 JSON 对象。文件格式与扩展名、数据集展示层的统一 schema 不完全一致，解析器应按各文件的真实结构实现。两套 HF repo 的不可变 revision 和逐文件哈希见 `data/manifests/*_download.json`。
 
 中保协两份 2026 年修订寿险草案和三份分红型草案的来源页、附件直链均已实际验证；下载后的 SHA-256、抓取时间见 `data/manifests/public_docs_download.json`。五份文件都仍标为 `draft`。
+
+M1.1 再次直连下载五份附件，固定 SHA-256 未变化。静态 `public_docs.yaml` 增加来源页未标明许可证的记录及本地研究使用说明；实际 `retrieved_at` 只保留在本次下载 provenance 中。未因公开征求意见附件而推断可重新分发的许可。

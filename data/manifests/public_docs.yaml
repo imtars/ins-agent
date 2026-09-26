@@ -8,9 +8,10 @@ documents:
     file_url: https://www.iachina.cn/module/download/downfile.jsp?classid=0&filename=782c0ec342d64f418c8c8f608165e2db.docx
     file_type: docx
     status: draft
+    license: not_stated_on_source_page
+    usage_note: 公开征求意见附件，仅供本地研究与演示；仓库不再分发原件，使用前核验来源页和草案状态。
     source_published_at: '2026-06-10'
     verified_at: '2026-09-27'
-    retrieved_at: '2026-09-26T16:56:58.687735+00:00'
     sha256: 2d26d9a5bac2f5d72f67774ee921c9e66b2ae84cf46b92baa4592443baba18fb
   - id: iachina_2026_whole_life_draft
     title: 终身寿险示范条款（2026年修订）（征求意见稿）
@@ -19,9 +20,10 @@ documents:
     file_url: https://www.iachina.cn/module/download/downfile.jsp?classid=0&filename=31f31239c27f43349c56b2593f952db5.docx
     file_type: docx
     status: draft
+    license: not_stated_on_source_page
+    usage_note: 公开征求意见附件，仅供本地研究与演示；仓库不再分发原件，使用前核验来源页和草案状态。
     source_published_at: '2026-06-10'
     verified_at: '2026-09-27'
-    retrieved_at: '2026-09-26T16:56:58.954370+00:00'
     sha256: 8611a751323c6beefe9c7518a882b4a38789ad11dddab7866510a005098adff3
   - id: iachina_2026_participating_whole_life_draft
     title: 终身寿险（分红型）示范条款（草案征求意见稿）
@@ -30,9 +32,10 @@ documents:
     file_url: https://www.iachina.cn/module/download/downfile.jsp?classid=0&filename=4d2ab6294103414e9a7e7c44ab5b4fd8.pdf
     file_type: pdf
     status: draft
+    license: not_stated_on_source_page
+    usage_note: 公开征求意见附件，仅供本地研究与演示；仓库不再分发原件，使用前核验来源页和草案状态。
     source_published_at: '2026-09-18'
     verified_at: '2026-09-27'
-    retrieved_at: '2026-09-26T16:56:59.777901+00:00'
     sha256: 2e63287723d5520ddb27ef98357cf652ac93ce3a4c7be9d253e28f291c3faee8
   - id: iachina_2026_participating_endowment_draft
     title: 两全保险（分红型）示范条款（草案征求意见稿）
@@ -41,9 +44,10 @@ documents:
     file_url: https://www.iachina.cn/module/download/downfile.jsp?classid=0&filename=ddaaa293c25d40ad82be82e7e03d242c.pdf
     file_type: pdf
     status: draft
+    license: not_stated_on_source_page
+    usage_note: 公开征求意见附件，仅供本地研究与演示；仓库不再分发原件，使用前核验来源页和草案状态。
     source_published_at: '2026-09-18'
     verified_at: '2026-09-27'
-    retrieved_at: '2026-09-26T16:57:00.517918+00:00'
     sha256: 000ef4634a3482b2be488a1cbcf079ab469ba30fa32ebd6a4d020db98ff69c8f
   - id: iachina_2026_participating_annuity_draft
     title: 年金保险（分红型）示范条款（草案征求意见稿）
@@ -52,7 +56,8 @@ documents:
     file_url: https://www.iachina.cn/module/download/downfile.jsp?classid=0&filename=13ca8a20255f41e7ad69fd76cc198b6f.pdf
     file_type: pdf
     status: draft
+    license: not_stated_on_source_page
+    usage_note: 公开征求意见附件，仅供本地研究与演示；仓库不再分发原件，使用前核验来源页和草案状态。
     source_published_at: '2026-09-18'
     verified_at: '2026-09-27'
-    retrieved_at: '2026-09-26T16:57:01.370795+00:00'
     sha256: 24cd8732ef3949d90a6195abd8878049ec6be4598d96676906d5b1772a3044d6

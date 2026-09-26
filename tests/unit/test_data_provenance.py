@@ -30,7 +30,9 @@ def test_dataset_file_lists_and_public_draft_status():
     assert len(documents) == 5
     assert len({item["id"] for item in documents}) == 5
     assert all(item["status"] == "draft" for item in documents)
-    assert all(len(item["sha256"]) == 64 and item["retrieved_at"] for item in documents)
+    assert all(len(item["sha256"]) == 64 and item["usage_note"] and
+               item["license"] == "not_stated_on_source_page" and
+               "retrieved_at" not in item for item in documents)
     assert all(item["source_page"].startswith("https://") and
                item["file_url"].startswith("https://www.iachina.cn/module/download/")
                for item in documents)

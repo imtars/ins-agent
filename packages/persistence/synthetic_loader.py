@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from dataclasses import asdict
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -9,9 +10,12 @@ from pathlib import Path
 from sqlalchemy import MetaData, Table, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from packages.domain.synthetic import GENERATOR_VERSION, TABLE_ORDER, SyntheticConfig, SyntheticDataset
+from packages.domain.synthetic import (
+    BASE_FREQUENCY, BASE_SEVERITY, GENERATOR_VERSION, OBSERVATION_END,
+    OBSERVATION_START, PRODUCT_PROFILES, TABLE_ORDER, SyntheticConfig, SyntheticDataset
+)
 
-SCHEMA_REVISION = "20260927_01"
+SCHEMA_REVISION = "20260927_02"
 
 
 def normalize(value):
@@ -48,9 +52,24 @@ def document_hashes(documents: dict[str, str]) -> dict[str, str]:
             for name, text in sorted(documents.items())}
 
 
+def simulation_profile_payload() -> dict:
+    return {
+        "annual_base_frequency": {key: str(value) for key, value in BASE_FREQUENCY.items()},
+        "base_severity_yuan": BASE_SEVERITY,
+        "observation_start": OBSERVATION_START.isoformat(),
+        "observation_end": OBSERVATION_END.isoformat(),
+        "products": {profile.code: normalize(asdict(profile)) for profile in PRODUCT_PROFILES},
+    }
+
+
+def simulation_profile_hash() -> str:
+    return hashlib.sha256(canonical_bytes(simulation_profile_payload())).hexdigest()
+
+
 def dataset_hash(config: SyntheticConfig, tables: dict[str, str], docs: dict[str, str]) -> str:
     envelope = {"generator_version": GENERATOR_VERSION, "schema_revision": SCHEMA_REVISION,
-                "config": config.to_dict(), "table_hashes": tables, "document_hashes": docs}
+                "config": config.to_dict(), "table_hashes": tables, "document_hashes": docs,
+                "simulation_profile_sha256": simulation_profile_hash()}
     return hashlib.sha256(canonical_bytes(envelope)).hexdigest()
 
 
@@ -119,6 +138,9 @@ def make_manifest(config: SyntheticConfig, counts: dict[str, int],
         "table_counts": counts,
         "table_sha256": table_hashes,
         "document_sha256": doc_hashes,
+        "simulation_profiles": simulation_profile_payload(),
+        "simulation_profile_sha256": simulation_profile_hash(),
+        "observation_rule": "At most one claim per policy; annual probability scaled to eligible observed days by 1-(1-p_annual)^(days/365). Health waiting days are excluded.",
         "dataset_sha256": dataset_hash(config, table_hashes, doc_hashes),
         "synthetic_notice": "All operational records and product documents are fictional. No real personal data.",
     }
