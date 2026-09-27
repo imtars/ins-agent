@@ -23,10 +23,17 @@ def test_client_group_namespaces_and_routes_existing_tools():
                                  "knowledge": Client(knowledge_server(
                                      object(), object(), object()))})
             async with group:
-                names = {tool.name for tool in await group.list_tools()}
+                listed = {tool.name: tool for tool in await group.list_tools()}
+                names = set(listed)
                 assert "data_execute_readonly_query" in names
                 assert "knowledge_search_knowledge" in names
                 assert len(names) == 11
+                query_schema = listed["data_execute_readonly_query"].input_schema
+                assert query_schema["required"] == ["sql"]
+                assert query_schema["additionalProperties"] is False
+                loss_schema = listed["data_compute_loss_ratio"].input_schema
+                assert "metric" not in loss_schema["properties"]
+                assert loss_schema["properties"]["kind"]["default"] == "incurred"
                 result = await group.call_tool("data_execute_readonly_query", {
                     "sql": "SELECT count(*) AS n FROM policies"})
                 assert result.structured_content["rows"] == [{"n": 30000}]

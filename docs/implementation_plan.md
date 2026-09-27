@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M4 已冻结；M5 单进程 LangGraph 已在本机实际验收，尚未进入 M6。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M4 已冻结；M5/M5.1 单进程 LangGraph 已在本机实际验收，尚未进入 M6。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -93,7 +93,13 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 
 四条真实 demo 使用本机 CLIProxyAPI `gpt-6-luna`、M1 synthetic PostgreSQL reader、M2 Milvus/BGE 和 M4 FastMCP `ClientGroup`，完整逐条记录见 [M5 demo 报告](../evaluation/reports/m5_demo.json)。第一轮连续运行发现混合题把“已发生赔付率”错误选择成理赔频率，Verification 返回 `REVISE`；此反馈用于明确两种指标的工具语义，并增加错误工具选择的确定性修复测试。最终验收从修正后的干净源码提交重新运行，保留模型响应中的 `REVISE` 或 JSON 格式重试记录，不把四题 demo 当成准确率 benchmark。所有测试与路由结果均为本机验收，尚无 CI status；代理报告的模型 ID 不能证明底层权重版本。
 
-最终从干净提交 `c4004ed` 连续运行：SQL `1 SQL / 0 RAG`、RAG `0 / 1`、混合 `1 / 1`、简报 `2 / 2`，四题均在预期节点后各执行一次 Synthesis 和 Verification，状态均为 `PASS`。报告记录 `git_worktree_dirty=false`、源码 SHA-256、24 次模型响应（均报告 `gpt-6-luna`，模型 ID 缺失数 0），本次 JSON 解析重试数 0；混合题实际调用 `incurred_loss_ratio`，简报同时调用 `incurred_loss_ratio` 和 `claims_per_in_force_policy_year`。独立脚本复核四题路由、节点集合、产物数量、引用 ID、指标工具、源码哈希及报告基线提交。真实依赖环境下完整 `pytest -q` 为 **60 passed**。这只是四个预设流程示例的本机验收，不能推断回答准确率或泛化能力。M5 PASS，冻结；进入 M6 的流程门槛已满足，本轮不实现 M6。
+最终从干净提交 `c4004ed` 连续运行：SQL `1 SQL / 0 RAG`、RAG `0 / 1`、混合 `1 / 1`、简报 `2 / 2`，四题均在预期节点后各执行一次 Synthesis 和 Verification，状态均为 `PASS`。报告记录 `git_worktree_dirty=false`、源码 SHA-256、24 次模型响应（均报告 `gpt-6-luna`，模型 ID 缺失数 0），本次 JSON 解析重试数 0；混合题实际调用 `incurred_loss_ratio`，简报同时调用 `incurred_loss_ratio` 和 `claims_per_in_force_policy_year`。独立脚本复核四题路由、节点集合、产物数量、引用 ID、指标工具、源码哈希及报告基线提交。真实依赖环境下完整 `pytest -q` 为 **60 passed**。这只是四个预设流程示例的本机验收，不能推断回答准确率或泛化能力。后续审查指出下述两个 M5.1 收尾点，因此 `4332091` 保留为 M5 初版历史，不作为最终冻结点。
+
+## M5.1 MCP 工具契约消费与严格 demo 判定（2026-09-27）
+
+审查原 M5 报告发现 4 个 SQL task 的第一次工具参数均被 M4 拒绝，第二次靠错误反馈修正。Data Analyst 当时只接收业务 schema 和手写工具用途，没有收到 MCP 的真实输入契约。M5.1 改为在任务开始时调用 `ClientGroup.list_tools()`，选取五个数据工具的实际 namespaced 名称、描述及完整 `input_schema` 放入 Data Analyst context；缺少任一工具契约直接失败。原有业务指标语义 guard 和有限 repair 仍在，M4 的 Pydantic 工具校验仍是执行边界。真实 `ClientGroup` 集成测试核对 `sql` 必填、`additionalProperties=false`、赔付率工具没有 `metric` 入参；单元测试验证五份契约确实传入模型。
+
+验收脚本现在要求每条 demo 的 Verification 状态严格为 `PASS`，`REVISE` 与 `BLOCK` 都使脚本失败，且不会写入成功报告；状态判定有独立回归测试。原 [M5 报告](../evaluation/reports/m5_demo.json)不覆盖，M5.1 另写 [新报告](../evaluation/reports/m51_demo.json)。新的四题真实运行结果和本机完整 pytest 结果以该报告与本节后续验收记录为准；不把 demo 当成准确率 benchmark，也不宣称 CI 通过。
 
 ## 关键实施细节
 

@@ -17,7 +17,7 @@ from packages.llm.client import select_chat_client
 from services.mcp_data.server import create_server as data_server
 from services.mcp_knowledge.server import build_real_server as knowledge_server
 
-REPORT_PATH = Path("evaluation/reports/m5_demo.json")
+REPORT_PATH = Path("evaluation/reports/m51_demo.json")
 DEMOS = {
     "sql": ("产品 product_001 有多少张保单？", "SQL"),
     "rag": ("合成产品 product_006 的等待期是多少天？请给出条款证据。", "RAG"),
@@ -25,6 +25,16 @@ DEMOS = {
     "report": ("请生成 2026 年第二季度合成产品 product_006 的业务与条款综合简报："
                "列出已发生赔付率、理赔频率和等待期，附上数据和条款来源。", "REPORT"),
 }
+
+
+def assert_accepted(record: dict, expected_route: str) -> None:
+    if (record["plan"]["route"] != expected_route
+            or bool(record["sql_results"]) != (expected_route != "RAG")
+            or bool(record["rag_results"]) != (expected_route != "SQL")
+            or record["trace"].count("synthesis") != 1
+            or record["trace"].count("verifier") != 1
+            or record["status"] != "PASS"):
+        raise RuntimeError(f"M5 demo route or verification failed: {record['name']}")
 
 
 async def run(reader_url: str, milvus_uri: str, provider: str, only: str | None) -> dict:
@@ -56,13 +66,7 @@ async def run(reader_url: str, milvus_uri: str, provider: str, only: str | None)
                       f"sql={len(record['sql_results'])} rag={len(record['rag_results'])} "
                       f"status={record['status']} trace={record['trace']} "
                       f"issues={record['verification']['issues']}", flush=True)
-                if (record["plan"]["route"] != expected_route
-                        or bool(record["sql_results"]) != (expected_route != "RAG")
-                        or bool(record["rag_results"]) != (expected_route != "SQL")
-                        or record["trace"].count("synthesis") != 1
-                        or record["trace"].count("verifier") != 1
-                        or record["status"] == "BLOCK"):
-                    raise RuntimeError(f"M5 demo route or verification failed: {name}")
+                assert_accepted(record, expected_route)
     finally:
         await engine.dispose()
     return {"generated_at": datetime.now(timezone.utc).isoformat(),

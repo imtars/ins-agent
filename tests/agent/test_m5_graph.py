@@ -52,6 +52,25 @@ class StubModel:
 class StubTools:
     def __init__(self):
         self.calls = []
+        self.list_tools_calls = 0
+
+    async def list_tools(self):
+        self.list_tools_calls += 1
+        schemas = {
+            "data_execute_readonly_query": {"type": "object", "additionalProperties": False,
+                                            "properties": {"sql": {"type": "string"}},
+                                            "required": ["sql"]},
+            "data_compute_claim_rate": {"type": "object", "properties": {
+                "start_date": {"type": "string"}, "end_date": {"type": "string"}}},
+            "data_compute_loss_ratio": {"type": "object", "properties": {
+                "start_date": {"type": "string"}, "end_date": {"type": "string"}}},
+            "data_group_statistics": {"type": "object", "properties": {
+                "group_by": {"enum": ["all", "product_code", "region"]}}},
+            "data_compute_growth": {"type": "object", "properties": {
+                "metric": {"enum": ["earned_premium"]}}},
+        }
+        return [SimpleNamespace(name=name, description=f"live {name} description",
+                                input_schema=schema) for name, schema in schemas.items()]
 
     async def call_tool(self, name, arguments):
         self.calls.append(name)
@@ -113,6 +132,7 @@ def test_four_routes_join_once_and_use_only_mcp_tools(route, expected_roles, exp
         state["trace"].index(role) for role in
         ({"data_analyst", "knowledge_researcher"} & expected_roles))
     assert set(tools.calls) == expected_tools
+    assert tools.list_tools_calls == (route != "RAG")
     assert set(model.calls) == expected_roles
     assert bool(state.get("sql_results")) == (route != "RAG")
     assert bool(state.get("rag_results")) == (route != "SQL")
@@ -167,3 +187,30 @@ def test_incurred_loss_ratio_cannot_be_replaced_by_claim_frequency():
     assert [attempt["status"] for attempt in artifact.attempts] == ["failed", "success"]
     assert "data_compute_claim_rate" not in tools.calls
     assert artifact.result["metric"] == "incurred_loss_ratio"
+
+
+def test_data_analyst_reads_live_mcp_input_schemas_and_fails_if_missing():
+    class InspectModel(StubModel):
+        async def complete_json(self, role, system, user, *, max_tokens=1200):
+            if role == "data_analyst":
+                catalog = json.loads(system.split("Live MCP tool catalog:\n", 1)[1])
+                assert len(catalog) == 5
+                by_name = {item["name"]: item for item in catalog}
+                query = by_name["data_execute_readonly_query"]
+                assert query["description"] == "live data_execute_readonly_query description"
+                assert query["input_schema"]["required"] == ["sql"]
+                assert query["input_schema"]["additionalProperties"] is False
+                assert "data_describe_schema" not in by_name
+            return await super().complete_json(role, system, user, max_tokens=max_tokens)
+
+    plan = TaskPlan(intent="count", route="SQL", sql_tasks=["count policies"])
+    tools = StubTools()
+    asyncio.run(DataAnalystAgent(InspectModel(), tools).run(plan))
+    assert tools.list_tools_calls == 1
+
+    class MissingTool(StubTools):
+        async def list_tools(self):
+            return (await super().list_tools())[:-1]
+
+    with pytest.raises(ValueError, match="required MCP data tool schemas missing"):
+        asyncio.run(DataAnalystAgent(InspectModel(), MissingTool()).run(plan))

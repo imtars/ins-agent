@@ -15,6 +15,7 @@ from packages.llm.client import JsonModel
 
 class ToolCaller(Protocol):
     async def call_tool(self, name: str, arguments: dict): ...
+    async def list_tools(self): ...
 
 
 def encode(value) -> str:
@@ -47,6 +48,10 @@ class PlannerAgent:
 
 
 class DataAnalystAgent:
+    TOOL_NAMES = ("data_execute_readonly_query", "data_compute_claim_rate",
+                  "data_compute_loss_ratio", "data_group_statistics",
+                  "data_compute_growth")
+
     def __init__(self, model: JsonModel, tools: ToolCaller):
         self.model = model
         self.tools = tools
@@ -54,9 +59,18 @@ class DataAnalystAgent:
     async def run(self, plan: TaskPlan) -> list[SqlArtifact]:
         schema_result = await self.tools.call_tool("data_describe_schema", {})
         schema = schema_result.structured_content["schema"]
+        listed = {tool.name: tool for tool in await self.tools.list_tools()}
+        missing = set(self.TOOL_NAMES) - listed.keys()
+        if missing:
+            raise ValueError(f"required MCP data tool schemas missing: {sorted(missing)}")
+        catalog = [{"name": name, "description": listed[name].description,
+                    "input_schema": listed[name].input_schema} for name in self.TOOL_NAMES]
         system = ("You are the Data Analyst. Return JSON only: "
                   "{\"tool\":\"data_...\",\"arguments\":{...}}. Choose one namespaced MCP tool "
-                  "for the task. For simple count/filter questions choose data_execute_readonly_query "
+                  "for the task. The live MCP tool catalog below is authoritative: use its exact "
+                  "input_schema, required field names and enum values; never send output fields "
+                  "or extra arguments when additionalProperties is false. "
+                  "For simple count/filter questions choose data_execute_readonly_query "
                   "with one PostgreSQL SELECT. For claim rates choose data_compute_claim_rate; "
                   "for loss ratios choose data_compute_loss_ratio; specifically 已发生赔付率 "
                   "means incurred_loss_ratio, while 理赔频率 means "
@@ -67,7 +81,8 @@ class DataAnalystAgent:
                   "choose data_group_statistics; for period-over-period growth choose "
                   "data_compute_growth. Dates must be ISO strings, end exclusive. "
                   "Use only stored codes from the schema. Never calculate numeric answers yourself. "
-                  "Do not choose a tool outside this list.\nSchema:\n" + schema)
+                  "Do not choose a tool outside this list.\nBusiness schema:\n" + schema
+                  + "\nLive MCP tool catalog:\n" + encode(catalog))
         artifacts = []
         for index, task in enumerate(plan.sql_tasks, start=1):
             feedback = None
