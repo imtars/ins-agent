@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M4 已冻结；M5/M5.1 单进程 LangGraph 已在本机实际验收，尚未进入 M6。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M5.1 已冻结；M6 handoff contract 已在本机实际验收，尚未进入 M7。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -102,6 +102,12 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 验收脚本现在要求每条 demo 的 Verification 状态严格为 `PASS`，`REVISE` 与 `BLOCK` 都使脚本失败，且不会写入新的成功报告；状态判定有独立回归测试。原 [M5 报告](../evaluation/reports/m5_demo.json)不覆盖，M5.1 另写 [新报告](../evaluation/reports/m51_demo.json)。不把 demo 当成准确率 benchmark，也不宣称 CI 通过。
 
 从干净提交 `edcb75e` 连续重跑真实四题：SQL `1 SQL / 0 RAG`、RAG `0 / 1`、混合 `1 / 1`、简报 `2 / 1`，路由、合流和最终状态均正确，四题严格 `PASS`。共 4 个 SQL task，**4/4 第一次工具调用成功**，修复次数为 0；前轮 4/4 第一次参数拒绝的问题未再出现。报告记录 `git_worktree_dirty=false`、7 份源码 SHA-256、19 次模型响应均报告 `gpt-6-luna`、模型 ID 缺失 0、JSON 解析失败 0。独立复核四题节点集合、引用 ID、业务指标、源码哈希与基线提交，原 M5 报告 SHA-256 保持 `de6943c9e67bc7aa23d58b56b11f623948d0b3ee05c1ca50499d4068c869a608`。真实依赖环境下完整本机 pytest 为 **64 passed**。这些是固定四题的流程验收事实，不能据此声称新题泛化或底层模型权重版本。M5/M5.1 PASS，可以冻结并进入 M6；本轮未实现 M6。
+
+## M6 Handoff contract 与验收（2026-09-27）
+
+实现 `NodeContract` 注册表，为主图和两个专家子图的所有节点声明必需/可选输入、输出、Pydantic schema 及上游关系。构图时核对实际节点集合、类型匹配的 producer 和 Verifier 对 `AnalysisResult` 的消费；每个节点执行前后统一验证，失败抛 `ContractViolation`，下游不运行。SQL 五种工具结果、知识搜索结果及 Evidence 也按 Pydantic 验证，M4 返回缺字段、错误类型、数量不符、内容哈希不符等直接阻断，不把服务端坏输出当作 LLM 参数错误进行修复。
+
+Verifier 批准前逐条校验 claim 的当前来源 ID：SQL 数字必须在所引工具产物/参数中出现；RAG claim 必须在正文与 `evidence_quote` 放入所引 evidence 的同一段原文，且数字来自该证据；摘要不能新增结果数字。确定性注入测试覆盖注册表缺项、无 producer、缺字段、错误 schema、无效工具输出、未知引用 ID、错误数字和虚构引文。详细边界与语义限制见 [M6 契约说明](handoff_contracts.md)。固定四题的真实依赖验收独立写入 [M6 报告](../evaluation/reports/m6_contract_demo.json)，不覆盖 M5/M5.1 历史报告。
 
 ## 关键实施细节
 

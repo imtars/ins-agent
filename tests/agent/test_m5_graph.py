@@ -1,6 +1,7 @@
 """M5 routing/fan-in tests use controlled role output, never benchmark scores."""
 
 import asyncio
+import hashlib
 import json
 from types import SimpleNamespace
 
@@ -40,7 +41,8 @@ class StubModel:
             if data["rag_results"]:
                 claims.append({"text": "The waiting period is 15 days.",
                                "source_ids": ["invalid" if self.bad_citation else
-                                              "product_006:等待期:chunkid"]})
+                                              "product_006:等待期:chunkid"],
+                               "evidence_quote": "waiting period is 15 days"})
             return {"summary": "Synthetic demo answer.", "claims": claims}
         if role == "verifier":
             if self.verifier_fails:
@@ -79,9 +81,19 @@ class StubTools:
         elif name == "data_execute_readonly_query":
             content = {"rows": [{"n": 30000}], "row_count": 1}
         elif name == "knowledge_search_knowledge":
-            content = {"evidence": [{"evidence_id": "product_006:等待期:chunkid",
-                                     "doc_id": "product_006", "text": "等待期 15 天"}],
-                       "count": 1}
+            evidence_text = "The waiting period is 15 days."
+            content = {"query": arguments["query"],
+                       "product_code": arguments["product_code"],
+                       "evidence": [{"evidence_id": "product_006:等待期:chunkid",
+                                     "doc_id": "product_006", "chunk_id": "chunkid",
+                                     "title": "Synthetic health", "section": "等待期",
+                                     "page": None, "text": evidence_text,
+                                     "source_type": "synthetic_product",
+                                     "source_name": "Synthetic demo product", "source_url": "",
+                                     "product_code": "product_006",
+                                     "content_hash": hashlib.sha256(
+                                         evidence_text.encode()).hexdigest(),
+                                     "rerank_score": 0.9}], "count": 1}
         else:
             raise AssertionError(f"unexpected MCP tool: {name}")
         return SimpleNamespace(structured_content=content)
@@ -150,7 +162,7 @@ def test_data_tool_repair_is_bounded_and_traced():
     model = RepairModel()
     state = asyncio.run(run_query(build_workflow(model, ValidatingTools()), "route_sql"))
     assert state["status"] == "PASS"
-    assert [item["status"] for item in state["sql_results"][0].attempts] == [
+    assert [item.status for item in state["sql_results"][0].attempts] == [
         "failed", "success"]
     assert model.proposals == 2
 
@@ -175,8 +187,12 @@ def test_incurred_loss_ratio_cannot_be_replaced_by_claim_frequency():
         async def call_tool(self, name, arguments):
             if name == "data_compute_loss_ratio":
                 self.calls.append(name)
-                return SimpleNamespace(structured_content={"metric": "incurred_loss_ratio",
-                                                           "value": 1.3449})
+                return SimpleNamespace(structured_content={
+                    "metric": "incurred_loss_ratio", "value": "1.3449", "unit": "ratio",
+                    "start_date": "2026-04-01", "end_date": "2026-07-01",
+                    "product_code": "product_006", "region": None,
+                    "incurred_amount": "2937010.48", "paid_amount": "2172304.76",
+                    "earned_premium": "2183750.57"})
             return await super().call_tool(name, arguments)
 
     model, tools = MetricModel(), MetricTools()
@@ -184,7 +200,7 @@ def test_incurred_loss_ratio_cannot_be_replaced_by_claim_frequency():
                     sql_tasks=["查询 product_006 的已发生赔付率"])
     artifact = asyncio.run(DataAnalystAgent(model, tools).run(plan))[0]
     assert model.calls == 2
-    assert [attempt["status"] for attempt in artifact.attempts] == ["failed", "success"]
+    assert [attempt.status for attempt in artifact.attempts] == ["failed", "success"]
     assert "data_compute_claim_rate" not in tools.calls
     assert artifact.result["metric"] == "incurred_loss_ratio"
 

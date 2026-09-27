@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M4 已冻结，M5/M5.1 LangGraph 已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和单进程 Agent 图。API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M5.1 已冻结，M6 handoff contract 已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和单进程 Agent 图。API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -118,6 +118,18 @@ uv run --locked python -m scripts.run_m5_demo --provider proxy
 
 脚本连接本机 CLIProxyAPI 的 `gpt-6-luna`，通过 M4 FastMCP `ClientGroup` 调用真实 PostgreSQL 与 Milvus/BGE。默认 `--provider auto` 在启动前检测本机模型服务，不可用时才使用 DeepSeek 备用 key；不会将 key 写入报告。四条路径的计划、节点 trace、工具产物、引用、验证状态、模型响应 ID 和代码 SHA-256 记录在 [M5.1 本机 demo 报告](evaluation/reports/m51_demo.json)；[原 M5 报告](evaluation/reports/m5_demo.json)保留历史。验收脚本仅在四题均 `PASS` 时成功，`REVISE` 也视为未通过。这是流程验收，不是工作流准确率或未见题 benchmark。
 
+## M6 Handoff contract
+
+每个图节点在执行前后校验注册的 Pydantic 输入/输出模型。M4 SQL/知识工具返回也按类型和来源元数据校验；缺字段、类型错误或无效工具返回触发 `ContractViolation`，下游节点不会运行。Verifier 批准前逐条检查 SQL 数字与被引产物、RAG 原文引文与当前 evidence；完整规则及其语义限制见 [M6 契约说明](docs/handoff_contracts.md)。当前仍无 checkpoint、审批或持久化运行状态。
+
+在 M5 所需真实依赖可用时运行四题 M6 验收：
+
+```bash
+M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_demo' uv run --locked python -m scripts.run_m6_demo --provider proxy
+```
+
+该脚本只在四题均 `PASS` 且所有 claim 的确定性证据检查通过后生成 [M6 本机报告](evaluation/reports/m6_contract_demo.json)；原 M5/M5.1 报告不覆盖。设齐上述测试依赖变量后，`uv run --locked pytest -q` 执行完整本机测试。
+
 ## 设计文档
 
 - [架构与阶段边界](docs/architecture.md)
@@ -127,6 +139,8 @@ uv run --locked python -m scripts.run_m5_demo --provider proxy
 - [M4 MCP 工具契约](docs/mcp_tools.md)
 - [M5.1 本机 demo 报告](evaluation/reports/m51_demo.json)
 - [原 M5 本机 demo 报告](evaluation/reports/m5_demo.json)
+- [M6 契约说明](docs/handoff_contracts.md)
+- [M6 本机报告](evaluation/reports/m6_contract_demo.json)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)

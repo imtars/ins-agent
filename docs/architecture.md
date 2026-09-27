@@ -4,7 +4,7 @@
 
 系统回答保险运营分析与条款知识问题，输入可以分别路由到 SQL、RAG 或两者。所有业务运营记录和与其通过 `product_code` 关联的产品文档均为合成演示数据。公开条款仅用于独立知识检索，除非有明确、已验证的产品映射，不得把公开条款套用到合成产品。
 
-五个依赖 LLM 的角色固定为 Planner、Data Analyst、Knowledge Researcher、Synthesis Analyst、Verification Agent。计算指标、SQL 校验、检索融合由确定性代码执行。M5 仅实现基本来源 ID 检查与 Verification 角色；完整的逐声明证据校验、跨节点契约和审批发布属于后续阶段。Provider 抽象位于 `packages/llm`；本机优先 CLIProxyAPI `gpt-6-luna`，DeepSeek 为备用。
+五个依赖 LLM 的角色固定为 Planner、Data Analyst、Knowledge Researcher、Synthesis Analyst、Verification Agent。计算指标、SQL 校验、检索融合由确定性代码执行。M6 已增加节点输入/输出契约和逐条 claim 的来源 ID、数字、原文引文检查；任意叙述的语义蕴含仍由 LLM Verifier 判断，审批发布属于后续阶段。Provider 抽象位于 `packages/llm`；本机优先 CLIProxyAPI `gpt-6-luna`，DeepSeek 为备用。
 
 ## 目标流程
 
@@ -43,7 +43,7 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-上面的持久化、审批与发布流程描述目标架构。当前 M5/M5.1 实现单进程、内存态主图：Planner 选择 SQL、RAG、BOTH、REPORT；SQL/RAG 子图分别由 Data Analyst/Knowledge Researcher 运行，混合路径并行后合流；Synthesis 仅消费结果，Verification 给出结论。两个专家角色只通过 M4 `ClientGroup` 调用命名空间工具，Graph 没有直连 `packages/sql` 或 `packages/knowledge`；Data Analyst 从该组的 `list_tools()` 读取实际输入 schema，而不在图中维护一套工具参数签名。`RunState` 在 M5 暂存本次结果与 trace；没有 checkpoint、数据库 run artifact、worker、HITL、API 和前端。M1–M4 的数据、检索、SQL 和 MCP 验收保持冻结。
+上面的持久化、审批与发布流程描述目标架构。当前 M5/M6 实现单进程、内存态主图：Planner 选择 SQL、RAG、BOTH、REPORT；SQL/RAG 子图分别由 Data Analyst/Knowledge Researcher 运行，混合路径并行后合流；Synthesis 仅消费结果，Verification 给出结论。两个专家角色只通过 M4 `ClientGroup` 调用命名空间工具，Graph 没有直连 `packages/sql` 或 `packages/knowledge`；Data Analyst 从该组的 `list_tools()` 读取实际输入 schema。M6 的 `NodeContract` 注册表在每个节点前后验证 Pydantic schema，并核对 producer/consumer。`RunState` 暂存本次结果与 trace；没有 checkpoint、数据库 run artifact、worker、HITL、API 和前端。M1–M5.1 的数据、检索、SQL、MCP 与图流程验收保持冻结。
 
 ## 后续待验证的工程问题
 
