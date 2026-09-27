@@ -44,7 +44,10 @@ def label_source_scope(analysis: AnalysisResult, sql: list[SqlArtifact],
                 source = evidence_by_id[source_id]
                 prefix = ("合成演示产品条款：" if source.source_type == "synthetic_product"
                           else "公开征求意见稿：")
-                text = prefix + text
+                if claim.evidence_quote and claim.evidence_quote in source.text:
+                    text = prefix + claim.evidence_quote
+                else:
+                    text = prefix + text
         claims.append({**claim.model_dump(), "text": text})
     return AnalysisResult(summary="".join(notices) + analysis.summary, claims=claims)
 

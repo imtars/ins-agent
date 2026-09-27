@@ -144,6 +144,10 @@ def test_each_claim_needs_current_numeric_or_exact_quote_support():
     assert labeled.claims[0].text.startswith("合成运营数据：")
     assert labeled.claims[1].text.startswith("合成演示产品条款：")
     assert validate_claim_evidence(plan, [sql], [rag], labeled) == []
+    overbroad = label_source_scope(AnalysisResult(summary="简报", claims=[
+        {"text": "所有保障均等待 15 天。" + text,
+         "source_ids": [evidence.evidence_id], "evidence_quote": text}]), [], [rag])
+    assert overbroad.claims[0].text == "合成演示产品条款：" + text
     repeated = RagArtifact(artifact_id="rag:2", task="another query",
                            query="same chunk", evidence=[evidence.model_copy(
                                update={"rerank_score": 0.2})])
@@ -193,3 +197,15 @@ def test_each_claim_needs_current_numeric_or_exact_quote_support():
     summary = asyncio.run(SynthesisAnalystAgent(InspectSynthesis()).compose(
         pure_sql, [sql], []))
     assert "运营结果为合成演示数据" in summary.summary
+
+    class InspectVerifier:
+        async def complete_json(self, role, system, user, *, max_tokens=1200):
+            assert "a RAG-only route does not need SQL" in system
+            return {"status": "PASS", "issues": []}
+
+    rag_only = TaskPlan(intent="waiting", route="RAG", rag_tasks=["waiting period"])
+    rag_analysis = AnalysisResult(summary="合成演示条款", claims=[
+        {"text": "合成演示产品条款：" + text,
+         "source_ids": [evidence.evidence_id], "evidence_quote": text}])
+    assert asyncio.run(VerificationAgent(InspectVerifier()).verify(
+        rag_only, [], [rag], rag_analysis)).status == "PASS"

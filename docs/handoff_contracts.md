@@ -15,6 +15,8 @@ M6 仍是单进程、内存图。`packages/agent/contracts.py` 的 `NODE_CONTRAC
 
 `packages/agent/evidence.py` 在 Verifier 批准前逐条检查：每条 claim 只能引用本轮一个 SQL artifact 或 RAG evidence；SQL claim 的数字必须出现在被引 SQL 结果/参数中；RAG claim 必须把该 evidence 文本中的一段原文同时放在 `evidence_quote` 与 claim 正文，数字也必须出现在该证据文本中。摘要只允许重复计划里已有的数字。Synthesis 还会根据已验证的 artifact `source_type` 给摘要和 claim 加上合成运营数据、合成产品条款或公开征求意见稿的确定性来源标识。任一证据检查失败即 `BLOCK`，Verifier 自身失败也 `BLOCK`。LLM Verifier 仍负责判断引文与叙述的语义关系及冲突；精确引文和数值核对**不能证明任意自然语言推论都被证据蕴含**。
 
+RAG claim 对外只保留来源标签和所引原文，避免把“疾病责任等待期”改写成范围更广的“所有责任等待期”。条款原文中的天数可由该原文支持；纯 RAG 问题不会为这个数字额外发起 SQL 查询。运营指标仍只能由 SQL 工具产物支持。
+
 多个检索任务可合法命中同一 chunk，因此同一 `evidence_id` 的重复出现只有在 `doc_id`、`chunk_id`、章节、正文、来源或内容哈希冲突时才阻断；不同 query 的 rerank 分数可不同。重复引用不会被当成新的独立证据。
 
 固定四题真实依赖 demo 与注册表/schema 哈希见 [M6 本机报告](../evaluation/reports/m6_contract_demo.json)。缺字段、错误 schema、无效 SQL/RAG 工具返回、错误数值/引文、引用注入和注册表缺项由 `tests/agent/test_m6_contracts.py` 确定性覆盖。这是本机流程与契约验收，不是回答质量 benchmark 或 CI 结果。
