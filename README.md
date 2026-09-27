@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M2 已冻结，M3 SQL 阶段已完成验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融，以及 SQL 只读执行与固定 gold case。M3 的 110 题真实模型评测已运行；MCP、Graph、API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M2 已冻结，M3.1 SQL 回归修正已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融，以及 SQL 只读执行与固定 gold case。M3 的 110 题真实模型评测和 M3.1 同题回归均已运行；MCP、Graph、API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -92,7 +92,7 @@ M3_TEST_READER_DATABASE_URL="$M3_READER_DATABASE_URL" uv run --locked pytest -q 
 uv run --locked python -m evaluation.sql.run --provider proxy
 ```
 
-本机 CLIProxyAPI + `gpt-6-luna` 已真实运行全部 110 题：[逐题报告](evaluation/reports/sql_evaluation.json)记录 100 道可回答题全部执行成功、85 道结果正确（85%），以及 5 道不可回答题和 5 道危险请求全部拒绝。没有触发修复，修复成功率为 `null`。SQL 结果评测不比对 SQL 字符串，单列执行成功率、结果准确率、首轮准确率、拒绝率和修复成功率；逐题保留尝试记录。模型服务的实际版本可能变化，报告中的结果属于该次调用，不能视为固定权重的跨时复现成绩。
+本机 CLIProxyAPI + `gpt-6-luna` 的[初始诊断报告](evaluation/reports/sql_evaluation_m3_v1.json)保留 100 道可回答题中 85 道严格结果匹配的原始成绩。M3.1 补充了业务字段值字典，明确 10 道排名题的 `branch_code` 输出和 10 道比率题的比例小数输出；gold、严格比较规则及其余 90 道题均未改变。在**同一 110 题回归集**上重新运行的[逐题报告](evaluation/reports/sql_evaluation.json)记录可回答题 100/100 执行成功且严格结果匹配，5/5 不可回答题与 5/5 危险请求均拒绝。没有触发修复，修复成功率为 `null`。这次 100% 是已分析过错误后的回归成绩，**不是未见题或泛化准确率**。报告记录请求的模型 ID、代理响应提供的模型 ID、源码和题本哈希；服务端版本未锁定，跨时结果可能变化。
 
 ## 设计文档
 

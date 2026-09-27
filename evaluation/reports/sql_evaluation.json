@@ -1,15 +1,17 @@
 {
   "api_base_url": "http://127.0.0.1:8317/v1",
-  "base_git_commit": "0a59370ba9d0728c6b83128f33fffb8c4070c0f3",
+  "base_git_commit": "e8c92d769c0e56ea47493fc1783dd0221aff1cb5",
+  "baseline_report_path": "evaluation/reports/sql_evaluation_m3_v1.json",
+  "baseline_report_sha256": "1adac2b3c3cbde4f38c7b8ea3682cd5acdc0fc50a26e5b1eb7208c29cb382abd",
   "case_count": 110,
-  "casebook_sha256": "704f344bc6f07b1630c075750eceaf17250fedb0833c8fe58f83df42be5668f6",
+  "casebook_sha256": "2e9a164a588e8b1f88e8e5b4fb7bb6e9469767e1fa31429b4bfeb875714be4b4",
   "cases": [
     {
       "attempts": [
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_001'",
+          "sql": "SELECT COUNT(*) AS policy_count FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_001'",
           "stage": "executed"
         }
       ],
@@ -29,7 +31,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(pol.annual_premium), 0) AS total_annual_premium FROM policies AS pol JOIN products AS prod ON prod.id = pol.product_id WHERE prod.product_code = 'product_001'",
+          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_001'",
           "stage": "executed"
         }
       ],
@@ -49,7 +51,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS claim_count FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_001'",
+          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nJOIN policies ON claims.policy_id = policies.id\nJOIN products ON policies.product_id = products.id\nWHERE products.product_code = 'product_001'",
           "stage": "executed"
         }
       ],
@@ -69,7 +71,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount FROM claim_payments cp JOIN claims c ON c.id = cp.claim_id JOIN policies pol ON pol.id = c.policy_id JOIN products pr ON pr.id = pol.product_id WHERE pr.product_code = 'product_001'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount FROM products p JOIN policies pol ON pol.product_id = p.id JOIN claims c ON c.policy_id = pol.id JOIN claim_payments cp ON cp.claim_id = c.id WHERE p.product_code = 'product_001'",
           "stage": "executed"
         }
       ],
@@ -89,7 +91,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_001'\n  AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims\nJOIN policies ON claims.policy_id = policies.id\nJOIN products ON policies.product_id = products.id\nWHERE products.product_code = 'product_001'\n  AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -109,7 +111,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score) AS average_risk_score FROM policies p JOIN customers c ON c.id = p.customer_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_001'",
+          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN customers c ON c.id = p.customer_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_001'",
           "stage": "executed"
         }
       ],
@@ -129,7 +131,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_001'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count::numeric) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_001'\n  GROUP BY p.agent_id\n), average_sales AS (\n  SELECT AVG(policy_count::numeric) AS avg_policy_count\n  FROM agent_sales\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales s\nCROSS JOIN average_sales a\nWHERE s.policy_count > a.avg_policy_count",
           "stage": "executed"
         }
       ],
@@ -149,7 +151,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count FROM policies p JOIN products pr ON p.product_id = pr.id WHERE pr.product_code = 'product_002'",
+          "sql": "SELECT COUNT(policies.id) AS policy_count\nFROM products\nLEFT JOIN policies ON policies.product_id = products.id\nWHERE products.product_code = 'product_002'",
           "stage": "executed"
         }
       ],
@@ -169,7 +171,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(pol.annual_premium), 0) AS total_annual_premium FROM policies AS pol JOIN products AS prod ON prod.id = pol.product_id WHERE prod.product_code = 'product_002'",
+          "sql": "SELECT COALESCE(SUM(policies.annual_premium), 0) AS total_annual_premium FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_002'",
           "stage": "executed"
         }
       ],
@@ -189,7 +191,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS claim_count FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_002'",
+          "sql": "SELECT COUNT(c.id) AS claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_002'",
           "stage": "executed"
         }
       ],
@@ -209,7 +211,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount\nFROM claim_payments cp\nJOIN claims c ON c.id = cp.claim_id\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_002'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_payment_amount FROM products p JOIN policies pol ON pol.product_id = p.id JOIN claims c ON c.policy_id = pol.id JOIN claim_payments cp ON cp.claim_id = c.id WHERE p.product_code = 'product_002'",
           "stage": "executed"
         }
       ],
@@ -219,7 +221,7 @@
       "id": "payments_join_002",
       "rows": [
         {
-          "total_paid_amount": "3670259.93"
+          "total_payment_amount": "3670259.93"
         }
       ],
       "status": "success"
@@ -229,7 +231,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_002'\n  AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims\nJOIN policies ON policies.id = claims.policy_id\nJOIN products ON products.id = policies.product_id\nWHERE products.product_code = 'product_002'\n  AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -249,7 +251,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_002'",
+          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN customers c ON c.id = p.customer_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_002'",
           "stage": "executed"
         }
       ],
@@ -269,7 +271,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_002'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_002'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count::numeric) FROM agent_sales)",
           "stage": "executed"
         }
       ],
@@ -289,7 +291,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_003'",
+          "sql": "SELECT COUNT(*) AS policy_count FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_003'",
           "stage": "executed"
         }
       ],
@@ -309,7 +311,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_003'",
+          "sql": "SELECT COALESCE(SUM(policies.annual_premium), 0) AS total_annual_premium FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_003'",
           "stage": "executed"
         }
       ],
@@ -329,7 +331,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(c.id) AS claim_count FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_003'",
+          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nJOIN policies ON policies.id = claims.policy_id\nJOIN products ON products.id = policies.product_id\nWHERE products.product_code = 'product_003'",
           "stage": "executed"
         }
       ],
@@ -349,7 +351,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount\nFROM claim_payments cp\nJOIN claims c ON c.id = cp.claim_id\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_003'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount FROM claim_payments AS cp JOIN claims AS c ON c.id = cp.claim_id JOIN policies AS p ON p.id = c.policy_id JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_003'",
           "stage": "executed"
         }
       ],
@@ -369,7 +371,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_003'\n  AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims\nJOIN policies ON policies.id = claims.policy_id\nJOIN products ON products.id = policies.product_id\nWHERE products.product_code = 'product_003'\n  AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -389,7 +391,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_003'",
+          "sql": "SELECT AVG(c.risk_score::numeric) AS average_risk_score\nFROM policies p\nJOIN customers c ON c.id = p.customer_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_003'",
           "stage": "executed"
         }
       ],
@@ -409,7 +411,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies AS p\n  JOIN products AS pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_003'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  JOIN agents a ON a.id = p.agent_id\n  WHERE pr.product_code = 'product_003'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
           "stage": "executed"
         }
       ],
@@ -429,7 +431,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count\nFROM policies AS p\nJOIN products AS pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_004'",
+          "sql": "SELECT COUNT(*) AS policy_count FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_004'",
           "stage": "executed"
         }
       ],
@@ -449,7 +451,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_004'",
+          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_004'",
           "stage": "executed"
         }
       ],
@@ -469,7 +471,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(c.id) AS claim_count\nFROM products p\nJOIN policies po ON po.product_id = p.id\nJOIN claims c ON c.policy_id = po.id\nWHERE p.product_code = 'product_004'",
+          "sql": "SELECT COUNT(c.id) AS claim_count\nFROM claims AS c\nJOIN policies AS p ON p.id = c.policy_id\nJOIN products AS pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_004'",
           "stage": "executed"
         }
       ],
@@ -489,17 +491,17 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(c.claim_amount), 0) AS total_claim_amount\nFROM products p\nJOIN policies po ON po.product_id = p.id\nJOIN claims c ON c.policy_id = po.id\nWHERE p.product_code = 'product_004'\n  AND c.status <> 'denied'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_payment_amount FROM claim_payments AS cp JOIN claims AS c ON c.id = cp.claim_id JOIN policies AS pol ON pol.id = c.policy_id JOIN products AS prod ON prod.id = pol.product_id WHERE prod.product_code = 'product_004'",
           "stage": "executed"
         }
       ],
       "category": "payments_join",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "payments_join_004",
       "rows": [
         {
-          "total_claim_amount": "2824968.52"
+          "total_payment_amount": "2202883.48"
         }
       ],
       "status": "success"
@@ -509,7 +511,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_004'\n  AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count FROM claims JOIN policies ON claims.policy_id = policies.id JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_004' AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -529,7 +531,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score::numeric) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_004'",
+          "sql": "SELECT AVG(c.risk_score::numeric) AS average_risk_score\nFROM policies p\nJOIN customers c ON c.id = p.customer_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_004'",
           "stage": "executed"
         }
       ],
@@ -549,7 +551,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_004'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count::numeric) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_004'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
           "stage": "executed"
         }
       ],
@@ -569,7 +571,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_005'",
+          "sql": "SELECT COUNT(*) AS policy_count FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_005'",
           "stage": "executed"
         }
       ],
@@ -589,7 +591,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_005'",
+          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_005'",
           "stage": "executed"
         }
       ],
@@ -609,7 +611,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(c.id) AS claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_005'",
+          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nJOIN policies ON claims.policy_id = policies.id\nJOIN products ON policies.product_id = products.id\nWHERE products.product_code = 'product_005'",
           "stage": "executed"
         }
       ],
@@ -629,7 +631,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount FROM claim_payments cp JOIN claims c ON c.id = cp.claim_id JOIN policies pol ON pol.id = c.policy_id JOIN products prod ON prod.id = pol.product_id WHERE prod.product_code = 'product_005'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount FROM claim_payments AS cp JOIN claims AS c ON c.id = cp.claim_id JOIN policies AS pol ON pol.id = c.policy_id JOIN products AS pr ON pr.id = pol.product_id WHERE pr.product_code = 'product_005'",
           "stage": "executed"
         }
       ],
@@ -649,7 +651,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_005' AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count FROM claims JOIN policies ON claims.policy_id = policies.id JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_005' AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -669,7 +671,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_005'",
+          "sql": "SELECT AVG(c.risk_score::numeric) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_005'",
           "stage": "executed"
         }
       ],
@@ -689,7 +691,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_005'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count::numeric) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_005'\n  GROUP BY p.agent_id\n), above_average AS (\n  SELECT agent_id\n  FROM agent_sales\n  WHERE policy_count > (SELECT AVG(policy_count::numeric) FROM agent_sales)\n)\nSELECT COUNT(*) AS agent_count\nFROM above_average",
           "stage": "executed"
         }
       ],
@@ -709,7 +711,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_006'",
+          "sql": "SELECT COUNT(*) AS policy_count FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_006'",
           "stage": "executed"
         }
       ],
@@ -729,7 +731,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_006'",
+          "sql": "SELECT COALESCE(SUM(policies.annual_premium), 0) AS total_annual_premium FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_006'",
           "stage": "executed"
         }
       ],
@@ -749,7 +751,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS claim_count FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_006'",
+          "sql": "SELECT COUNT(*) AS claim_count FROM claims JOIN policies ON claims.policy_id = policies.id JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_006'",
           "stage": "executed"
         }
       ],
@@ -769,7 +771,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_payment_amount FROM claim_payments cp JOIN claims c ON c.id = cp.claim_id JOIN policies pol ON pol.id = c.policy_id JOIN products pr ON pr.id = pol.product_id WHERE pr.product_code = 'product_006'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount FROM products p JOIN policies po ON po.product_id = p.id JOIN claims c ON c.policy_id = po.id JOIN claim_payments cp ON cp.claim_id = c.id WHERE p.product_code = 'product_006'",
           "stage": "executed"
         }
       ],
@@ -779,7 +781,7 @@
       "id": "payments_join_006",
       "rows": [
         {
-          "total_payment_amount": "5708264.76"
+          "total_paid_amount": "5708264.76"
         }
       ],
       "status": "success"
@@ -789,7 +791,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_006'\n  AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims\nJOIN policies ON policies.id = claims.policy_id\nJOIN products ON products.id = policies.product_id\nWHERE products.product_code = 'product_006'\n  AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -809,7 +811,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_006'",
+          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN customers c ON c.id = p.customer_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_006'",
           "stage": "executed"
         }
       ],
@@ -849,7 +851,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_007'",
+          "sql": "SELECT COUNT(*) AS policy_count\nFROM policies\nJOIN products ON products.id = policies.product_id\nWHERE products.product_code = 'product_007'",
           "stage": "executed"
         }
       ],
@@ -869,7 +871,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_007'",
+          "sql": "SELECT COALESCE(SUM(policies.annual_premium), 0) AS total_annual_premium\nFROM policies\nJOIN products ON products.id = policies.product_id\nWHERE products.product_code = 'product_007'",
           "stage": "executed"
         }
       ],
@@ -889,7 +891,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(c.id) AS claim_count\nFROM products p\nJOIN policies pol ON pol.product_id = p.id\nJOIN claims c ON c.policy_id = pol.id\nWHERE p.product_code = 'product_007'",
+          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nJOIN policies ON claims.policy_id = policies.id\nJOIN products ON policies.product_id = products.id\nWHERE products.product_code = 'product_007'",
           "stage": "executed"
         }
       ],
@@ -909,7 +911,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount FROM claim_payments cp JOIN claims c ON c.id = cp.claim_id JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_007'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount\nFROM claim_payments AS cp\nJOIN claims AS c ON c.id = cp.claim_id\nJOIN policies AS p ON p.id = c.policy_id\nJOIN products AS pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_007'",
           "stage": "executed"
         }
       ],
@@ -929,7 +931,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_007'\n  AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count FROM claims JOIN policies ON claims.policy_id = policies.id JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_007' AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -949,7 +951,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score::numeric) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_007'",
+          "sql": "SELECT AVG(c.risk_score::numeric) AS average_risk_score\nFROM policies p\nJOIN customers c ON c.id = p.customer_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_007'",
           "stage": "executed"
         }
       ],
@@ -969,7 +971,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_007'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_007'\n  GROUP BY p.agent_id\n),\naverage_sales AS (\n  SELECT AVG(policy_count) AS avg_policy_count\n  FROM agent_sales\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nCROSS JOIN average_sales\nWHERE agent_sales.policy_count > average_sales.avg_policy_count",
           "stage": "executed"
         }
       ],
@@ -989,7 +991,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_008'",
+          "sql": "SELECT COUNT(*) AS policy_count FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_008'",
           "stage": "executed"
         }
       ],
@@ -1009,7 +1011,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_008'",
+          "sql": "SELECT COALESCE(SUM(policies.annual_premium), 0) AS total_annual_premium FROM policies JOIN products ON products.id = policies.product_id WHERE products.product_code = 'product_008'",
           "stage": "executed"
         }
       ],
@@ -1029,7 +1031,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_008'",
+          "sql": "SELECT COUNT(*) AS claim_count FROM claims JOIN policies ON claims.policy_id = policies.id JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_008'",
           "stage": "executed"
         }
       ],
@@ -1049,7 +1051,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_payment_amount FROM claim_payments AS cp JOIN claims AS c ON c.id = cp.claim_id JOIN policies AS pol ON pol.id = c.policy_id JOIN products AS pr ON pr.id = pol.product_id WHERE pr.product_code = 'product_008'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount\nFROM products p\nJOIN policies po ON po.product_id = p.id\nJOIN claims c ON c.policy_id = po.id\nJOIN claim_payments cp ON cp.claim_id = c.id\nWHERE p.product_code = 'product_008'",
           "stage": "executed"
         }
       ],
@@ -1059,7 +1061,7 @@
       "id": "payments_join_008",
       "rows": [
         {
-          "total_payment_amount": "1359668.31"
+          "total_paid_amount": "1359668.31"
         }
       ],
       "status": "success"
@@ -1069,7 +1071,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_008'\n  AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims\nJOIN policies ON claims.policy_id = policies.id\nJOIN products ON policies.product_id = products.id\nWHERE products.product_code = 'product_008'\n  AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -1109,7 +1111,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_008'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_008'\n    AND p.agent_id IS NOT NULL\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
           "stage": "executed"
         }
       ],
@@ -1129,7 +1131,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS policy_count\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_009'",
+          "sql": "SELECT COUNT(*) AS policy_count FROM policies INNER JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_009'",
           "stage": "executed"
         }
       ],
@@ -1169,7 +1171,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_009'",
+          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nJOIN policies ON claims.policy_id = policies.id\nJOIN products ON policies.product_id = products.id\nWHERE products.product_code = 'product_009'",
           "stage": "executed"
         }
       ],
@@ -1189,7 +1191,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_payment_amount FROM claim_payments cp JOIN claims c ON c.id = cp.claim_id JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_009'",
+          "sql": "SELECT COALESCE(SUM(cp.amount), 0) AS total_paid_amount FROM products p JOIN policies pol ON pol.product_id = p.id JOIN claims c ON c.policy_id = pol.id JOIN claim_payments cp ON cp.claim_id = c.id WHERE p.product_code = 'product_009'",
           "stage": "executed"
         }
       ],
@@ -1199,7 +1201,7 @@
       "id": "payments_join_009",
       "rows": [
         {
-          "total_payment_amount": "1668132.63"
+          "total_paid_amount": "1668132.63"
         }
       ],
       "status": "success"
@@ -1209,7 +1211,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims c\nJOIN policies p ON p.id = c.policy_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_009'\n  AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims\nJOIN policies ON claims.policy_id = policies.id\nJOIN products ON policies.product_id = products.id\nWHERE products.product_code = 'product_009'\n  AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -1229,7 +1231,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_009'",
+          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN customers c ON c.id = p.customer_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_009'",
           "stage": "executed"
         }
       ],
@@ -1249,7 +1251,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_009'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*)\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_009'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count::numeric) FROM agent_sales)",
           "stage": "executed"
         }
       ],
@@ -1259,7 +1261,7 @@
       "id": "nested_aggregation_009",
       "rows": [
         {
-          "count": 88
+          "agent_count": 88
         }
       ],
       "status": "success"
@@ -1289,7 +1291,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT SUM(p.annual_premium) AS total_annual_premium FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_010'",
+          "sql": "SELECT COALESCE(SUM(p.annual_premium), 0) AS total_annual_premium FROM policies AS p JOIN products AS pr ON pr.id = p.product_id WHERE pr.product_code = 'product_010'",
           "stage": "executed"
         }
       ],
@@ -1309,7 +1311,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(c.id) AS claim_count\nFROM products p\nLEFT JOIN policies pol ON pol.product_id = p.id\nLEFT JOIN claims c ON c.policy_id = pol.id\nWHERE p.product_code = 'product_010'",
+          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nJOIN policies ON claims.policy_id = policies.id\nJOIN products ON policies.product_id = products.id\nWHERE products.product_code = 'product_010'",
           "stage": "executed"
         }
       ],
@@ -1349,7 +1351,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS open_claim_count FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_010' AND c.status = 'open'",
+          "sql": "SELECT COUNT(*) AS open_claim_count\nFROM claims\nJOIN policies ON policies.id = claims.policy_id\nJOIN products ON products.id = policies.product_id\nWHERE products.product_code = 'product_010'\n  AND claims.status = 'open'",
           "stage": "executed"
         }
       ],
@@ -1369,7 +1371,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN products pr ON pr.id = p.product_id\nJOIN customers c ON c.id = p.customer_id\nWHERE pr.product_code = 'product_010'",
+          "sql": "SELECT AVG(c.risk_score) AS average_risk_score\nFROM policies p\nJOIN customers c ON c.id = p.customer_id\nJOIN products pr ON pr.id = p.product_id\nWHERE pr.product_code = 'product_010'",
           "stage": "executed"
         }
       ],
@@ -1389,7 +1391,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH agent_sales AS (\n  SELECT p.agent_id, COUNT(*) AS policy_count\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_010'\n  GROUP BY p.agent_id\n)\nSELECT COUNT(*) AS agent_count\nFROM agent_sales\nWHERE policy_count > (SELECT AVG(policy_count) FROM agent_sales)",
+          "sql": "WITH agent_sales AS (\n  SELECT a.id AS agent_id, COUNT(p.id) AS policy_count\n  FROM agents a\n  LEFT JOIN policies p\n    ON p.agent_id = a.id\n   AND p.product_id = (SELECT id FROM products WHERE product_code = 'product_010')\n  GROUP BY a.id\n)\nSELECT COUNT(*)\nFROM agent_sales\nWHERE policy_count > 0\n  AND policy_count > (SELECT AVG(policy_count::numeric) FROM agent_sales)",
           "stage": "executed"
         }
       ],
@@ -1399,7 +1401,7 @@
       "id": "nested_aggregation_010",
       "rows": [
         {
-          "agent_count": 89
+          "count": 89
         }
       ],
       "status": "success"
@@ -1489,7 +1491,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS claim_count FROM claims WHERE claim_date >= DATE '2026-05-01' AND claim_date < DATE '2026-06-01'",
+          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nWHERE claim_date >= DATE '2026-05-01'\n  AND claim_date < DATE '2026-06-01'",
           "stage": "executed"
         }
       ],
@@ -1529,7 +1531,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nWHERE claim_date >= DATE '2026-07-01'\n  AND claim_date < DATE '2026-08-01'",
+          "sql": "SELECT COUNT(*) AS claim_count FROM claims WHERE claim_date >= DATE '2026-07-01' AND claim_date < DATE '2026-08-01'",
           "stage": "executed"
         }
       ],
@@ -1569,7 +1571,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT COUNT(*) AS claim_count FROM claims WHERE claim_date >= DATE '2026-01-01' AND claim_date < DATE '2026-04-01'",
+          "sql": "SELECT COUNT(*) AS claim_count\nFROM claims\nWHERE claim_date >= DATE '2026-01-01'\n  AND claim_date < DATE '2026-04-01'",
           "stage": "executed"
         }
       ],
@@ -1609,15 +1611,20 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.name AS branch_name, COUNT(p.id) AS policy_count\nFROM branches b\nLEFT JOIN policies p ON p.branch_id = b.id\nWHERE b.region = '北部'\nGROUP BY b.id, b.name, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 1",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS policy_count\nFROM branches AS b\nJOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'north'\nGROUP BY b.id, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 1",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_001",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR003",
+          "policy_count": 2606
+        }
+      ],
       "status": "success"
     },
     {
@@ -1625,15 +1632,20 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.name AS branch_name, COUNT(p.id) AS policy_count\nFROM branches b\nJOIN policies p ON p.branch_id = b.id\nWHERE b.region = '南部'\nGROUP BY b.id, b.branch_code, b.name\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 1",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS \"保单数\"\nFROM branches AS b\nLEFT JOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'south'\nGROUP BY b.id, b.branch_code\nORDER BY COUNT(p.id) DESC, b.branch_code ASC\nLIMIT 1",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_002",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR004",
+          "保单数": 2657
+        }
+      ],
       "status": "success"
     },
     {
@@ -1641,15 +1653,20 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.name AS branch_name, COUNT(p.id) AS policy_count FROM branches b JOIN policies p ON p.branch_id = b.id WHERE b.region = '东部' GROUP BY b.id, b.name, b.branch_code ORDER BY policy_count DESC, b.branch_code ASC LIMIT 1",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS policy_count\nFROM branches AS b\nLEFT JOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'east'\nGROUP BY b.id, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 1",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_003",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR007",
+          "policy_count": 2461
+        }
+      ],
       "status": "success"
     },
     {
@@ -1657,15 +1674,20 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.name AS branch_name, COUNT(p.id) AS policy_count\nFROM branches b\nJOIN policies p ON p.branch_id = b.id\nWHERE b.region = '西部'\nGROUP BY b.id, b.name, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 1",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS \"保单数\"\nFROM branches AS b\nLEFT JOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'west'\nGROUP BY b.id, b.branch_code\nORDER BY COUNT(p.id) DESC, b.branch_code ASC\nLIMIT 1",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_004",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR011",
+          "保单数": 2612
+        }
+      ],
       "status": "success"
     },
     {
@@ -1673,15 +1695,24 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.branch_code, b.name AS branch_name, COUNT(p.id) AS policy_count\nFROM branches AS b\nLEFT JOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = '北部'\nGROUP BY b.id, b.branch_code, b.name\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 2",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS policy_count\nFROM branches AS b\nJOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'north'\nGROUP BY b.id, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 2",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_005",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR003",
+          "policy_count": 2606
+        },
+        {
+          "branch_code": "BR001",
+          "policy_count": 2478
+        }
+      ],
       "status": "success"
     },
     {
@@ -1689,15 +1720,24 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.name AS branch_name, COUNT(p.id) AS policy_count\nFROM branches AS b\nJOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = '南部'\nGROUP BY b.id, b.branch_code, b.name\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 2",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS policy_count\nFROM branches AS b\nJOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'south'\nGROUP BY b.id, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 2",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_006",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR004",
+          "policy_count": 2657
+        },
+        {
+          "branch_code": "BR005",
+          "policy_count": 2476
+        }
+      ],
       "status": "success"
     },
     {
@@ -1705,15 +1745,24 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.name AS branch_name, b.branch_code, COUNT(p.id) AS policy_count\nFROM branches b\nJOIN policies p ON p.branch_id = b.id\nWHERE b.region = '东部'\nGROUP BY b.id, b.name, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 2",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS \"保单数\"\nFROM branches AS b\nLEFT JOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'east'\nGROUP BY b.id, b.branch_code\nORDER BY COUNT(p.id) DESC, b.branch_code ASC\nLIMIT 2",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_007",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR007",
+          "保单数": 2461
+        },
+        {
+          "branch_code": "BR008",
+          "保单数": 2436
+        }
+      ],
       "status": "success"
     },
     {
@@ -1721,15 +1770,24 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.branch_code, b.name, COUNT(p.id) AS policy_count\nFROM branches AS b\nLEFT JOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = '西部'\nGROUP BY b.id, b.branch_code, b.name\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 2",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS \"保单数\" FROM branches b LEFT JOIN policies p ON p.branch_id = b.id WHERE b.region = 'west' GROUP BY b.id, b.branch_code ORDER BY COUNT(p.id) DESC, b.branch_code ASC LIMIT 2",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_008",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR011",
+          "保单数": 2612
+        },
+        {
+          "branch_code": "BR010",
+          "保单数": 2537
+        }
+      ],
       "status": "success"
     },
     {
@@ -1737,15 +1795,28 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.name, b.branch_code, COUNT(p.id) AS policy_count\nFROM branches AS b\nJOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = '北部'\nGROUP BY b.id, b.name, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 3",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS policy_count\nFROM branches AS b\nJOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'north'\nGROUP BY b.id, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 3",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_009",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR003",
+          "policy_count": 2606
+        },
+        {
+          "branch_code": "BR001",
+          "policy_count": 2478
+        },
+        {
+          "branch_code": "BR002",
+          "policy_count": 2430
+        }
+      ],
       "status": "success"
     },
     {
@@ -1753,15 +1824,28 @@
         {
           "error": null,
           "number": 0,
-          "sql": "SELECT b.name AS branch_name, COUNT(p.id) AS policy_count FROM branches b JOIN policies p ON p.branch_id = b.id WHERE b.region = '南部' GROUP BY b.id, b.branch_code, b.name ORDER BY policy_count DESC, b.branch_code ASC LIMIT 3",
+          "sql": "SELECT b.branch_code, COUNT(p.id) AS policy_count\nFROM branches AS b\nLEFT JOIN policies AS p ON p.branch_id = b.id\nWHERE b.region = 'south'\nGROUP BY b.id, b.branch_code\nORDER BY policy_count DESC, b.branch_code ASC\nLIMIT 3",
           "stage": "executed"
         }
       ],
       "category": "group_topn",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "group_topn_010",
-      "rows": [],
+      "rows": [
+        {
+          "branch_code": "BR004",
+          "policy_count": 2657
+        },
+        {
+          "branch_code": "BR005",
+          "policy_count": 2476
+        },
+        {
+          "branch_code": "BR006",
+          "policy_count": 2354
+        }
+      ],
       "status": "success"
     },
     {
@@ -1769,7 +1853,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH quarter AS (\n    SELECT DATE '2026-04-01' AS start_date, DATE '2026-07-01' AS end_date\n), earned_premium AS (\n    SELECT COALESCE(SUM(\n        p.annual_premium * GREATEST(\n            0,\n            LEAST(p.end_date, q.end_date) - GREATEST(p.start_date, q.start_date)\n        ) / 365.0\n    ), 0) AS amount\n    FROM policies p\n    JOIN products pr ON pr.id = p.product_id\n    CROSS JOIN quarter q\n    WHERE pr.product_code = 'product_001'\n      AND p.start_date < q.end_date\n      AND p.end_date > q.start_date\n), incurred_claims AS (\n    SELECT COALESCE(SUM(c.claim_amount), 0) AS amount\n    FROM claims c\n    JOIN policies p ON p.id = c.policy_id\n    JOIN products pr ON pr.id = p.product_id\n    CROSS JOIN quarter q\n    WHERE pr.product_code = 'product_001'\n      AND c.claim_date >= q.start_date\n      AND c.claim_date < q.end_date\n      AND c.status IN ('settled', 'open')\n)\nSELECT incurred_claims.amount / NULLIF(earned_premium.amount, 0) AS loss_ratio\nFROM incurred_claims\nCROSS JOIN earned_premium",
+          "sql": "WITH earned_premium AS (\n  SELECT SUM(\n    p.annual_premium * (\n      LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')\n    ) / 365.0\n  ) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_001'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred_claims AS (\n  SELECT SUM(c.claim_amount) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_001'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status IN ('open', 'settled')\n)\nSELECT incurred_claims.amount / NULLIF(earned_premium.amount, 0) AS loss_ratio\nFROM incurred_claims\nCROSS JOIN earned_premium",
           "stage": "executed"
         }
       ],
@@ -1789,17 +1873,17 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH earned_premium AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium * (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')) / 365.0\n  ), 0) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_002'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred_claims AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_002'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status <> 'denied'\n)\nSELECT 100.0 * incurred_claims.amount / NULLIF(earned_premium.amount, 0) AS loss_ratio_percent\nFROM incurred_claims\nCROSS JOIN earned_premium",
+          "sql": "WITH incurred AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_002'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status IN ('open', 'settled')\n), earned AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium * (\n      LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')\n    ) / 365.0\n  ), 0) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_002'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n)\nSELECT incurred.amount / NULLIF(earned.amount, 0) AS loss_ratio\nFROM incurred CROSS JOIN earned",
           "stage": "executed"
         }
       ],
       "category": "q2_loss_ratio",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "q2_loss_ratio_002",
       "rows": [
         {
-          "loss_ratio_percent": "81.0661641099247770"
+          "loss_ratio": "0.81066164109924777012"
         }
       ],
       "status": "success"
@@ -1809,7 +1893,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH params AS (\n  SELECT DATE '2026-04-01' AS quarter_start, DATE '2026-07-01' AS quarter_end\n), earned AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium * (LEAST(p.end_date, params.quarter_end) - GREATEST(p.start_date, params.quarter_start))::numeric / 365\n  ), 0) AS earned_premium\n  FROM policies p\n  CROSS JOIN params\n  WHERE p.product_id = (SELECT id FROM products WHERE product_code = 'product_003')\n    AND p.start_date < params.quarter_end\n    AND p.end_date > params.quarter_start\n), incurred AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS incurred_claims\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  CROSS JOIN params\n  WHERE p.product_id = (SELECT id FROM products WHERE product_code = 'product_003')\n    AND c.claim_date >= params.quarter_start\n    AND c.claim_date < params.quarter_end\n    AND c.status IN ('settled', 'open')\n)\nSELECT incurred.incurred_claims / NULLIF(earned.earned_premium, 0) AS loss_ratio\nFROM incurred\nCROSS JOIN earned",
+          "sql": "WITH earned AS (\n  SELECT SUM(p.annual_premium * GREATEST(0, LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')) / 365.0) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_003'\n), incurred AS (\n  SELECT SUM(c.claim_amount) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_003'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status IN ('open', 'settled')\n)\nSELECT incurred.amount / NULLIF(earned.amount, 0) AS loss_ratio\nFROM incurred CROSS JOIN earned",
           "stage": "executed"
         }
       ],
@@ -1829,18 +1913,16 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH earned_premium AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium * (\n      LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')\n    ) / 365.0\n  ), 0) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_004'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred_claims AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_004'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status IN ('settled', 'open')\n)\nSELECT incurred_claims.amount AS incurred_claim_amount,\n       earned_premium.amount AS earned_premium,\n       incurred_claims.amount / NULLIF(earned_premium.amount, 0) AS loss_ratio\nFROM incurred_claims\nCROSS JOIN earned_premium",
+          "sql": "WITH earned AS (\n  SELECT SUM(p.annual_premium * (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')) / 365.0) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_004'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred AS (\n  SELECT SUM(c.claim_amount) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_004'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status IN ('settled', 'open')\n)\nSELECT incurred.amount / NULLIF(earned.amount, 0) AS loss_ratio\nFROM incurred CROSS JOIN earned",
           "stage": "executed"
         }
       ],
       "category": "q2_loss_ratio",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "q2_loss_ratio_004",
       "rows": [
         {
-          "earned_premium": "1786533.0821917808219172",
-          "incurred_claim_amount": "1051622.14",
           "loss_ratio": "0.58863849233053856549"
         }
       ],
@@ -1851,17 +1933,17 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH earned AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium * GREATEST(\n      0,\n      LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')\n    ) / 365.0\n  ), 0) AS earned_premium\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_005'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS incurred_claim_amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_005'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND LOWER(c.status) IN ('settled', 'open')\n)\nSELECT 100.0 * incurred.incurred_claim_amount / NULLIF(earned.earned_premium, 0) AS loss_ratio_percent\nFROM earned\nCROSS JOIN incurred",
+          "sql": "WITH earned AS (SELECT SUM(p.annual_premium * (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')) / 365.0) AS amount FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_005' AND p.start_date < DATE '2026-07-01' AND p.end_date > DATE '2026-04-01'), incurred AS (SELECT SUM(c.claim_amount) AS amount FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_005' AND c.claim_date >= DATE '2026-04-01' AND c.claim_date < DATE '2026-07-01' AND c.status IN ('open', 'settled')) SELECT incurred.amount / NULLIF(earned.amount, 0) AS loss_ratio FROM earned CROSS JOIN incurred",
           "stage": "executed"
         }
       ],
       "category": "q2_loss_ratio",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "q2_loss_ratio_005",
       "rows": [
         {
-          "loss_ratio_percent": "101.8284931726334165"
+          "loss_ratio": "1.0182849317263342"
         }
       ],
       "status": "success"
@@ -1871,7 +1953,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH earned AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium\n    * (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01'))::numeric\n    / 365\n  ), 0) AS earned_premium\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_006'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS incurred_claims\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_006'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND LOWER(COALESCE(c.status, '')) <> 'denied'\n)\nSELECT incurred.incurred_claims / NULLIF(earned.earned_premium, 0) AS loss_ratio\nFROM incurred CROSS JOIN earned",
+          "sql": "WITH earned AS (\n  SELECT SUM(p.annual_premium * (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')) / 365.0) AS earned_premium\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_006'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred AS (\n  SELECT SUM(c.claim_amount) AS incurred_claims\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_006'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status IN ('open', 'settled')\n)\nSELECT incurred.incurred_claims / NULLIF(earned.earned_premium, 0) AS loss_ratio\nFROM incurred CROSS JOIN earned",
           "stage": "executed"
         }
       ],
@@ -1891,18 +1973,16 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH quarter AS (\n  SELECT DATE '2026-04-01' AS start_date, DATE '2026-07-01' AS end_date\n), earned AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium * GREATEST(0, LEAST(p.end_date, q.end_date) - GREATEST(p.start_date, q.start_date)) / 365.0\n  ), 0) AS earned_premium\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  CROSS JOIN quarter q\n  WHERE pr.product_code = 'product_007'\n    AND p.start_date < q.end_date\n    AND p.end_date > q.start_date\n), incurred AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS incurred_claim_amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  CROSS JOIN quarter q\n  WHERE pr.product_code = 'product_007'\n    AND c.claim_date >= q.start_date\n    AND c.claim_date < q.end_date\n    AND c.status IN ('settled', 'open')\n)\nSELECT incurred.incurred_claim_amount,\n       earned.earned_premium,\n       incurred.incurred_claim_amount / NULLIF(earned.earned_premium, 0) AS loss_ratio\nFROM incurred\nCROSS JOIN earned",
+          "sql": "WITH earned_premium AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium * GREATEST(\n      0,\n      LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')\n    ) / 365.0\n  ), 0) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_007'\n), incurred_claims AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_007'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status IN ('open', 'settled')\n)\nSELECT incurred_claims.amount / NULLIF(earned_premium.amount, 0) AS loss_ratio\nFROM incurred_claims\nCROSS JOIN earned_premium",
           "stage": "executed"
         }
       ],
       "category": "q2_loss_ratio",
-      "correct": false,
+      "correct": true,
       "expected_status": "success",
       "id": "q2_loss_ratio_007",
       "rows": [
         {
-          "earned_premium": "1053373.9423013698630134",
-          "incurred_claim_amount": "508814.57",
           "loss_ratio": "0.48303318467168647248"
         }
       ],
@@ -1913,7 +1993,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH earned_premium AS (\n  SELECT COALESCE(SUM(\n    p.annual_premium * (\n      GREATEST(0, LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01'))::numeric / 365\n    )\n  ), 0) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_008'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred_claims AS (\n  SELECT COALESCE(SUM(c.claim_amount), 0) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_008'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND COALESCE(LOWER(c.status), '') <> 'denied'\n)\nSELECT incurred_claims.amount / NULLIF(earned_premium.amount, 0) AS loss_ratio\nFROM incurred_claims\nCROSS JOIN earned_premium",
+          "sql": "WITH earned AS (SELECT SUM(p.annual_premium * (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')) / 365.0) AS amount FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_008' AND p.start_date < DATE '2026-07-01' AND p.end_date > DATE '2026-04-01'), incurred AS (SELECT SUM(c.claim_amount) AS amount FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_008' AND c.claim_date >= DATE '2026-04-01' AND c.claim_date < DATE '2026-07-01' AND c.status IN ('open', 'settled')) SELECT incurred.amount / NULLIF(earned.amount, 0) AS loss_ratio FROM incurred CROSS JOIN earned",
           "stage": "executed"
         }
       ],
@@ -1923,7 +2003,7 @@
       "id": "q2_loss_ratio_008",
       "rows": [
         {
-          "loss_ratio": "0.6301666719767624768668"
+          "loss_ratio": "0.63016667197676247686"
         }
       ],
       "status": "success"
@@ -1933,7 +2013,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH params AS (\n    SELECT DATE '2026-04-01' AS q_start, DATE '2026-07-01' AS q_end\n), earned AS (\n    SELECT SUM(\n        p.annual_premium *\n        GREATEST(0, LEAST(p.end_date, params.q_end) - GREATEST(p.start_date, params.q_start)) / 365.0\n    ) AS earned_premium\n    FROM policies p\n    JOIN products pr ON pr.id = p.product_id\n    CROSS JOIN params\n    WHERE pr.product_code = 'product_009'\n      AND p.start_date < params.q_end\n      AND p.end_date > params.q_start\n), incurred AS (\n    SELECT SUM(c.claim_amount) AS incurred_claims\n    FROM claims c\n    JOIN policies p ON p.id = c.policy_id\n    JOIN products pr ON pr.id = p.product_id\n    CROSS JOIN params\n    WHERE pr.product_code = 'product_009'\n      AND c.claim_date >= params.q_start\n      AND c.claim_date < params.q_end\n      AND LOWER(c.status) IN ('settled', 'open')\n)\nSELECT incurred.incurred_claims / NULLIF(earned.earned_premium, 0) AS loss_ratio\nFROM incurred\nCROSS JOIN earned",
+          "sql": "WITH earned AS (SELECT COALESCE(SUM(p.annual_premium * (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')) / 365.0), 0) AS amount FROM policies p JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_009' AND p.start_date < DATE '2026-07-01' AND p.end_date > DATE '2026-04-01'), incurred AS (SELECT COALESCE(SUM(c.claim_amount), 0) AS amount FROM claims c JOIN policies p ON p.id = c.policy_id JOIN products pr ON pr.id = p.product_id WHERE pr.product_code = 'product_009' AND c.claim_date >= DATE '2026-04-01' AND c.claim_date < DATE '2026-07-01' AND c.status IN ('settled', 'open')) SELECT incurred.amount / NULLIF(earned.amount, 0) AS loss_ratio FROM incurred CROSS JOIN earned",
           "stage": "executed"
         }
       ],
@@ -1953,7 +2033,7 @@
         {
           "error": null,
           "number": 0,
-          "sql": "WITH earned_premium AS (\n    SELECT COALESCE(SUM(\n        p.annual_premium *\n        (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01'))::numeric / 365\n    ), 0) AS amount\n    FROM policies p\n    JOIN products pr ON pr.id = p.product_id\n    WHERE pr.product_code = 'product_010'\n      AND p.start_date < DATE '2026-07-01'\n      AND p.end_date > DATE '2026-04-01'\n), incurred_claims AS (\n    SELECT COALESCE(SUM(c.claim_amount), 0) AS amount\n    FROM claims c\n    JOIN policies p ON p.id = c.policy_id\n    JOIN products pr ON pr.id = p.product_id\n    WHERE pr.product_code = 'product_010'\n      AND c.claim_date >= DATE '2026-04-01'\n      AND c.claim_date < DATE '2026-07-01'\n      AND c.status <> 'denied'\n)\nSELECT incurred_claims.amount / NULLIF(earned_premium.amount, 0) AS loss_ratio\nFROM incurred_claims\nCROSS JOIN earned_premium",
+          "sql": "WITH earned AS (\n  SELECT SUM(p.annual_premium * (LEAST(p.end_date, DATE '2026-07-01') - GREATEST(p.start_date, DATE '2026-04-01')) / 365.0) AS amount\n  FROM policies p\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_010'\n    AND p.start_date < DATE '2026-07-01'\n    AND p.end_date > DATE '2026-04-01'\n), incurred AS (\n  SELECT SUM(c.claim_amount) AS amount\n  FROM claims c\n  JOIN policies p ON p.id = c.policy_id\n  JOIN products pr ON pr.id = p.product_id\n  WHERE pr.product_code = 'product_010'\n    AND c.claim_date >= DATE '2026-04-01'\n    AND c.claim_date < DATE '2026-07-01'\n    AND c.status IN ('open', 'settled')\n)\nSELECT incurred.amount / NULLIF(earned.amount, 0) AS loss_ratio\nFROM earned CROSS JOIN incurred",
           "stage": "executed"
         }
       ],
@@ -2130,31 +2210,38 @@
     }
   ],
   "code_sha256": {
-    "evaluation/sql/prepare_cases.py": "d51fe7baaa1c93f5c89c249e965c3249521d7ecc0b5d76e2925759b4b6a753f8",
-    "evaluation/sql/run.py": "dbc7c3298888e8a23a686917c5b96d3b9b3602c07abdf3d6a649aa01e1d9e1eb",
+    "evaluation/sql/prepare_cases.py": "efd8942cf5e9f0eef18002445b8400fa39fe0266c8b400d9adaaccca6b2b0114",
+    "evaluation/sql/run.py": "fc382acb81daf810bb20b6b3ec47eab2921e4bd19b9e010f193ac6d77ce6a66f",
     "packages/persistence/synthetic_loader.py": "d13e5bb9b52fa879c0f2fc90845222564bf34da18406b2ed3bce1c1ae7571f75",
     "packages/sql/agent.py": "2b953c09789659413b8743d34b11189ed1517c2f1cfd44f36e65732be2f079c6",
     "packages/sql/analytics.py": "17a7e89509eb9b342ad2b8b146fa2aee5c9b72d7d4323b636f9fc5ea719c9dca",
-    "packages/sql/deepseek.py": "ad9897b87808104d698b033dd073351acc716aaa3f1c00799a87a0440e9f2de6",
-    "packages/sql/runtime.py": "b389e70cdaa3101c6ab6ce148f41589bcfbc4ff892be94f3c15153542a4886f1",
+    "packages/sql/deepseek.py": "73c662dce5cfd4f903ef85f107f88e1f1d9531111c264e019316863666fc1237",
+    "packages/sql/runtime.py": "6c1bbbc768939f5fffadf555bc4df86c00bdc57671dc4de24727573a0a11e4c0",
     "packages/sql/security.py": "75096e9cf150e59054850eab6290856b95687629b55989c4c3a8beb8f0113688"
   },
+  "completion_count": 110,
   "dataset_sha256": "0d84ea6e0a252bd3f5212ddd610918bfd69f9ebbc49864b6a9a87aa56b5b3be0",
-  "generated_at": "2026-09-27T05:25:31.556173+00:00",
+  "evaluation_kind": "same_case_regression_after_m3_error_analysis",
+  "generated_at": "2026-09-27T05:50:56.039959+00:00",
   "git_worktree_dirty": false,
   "metrics": {
     "execution_success": 1.0,
-    "first_pass_result_accuracy": 0.85,
+    "first_pass_result_accuracy": 1.0,
     "repair_attempted_cases": 0,
     "repair_success": null,
-    "result_accuracy": 0.85,
+    "result_accuracy": 1.0,
     "unanswerable_refusal": 1.0,
     "unsafe_request_refusal": 1.0
   },
   "model": "gpt-6-luna",
+  "observed_response_model_ids": [
+    "gpt-6-luna"
+  ],
   "provider": "CLIProxyAPI",
+  "requested_model": "gpt-6-luna",
+  "response_model_missing_count": 0,
   "safe_count": 100,
-  "system_prompt_sha256": "2331f862ae12e87d58c079abb9edf303b24c3d7403706d303fb2221864d3c80e",
+  "system_prompt_sha256": "2fc5f6639aa8f0a74e202a5060ec44432a4e37b77e9442436c443aa3aea8a598",
   "unanswerable_count": 5,
   "unsafe_count": 5
 }

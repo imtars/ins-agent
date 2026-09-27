@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M2 RAG 检索与评测已冻结；M3 SQL 阶段已实际验收，尚未进入 M4。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M2 RAG 检索与评测已冻结；M3 SQL 阶段和 M3.1 同题回归已在本机实际验收，尚未进入 M4。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -71,9 +71,15 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 
 在固定 M1 数据库中实际建立 `insurance_reader` 登录，只授予 7 张业务表 SELECT，重复运行权限配置脚本成功。直接用该账号查询 `has_table_privilege` 得到 SELECT=true、INSERT/UPDATE/DELETE=false；尝试绕过 AST 直接 INSERT 仍由 PostgreSQL 拒绝。SQL 执行器要求专用账号、单条 SELECT/CTE、业务表和函数白名单；在只读事务内设置 5 秒语句超时，最多返回 200 行。危险 SQL、系统 schema、锁定读取及副作用函数均有拒绝测试。schema introspection 从实际 information_schema 生成。
 
-`evaluation/sql/cases.yaml` 由手工设计的参考查询模板及固定数据库实际结果生成，共 110 题，覆盖过滤、聚合、多表连接、日期区间、分组排名、嵌套聚合和季度赔付率；100 题可回答，5 题不可回答，5 题不安全请求。生成前逐表核对 M1 manifest 哈希；实际运行 `python -m evaluation.sql.run --check-gold` 校验全部静态结果；独立 Python oracle 对全部 110 题复核通过。casebook SHA-256 为 `704f344bc6f07b1630c075750eceaf17250fedb0833c8fe58f83df42be5668f6`。季度已赚保费使用在保天数 / 365；已发生赔款排除 denied，赔付现金按付款日另算。当前 SQL 业务表没有结构化等待期，因此在保暴露指标不能声称是等待期后可出险暴露。
+`evaluation/sql/cases.yaml` 由手工设计的参考查询模板及固定数据库实际结果生成，共 110 题，覆盖过滤、聚合、多表连接、日期区间、分组排名、嵌套聚合和季度赔付率；100 题可回答，5 题不可回答，5 题不安全请求。生成前逐表核对 M1 manifest 哈希；实际运行 `python -m evaluation.sql.run --check-gold` 校验全部静态结果；独立 Python oracle 对全部 110 题复核通过。初始题本已保留在 `cases_m3_v1.yaml`，SHA-256 为 `704f344bc6f07b1630c075750eceaf17250fedb0833c8fe58f83df42be5668f6`；M3.1 仅明确 20 题自然语言输出约定，当前题本 SHA-256 为 `2e9a164a588e8b1f88e8e5b4fb7bb6e9469767e1fa31429b4bfeb875714be4b4`。季度已赚保费使用在保天数 / 365；已发生赔款排除 denied，赔付现金按付款日另算。当前 SQL 业务表没有结构化等待期，因此在保暴露指标不能声称是等待期后可出险暴露。
 
-在干净源码提交 `0a59370` 上，以本机 CLIProxyAPI 的 `gpt-6-luna` 执行 `python -m evaluation.sql.run --provider proxy`，全部 110 题实际完成，报告记录 `git_worktree_dirty=false`、题本和源码哈希及逐题尝试。100 道可回答题执行成功 100/100，结果正确 85/100，首轮正确 85/100；5 道不可回答题及 5 道危险请求均拒绝。没有任何修复尝试，修复成功率为 `null`，不能宣称修复效果。15 道结果错误集中在分组排名 10、季度赔付率 4、赔付汇总 1；没有在看过这些错误后修改提示词并重跑同一题本。独立核对报告的 110 个 ID、分母、指标、题本和源码 SHA-256 均通过；`--check-gold` 再次验证 110 题；完整测试在 M1 数据、下载文件、Milvus 与 M3 reader 环境变量齐备时为 **41 passed**。DeepSeek 备用 key 未使用，故本次指标仅代表 CLIProxyAPI 路由的 Luna。服务端模型版本未锁定，跨时结果可能变化。规格未规定最低准确率门槛；按所列真实结果、权限和测试验收，**M3 PASS，可以进入 M4**，本轮停在 M3。
+在干净源码提交 `0a59370` 上，以本机 CLIProxyAPI 的 `gpt-6-luna` 执行初始 110 题诊断，结果为 100 道可回答题全部执行成功、85 道严格结果匹配；5 道不可回答题与 5 道危险请求全部拒绝。15 道严格判错中，10 道排名题缺少区域值语义，4 道比率题涉及表示形式或附加列，1 道赔付汇总混淆了已发生与已支付金额。原报告逐字节保存在 `evaluation/reports/sql_evaluation_m3_v1.json`。这次属于本机验收，不能当作 CI 状态。
+
+## M3.1 数据字典与同题回归（2026-09-27）
+
+在 `schema_context()` 提供中文区域名到英文存储码的映射，同时列出产品类型和理赔状态的实际枚举；模型系统提示明确要求用存储码过滤。排名题明确要求 `branch_code`，季度赔付率题明确要求单列比例小数。仅这 20 题的问题文本改变；全部 110 题的 gold、参考 SQL、排序和容差完全一致，严格比较器未改。测试核对数据字典与实际数据库枚举一致，原题本和报告均归档；抽查失败后进一步明确映射方向，再从干净源码提交 `e8c92d7` 实际运行完整 110 题回归。
+
+最终[回归报告](../evaluation/reports/sql_evaluation.json)记录 `git_worktree_dirty=false`、源码/题本/原报告 SHA-256，`requested_model=gpt-6-luna`、`observed_response_model_ids=[gpt-6-luna]`、110 次响应均有模型 ID。可回答题执行成功及严格结果匹配均为 **100/100**，首轮也是 100/100；不可回答与危险请求均为 **5/5** 拒绝。两轮都未触发修复，修复成功率保持 `null`。独立核验 110 个 ID、逐类结果、源码与题本哈希；`--check-gold` 验证 110 题；完整本机测试在 M1 数据、下载文件、Milvus 与 M3 reader 可用时为 **44 passed**。DeepSeek 备用 key 未使用。**100% 是针对已分析错误的同题回归结果，不能称为未见题或泛化成绩**；代理返回的模型 ID 也不能证明底层权重版本。M3 工程验收与 M3.1 回归完成，可以进入 M4，本轮停在 M3.1。
 
 ## 关键实施细节
 
