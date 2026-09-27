@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M9 已通过本机验收；当前停在 M9，尚未进入 M10。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M9 已通过本机验收；M10 的 API/UI 正在本机验收，M11 尚未开始。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -152,6 +152,14 @@ M8 另建专用图与 `agent_jobs`、`run_artifacts`、`m8_reviews`、`m8_public
 M9 的故障只由 worker 本地 `FAULT_INJECTION_ENABLED=1` 开启，API 不接受故障参数。HTTP 超时、429/部分 5xx、暂时性 MCP 故障和数据库连接错误最多重试 3 次并指数退避；业务参数/契约错误不做传输层重试。现有 SQL 反馈修正、RAG 空结果重查、JSON 解析重试继续属于 Agent 自身恢复。Verifier 故障或无效输出始终 `BLOCK`，不自动降级通过。仅 reranker 失败时允许使用已取得的 dense/sparse RRF 候选，RAG artifact 和 run 状态记录 `reranker_unavailable`。worker 为每个 run 持有 PostgreSQL advisory lock，保证旧 worker 与接管者不会同时写 checkpoint；artifact 写入仍以 generation 去重。
 
 `tests/fault` 覆盖八类配置故障、429 的真实 HTTP 客户端响应路径、真实 PostgreSQL statement timeout、真实 Milvus/BGE reranker 降级、worker 进程崩溃、artifact 写入后的进程崩溃、租约接管竞争和重复 publish。受控故障用 stub 模型/工具验证确定性状态，不把它们称作真实 DeepSeek/Milvus 故障。最终脚本另对真实 DeepSeek Planner 注入一次本地超时，随后继续调用真实 MCP、业务 PostgreSQL 和 Milvus/BGE，并要求人工审核前 `PASS`、审核后唯一发布；成功才写 [M9 故障报告](../evaluation/reports/m9_fault_injection.json)。最终本机验收中，该超时触发 1 次重试，随后 5 次响应均报告 `deepseek-flash`，批准后的 worker 模型响应为 0；`tests/fault` 为 **28 passed**，完整 pytest 为 **106 passed**。故障发生于受控注入点，不能宣称 DeepSeek 或 Milvus 在验收期间实际故障；本机测试也不是 CI。M9 PASS，停在 M9；M10 尚未实现。
+
+## M10 API/UI 实施与验收
+
+M10 通过共用 `RunControl` 复用 M8 的创建、状态读取与版本绑定审核。FastAPI 提供 JWT 登录和一次性 refresh 轮换；角色信息每次从 PostgreSQL 重查。worker 在独立 `run_events` 表保存节点开始/完成、受控重试、审核暂停、恢复和完成事件，事件带 job ID、attempt 和时间戳。API 从当前 checkpoint 引用加载并验证 artifact；SSE 按递增 event ID 推送。Vue 工作台提供 Workbench、Run Detail、Review Queue、Evaluation 四页，审核按钮始终调用服务端审核接口。前端构建不含 JWT secret、DeepSeek key 或 reviewer 密码。
+
+M10 只核验 M2 已注册文档的 SHA-256，保留公开草案 `draft` 状态；新文件上传与重建知识索引尚未实现。评测接口读取已有 RAG/SQL 报告和文件哈希，明确返回 `existing_report`，不会把历史报告伪装成新评测。模型 token 使用量未持久化，UI 当前显示可用的 attempts、tool arguments、results、trace、retry events 和 degraded flags。M9 的文本错误分类未在本阶段修改；将来若接入第三方 MCP 服务，再考虑机器可读业务错误码。
+
+M10 gate：从空专用数据库启动 HTTP API、登录 analyst、创建综合 run、拒绝 analyst 审核、DeepSeek worker 经真实 PostgreSQL/Milvus/BGE/MCP 执行并在注入一次 Planner timeout 后留下持久化 retry event、读取预览/artifact/SSE、reviewer 拒绝过期版本而批准当前版本、再次执行 worker、确认唯一 publication 与报告 `published=true`；并运行完整 pytest 与 Vue build。演示脚本只在全部断言通过后写独立 [M10 报告](../evaluation/reports/m10_api_ui_demo.json)。状态与结果以实际脚本输出和报告为准。
 
 ## 关键实施细节
 

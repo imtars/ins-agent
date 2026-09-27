@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M9 已完成本机验收**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M8 增加本机 worker 与定向重跑；M9 增加受控故障、重试和降级。完整 API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M9 已完成本机验收；M10 API/UI 已实现，验收状态见下文**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务、带 PostgreSQL checkpoint 的 Agent 图、JWT API 和 Vue 工作台。不能用于真实保险业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -188,6 +188,33 @@ uv run --locked python -m scripts.run_m9_faults
 
 最终本机验收：真实 DeepSeek Planner 的一次受控超时被记录为一次 `dependency_timeout` 重试，之后流程到达 Verifier `PASS` 与人工审核；批准后的 worker 没有再调用模型，PostgreSQL 只有一条发布回执。故障套件 **28 passed**，完整本机 pytest **106 passed**。受控故障证明代码路径和状态转换，不表示外部服务实际发生过对应故障；这些数字也不是 CI 结果。
 
+## M10 JWT API 与 Vue 工作台
+
+M10 API 复用 M8/M9 的 `RunControl → JobQueue → worker → ReviewStore.publish` 链路。分析员可提交和查看，审核员可绑定当前 analysis 的 ID/版本/哈希批准或拒绝，管理员可核验 M2 已注册文档并查看固定历史评测。令牌采用 15 分钟 JWT access token、7 天一次性轮换 refresh token；每次受保护请求从 PostgreSQL 读取用户当前角色与启用状态。密码以随机盐和 scrypt 存储。`M10_JWT_SECRET` 必须至少 32 字节。M10 状态数据库仍须与 M1 业务库分开。
+
+创建独立 M10 数据库后运行 API 与工作台：
+
+```bash
+docker compose exec -T postgres createdb -U insurance_app insurance_m10_demo
+export M10_DATABASE_URL='postgresql://insurance_app:change-me-local-only@127.0.0.1:5432/insurance_m10_demo'
+export M10_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_acceptance'
+export M10_JWT_SECRET="$(openssl rand -hex 32)"
+uv run --locked python -m scripts.create_m10_user analyst analyst
+uv run --locked python -m scripts.create_m10_user reviewer reviewer
+uv run --locked uvicorn apps.api.m10:app_from_env --factory --host 127.0.0.1 --port 8000
+```
+
+另开终端运行 worker（需 M2 Milvus/BGE 与 DeepSeek key），再运行前端：
+
+```bash
+M8_DATABASE_URL="$M10_DATABASE_URL" M8_READER_DATABASE_URL="$M10_READER_DATABASE_URL" uv run --locked python -m apps.runner.worker --provider deepseek
+cd apps/web && npm ci && npm run dev
+```
+
+`worker` 的命令行每次只处理一个 job；演示时每次提交、拒绝重跑或批准后重新执行。浏览器访问 Vite 输出的本机地址。前端四页分别展示提交、run 详情、审核和历史评测；详情读取哈希校验后的 SQL/RAG/analysis/verification artifact、degraded flags、attempt 与持久化事件，并通过 SSE 更新事件。`GET /api/runs/{id}/report` 在批准前明确标记 `published=false`。具体端点与角色见 [M10 API 契约](docs/m10_api.md)。
+
+`POST /api/documents` 仅核验固定 M2 注册表中的现有文档及 SHA-256；不会上传新文档、更新 Milvus 或把公开草案绑定 synthetic 产品。`POST /api/evaluations/rag|sql` 返回现有固定报告及哈希，状态是 `existing_report`，不会假装重新跑评测。真正的新文档入库、按需重跑评测与 token 使用量采集尚未完成，属于当前限制。M10 本机端到端验收使用 `M10_DATABASE_URL`/`M10_READER_DATABASE_URL` 执行 `uv run --locked python -m scripts.run_m10_demo`，报告写入 `evaluation/reports/m10_api_ui_demo.json`；完整测试另设置 `M10_TEST_DATABASE_URL` 指向专用测试库。M10 的验收数字与结果见 [实施计划](docs/implementation_plan.md)。
+
 ## 设计文档
 
 - [架构与阶段边界](docs/architecture.md)
@@ -202,6 +229,7 @@ uv run --locked python -m scripts.run_m9_faults
 - [M7 本机报告](evaluation/reports/m7_durable_demo.json)
 - [M8 本机报告](evaluation/reports/m8_runner_replay.json)
 - [M9 故障报告](evaluation/reports/m9_fault_injection.json)
+- [M10 API 契约](docs/m10_api.md)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)

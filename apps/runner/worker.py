@@ -19,6 +19,7 @@ from packages.persistence.approvals import psycopg_url
 from packages.persistence.artifacts import ArtifactStore
 from packages.persistence.checkpoints import checkpoint_serializer
 from packages.persistence.jobs import JobQueue
+from packages.persistence.events import EventStore
 from packages.persistence.reviews import ReviewStore
 from services.mcp_data.server import create_server as data_server
 from services.mcp_knowledge.server import build_real_server
@@ -26,14 +27,34 @@ from services.mcp_knowledge.server import build_real_server
 
 async def run_claimed(job: dict, queue: JobQueue, graph, reviews: ReviewStore, *,
                       lease_seconds: int = 30,
-                      crash_after_planner: bool = False) -> dict:
+                      crash_after_planner: bool = False,
+                      events: EventStore | None = None, policy: RetryPolicy | None = None) -> dict:
     async with queue.execution_lock(job, lease_seconds):
         return await _run_claimed_locked(job, queue, graph, reviews,
-            lease_seconds=lease_seconds, crash_after_planner=crash_after_planner)
+            lease_seconds=lease_seconds, crash_after_planner=crash_after_planner,
+            events=events, policy=policy)
 
 
 async def _run_claimed_locked(job: dict, queue: JobQueue, graph, reviews: ReviewStore, *,
-                              lease_seconds: int, crash_after_planner: bool) -> dict:
+                              lease_seconds: int, crash_after_planner: bool,
+                              events: EventStore | None = None,
+                              policy: RetryPolicy | None = None) -> dict:
+    async def emit(kind: str, *, node: str | None = None, payload: dict | None = None):
+        if events:
+            await events.append(str(job["run_id"]), kind, job_id=str(job["id"]),
+                                attempt=job["attempt"], node=node, payload=payload)
+
+    retry_cursor = 0
+
+    async def flush_retries():
+        nonlocal retry_cursor
+        if policy:
+            for item in policy.events[retry_cursor:]:
+                await emit("dependency.retry", payload=item.__dict__)
+            retry_cursor = len(policy.events)
+
+    await emit("workflow.resumed" if job["kind"] == "RESUME" else "workflow.started",
+               payload={"job_kind": job["kind"]})
     config = {"configurable": {"thread_id": str(job["run_id"])}}
     snapshot = await graph.aget_state(config)
     if not snapshot.values:
@@ -50,11 +71,13 @@ async def _run_claimed_locked(job: dict, queue: JobQueue, graph, reviews: Review
             graph_input = Command(resume={"approval_id": job["payload"]["approval_id"]})
         else:
             await queue.finish(job, "WAITING_APPROVAL")
+            await emit("workflow.interrupted")
             return {"status": "WAITING_APPROVAL"}
     elif snapshot.next:
         graph_input = None
     else:
         await queue.finish(job, "COMPLETED")
+        await emit("workflow.completed", payload={"status": snapshot.values.get("status")})
         return {"status": snapshot.values.get("status", "COMPLETED")}
 
     async def heartbeat():
@@ -64,9 +87,27 @@ async def _run_claimed_locked(job: dict, queue: JobQueue, graph, reviews: Review
 
     task = asyncio.create_task(heartbeat())
     try:
-        async for update in graph.astream(graph_input, config,
-                                          stream_mode="updates", durability="sync"):
+        async for mode, update in graph.astream(graph_input, config,
+                                                stream_mode=["tasks", "updates"],
+                                                durability="sync"):
             await queue.assert_lease(job)
+            await flush_retries()
+            if mode == "tasks":
+                if "input" in update:
+                    node = update["name"]
+                    label = "sql" if node.startswith("sql") else (
+                        "rag" if node.startswith("rag") else
+                        "verification" if node == "verifier" else node)
+                    await emit(f"{label}.started", node=node)
+                continue
+            for node, value in update.items():
+                if node == "__interrupt__":
+                    continue
+                await emit("verification.completed" if node == "verifier" else
+                           "synthesis.completed" if node == "synthesis" else
+                           f"{('sql' if node.startswith('sql') else 'rag' if node.startswith('rag') else node)}.completed",
+                           node=node,
+                           payload={"status": value.get("status") if isinstance(value, dict) else None})
             if crash_after_planner and "planner" in update:
                 # Acceptance-only failpoint: the synchronous checkpoint is durable.
                 os._exit(73)
@@ -75,6 +116,10 @@ async def _run_claimed_locked(job: dict, queue: JobQueue, graph, reviews: Review
                    and any(item.interrupts for item in snapshot.tasks))
         status = "WAITING_APPROVAL" if waiting else "COMPLETED"
         await queue.finish(job, status)
+        await flush_retries()
+        await emit("workflow.interrupted" if waiting else "workflow.completed",
+                   payload={"status": snapshot.values.get("status", status),
+                            "degraded_flags": snapshot.values.get("degraded_flags", [])})
         return {"status": status, "snapshot": snapshot}
     finally:
         task.cancel()
@@ -90,9 +135,11 @@ async def work_once(database_url: str, reader_url: str, milvus_uri: str,
     policy = RetryPolicy()
     artifacts = ArtifactStore(database_url)
     reviews = ReviewStore(database_url, artifacts)
+    events = EventStore(database_url)
     await queue.setup()
     await artifacts.setup()
     await reviews.setup()
+    await events.setup()
     engine = create_async_engine(reader_url)
     try:
         async with AsyncPostgresSaver.from_conn_string(
@@ -116,6 +163,7 @@ async def work_once(database_url: str, reader_url: str, milvus_uri: str,
                 try:
                     result = await run_claimed(job, queue, graph, reviews,
                         lease_seconds=lease_seconds,
+                        events=events, policy=policy,
                         crash_after_planner=(crash_after_planner or
                                              (injector.enabled and
                                               injector.case == "runner_crash")))
@@ -131,6 +179,10 @@ async def work_once(database_url: str, reader_url: str, milvus_uri: str,
                     # A lost lease belongs to the next worker; all other failures stay visible.
                     try:
                         await queue.finish(job, "FAILED", f"{type(exc).__name__}: {exc}"[:1000])
+                        await events.append(str(job["run_id"]), "workflow.failed",
+                            job_id=str(job["id"]), attempt=job["attempt"],
+                            payload={"error_type": type(exc).__name__,
+                                     "retry_events": [item.__dict__ for item in policy.events]})
                     except Exception:
                         pass
                     raise
