@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import shutil
 
-from packages.domain.hf_download import file_sha256, portable_path, verify_manifest
+from packages.domain.hf_download import PROJECT_ROOT, file_sha256, portable_path, verify_manifest
 
 MODELS = {
     "bge-m3": {
@@ -27,6 +27,29 @@ MODELS = {
 }
 
 
+def verify_local_model(name: str, base_dir: Path = Path("data")) -> dict:
+    """Check pinned identity, file locations and bytes before loading a local model."""
+    spec = MODELS[name]
+    path = base_dir / "manifests" / f"{name}_download.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if (manifest.get("model") != name or manifest.get("repo_id") != spec["repo_id"]
+            or manifest.get("revision") != spec["revision"]):
+        raise ValueError(f"model identity mismatch: {name}")
+    files = manifest["files"]
+    names = [item["filename"] for item in files]
+    if len(names) != len(set(names)) or set(names) != set(spec["files"]):
+        raise ValueError(f"model file list mismatch: {name}")
+    for item in files:
+        recorded = Path(item["local_path"])
+        if not recorded.is_absolute():
+            recorded = PROJECT_ROOT / recorded
+        expected = base_dir / "models" / name / item["filename"]
+        if recorded.resolve() != expected.resolve():
+            raise ValueError(f"model file path mismatch: {name}/{item['filename']}")
+    verify_manifest(path)
+    return manifest
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--endpoint", default="https://huggingface.co")
@@ -35,7 +58,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.verify:
         for name in MODELS:
-            verify_manifest(Path(f"data/manifests/{name}_download.json"))
+            verify_local_model(name)
         print("model provenance verified")
         return
     if args.transport == "direct":
@@ -86,7 +109,7 @@ def main() -> None:
         path = Path("data/manifests") / f"{name}_download.json"
         path.write_text(json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
                         encoding="utf-8")
-        verify_manifest(path)
+        verify_local_model(name)
 
 
 if __name__ == "__main__":

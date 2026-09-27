@@ -12,9 +12,10 @@ from packages.domain.hf_download import file_sha256
 from packages.knowledge.documents import build_knowledge_corpus
 from packages.knowledge.retrieval import rrf, search_vector
 from packages.knowledge.milvus_store import (
-    BENCHMARK_COLLECTION, KNOWLEDGE_COLLECTION, MODEL_MANIFEST,
+    BENCHMARK_COLLECTION, KNOWLEDGE_COLLECTION,
     MAX_MODEL_TOKENS, client, embedding_model, encode, index_jsonl
 )
+from scripts.download_m2_models import verify_local_model
 from evaluation.rag.dataset import OUTPUT, SOURCE, SOURCE_MANIFEST, prepare
 
 REPORT_DIR = Path("evaluation/reports")
@@ -96,14 +97,13 @@ def _rankings(store, model, holdout: list[dict]) -> dict[str, dict[str, list[str
 
 
 def run(uri: str, rebuild: bool = False) -> dict:
+    model_info = verify_local_model("bge-m3")
+    reranker_info = verify_local_model("bge-reranker-v2-m3")
     provenance = json.loads(SOURCE_MANIFEST.read_text(encoding="utf-8"))
     source_info = next(item for item in provenance["files"]
                        if item["filename"] == SOURCE.name)
     dataset = prepare(expected_source_sha256=source_info["sha256"])
     knowledge = build_knowledge_corpus()
-    model_info = json.loads(MODEL_MANIFEST.read_text(encoding="utf-8"))
-    reranker_info = json.loads(Path("data/manifests/bge-reranker-v2-m3_download.json")
-                               .read_text(encoding="utf-8"))
     store = client(uri)
     model = embedding_model()
     benchmark_index = index_jsonl(store, model, BENCHMARK_COLLECTION,
@@ -130,7 +130,8 @@ def run(uri: str, rebuild: bool = False) -> dict:
         git_dirty = None
     code_files = ("evaluation/rag/dataset.py", "evaluation/rag/run.py",
                   "packages/knowledge/documents.py", "packages/knowledge/milvus_store.py",
-                  "packages/knowledge/retrieval.py")
+                  "packages/knowledge/retrieval.py", "scripts/download_m2_models.py",
+                  "packages/domain/hf_download.py")
     report = {
         "name": "Insur-QA local query holdout, full deduplicated passage corpus",
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -141,6 +142,10 @@ def run(uri: str, rebuild: bool = False) -> dict:
         "dataset_manifest": dataset,
         "model_revision": model_info["revision"],
         "reranker_revision": reranker_info["revision"],
+        "embedder_files_sha256": {item["filename"]: item["sha256"]
+                                  for item in model_info["files"]},
+        "reranker_files_sha256": {item["filename"]: item["sha256"]
+                                  for item in reranker_info["files"]},
         "software_versions": {name: version(name) for name in
                               ("FlagEmbedding", "pymilvus", "torch", "transformers")},
         "benchmark_index": benchmark_index,

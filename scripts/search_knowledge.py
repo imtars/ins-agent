@@ -5,6 +5,7 @@ import json
 
 from packages.knowledge.milvus_store import KNOWLEDGE_COLLECTION, client, embedding_model
 from packages.knowledge.retrieval import retrieve_evidence
+from scripts.download_m2_models import verify_local_model
 
 
 def main() -> None:
@@ -16,6 +17,8 @@ def main() -> None:
     args = parser.parse_args()
     from FlagEmbedding import FlagReranker
 
+    verify_local_model("bge-m3")
+    verify_local_model("bge-reranker-v2-m3")
     store = client(args.milvus_uri)
     if not store.has_collection(KNOWLEDGE_COLLECTION):
         raise RuntimeError("knowledge collection is absent; run M2 index/evaluation first")
