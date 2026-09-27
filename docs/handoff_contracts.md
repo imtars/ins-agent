@@ -13,7 +13,7 @@ M6 仍是单进程、内存图。`packages/agent/contracts.py` 的 `NODE_CONTRAC
 
 每个 LangGraph 节点执行 `validate_input() → node() → validate_output()`。边界会拒绝缺字段、错误类型、未声明输出、产物数量与计划不一致、最终状态与 Verification 不一致，抛出 `ContractViolation`，不会调用下游。M4 工具调用也有输出模型：SQL 五种结果按工具分别验证，知识检索验证查询/产品匹配、结果数量、Evidence 字段、内容 SHA-256 和来源 ID；无效工具返回立即阻断，不能当作 LLM 参数错误进行 repair。
 
-`packages/agent/evidence.py` 在 Verifier 批准前逐条检查：每条 claim 只能引用本轮一个 SQL artifact 或 RAG evidence；SQL claim 的数字必须出现在被引 SQL 结果/参数中；RAG claim 必须把该 evidence 文本中的一段原文同时放在 `evidence_quote` 与 claim 正文，数字也必须出现在该证据文本中。摘要只允许重复计划里已有的数字。Synthesis 还会根据已验证的 artifact `source_type` 给摘要和 claim 加上合成运营数据、合成产品条款或公开征求意见稿的确定性来源标识。任一证据检查失败即 `BLOCK`，Verifier 自身失败也 `BLOCK`。LLM Verifier 仍负责判断引文与叙述的语义关系及冲突；精确引文和数值核对**不能证明任意自然语言推论都被证据蕴含**。
+`packages/agent/evidence.py` 在 Verifier 批准前逐条检查：每条 claim 只能引用本轮一个 SQL artifact 或 RAG evidence；SQL claim 的数字必须出现在被引 SQL 结果/参数中，`sql:3` 这类来源标签的序号不算业务数字；RAG claim 必须把该 evidence 文本中的一段原文同时放在 `evidence_quote` 与 claim 正文，数字也必须出现在该证据文本中。摘要只允许重复计划里已有的数字。Synthesis 还会根据已验证的 artifact `source_type` 给摘要和 claim 加上合成运营数据、合成产品条款或公开征求意见稿的确定性来源标识。Synthesis 对不合格草稿最多要求一次基于相同产物的修正；最终任一证据检查仍失败即 `BLOCK`，Verifier 自身失败也 `BLOCK`。LLM Verifier 仍负责判断引文与叙述的语义关系及冲突；精确引文和数值核对**不能证明任意自然语言推论都被证据蕴含**。
 
 RAG claim 对外只保留来源标签和所引原文，避免把“疾病责任等待期”改写成范围更广的“所有责任等待期”。条款原文中的天数可由该原文支持；纯 RAG 问题不会为这个数字额外发起 SQL 查询。运营指标仍只能由 SQL 工具产物支持。
 

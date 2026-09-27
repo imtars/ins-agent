@@ -120,7 +120,7 @@ uv run --locked python -m scripts.run_m5_demo --provider proxy
 
 ## M6 Handoff contract
 
-每个图节点在执行前后校验注册的 Pydantic 输入/输出模型。M4 SQL/知识工具返回也按类型和来源元数据校验；缺字段、类型错误或无效工具返回触发 `ContractViolation`，下游节点不会运行。Synthesis 根据产物来源确定性地标注合成数据或公开草案；Verifier 批准前逐条检查 SQL 数字与被引产物、RAG 原文引文与当前 evidence。完整规则及其语义限制见 [M6 契约说明](docs/handoff_contracts.md)。当前仍无 checkpoint、审批或持久化运行状态。
+每个图节点在执行前后校验注册的 Pydantic 输入/输出模型。M4 SQL/知识工具返回也按类型和来源元数据校验；缺字段、类型错误或无效工具返回触发 `ContractViolation`，下游节点不会运行。Planner 的格式/任务拆分及 Synthesis 的证据草稿各最多修正一次，最终仍必须通过原契约。Synthesis 根据产物来源确定性地标注合成数据或公开草案；Verifier 批准前逐条检查 SQL 数字与被引产物、RAG 原文引文与当前 evidence。完整规则及其语义限制见 [M6 契约说明](docs/handoff_contracts.md)。当前仍无 checkpoint、审批或持久化运行状态。
 
 在 M5 所需真实依赖可用时运行四题 M6 验收：
 

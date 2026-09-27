@@ -178,6 +178,8 @@ def test_incurred_loss_ratio_cannot_be_replaced_by_claim_frequency():
 
         async def complete_json(self, role, system, user, *, max_tokens=1200):
             self.calls += 1
+            if "已赚保费" in user:
+                assert "data_compute_loss_ratio kind=incurred: that tool already" in system
             return {"tool": ("data_compute_claim_rate" if self.calls == 1 else
                              "data_compute_loss_ratio"),
                     "arguments": {"start_date": "2026-04-01", "end_date": "2026-07-01",
@@ -203,6 +205,13 @@ def test_incurred_loss_ratio_cannot_be_replaced_by_claim_frequency():
     assert [attempt.status for attempt in artifact.attempts] == ["failed", "success"]
     assert "data_compute_claim_rate" not in tools.calls
     assert artifact.result["metric"] == "incurred_loss_ratio"
+
+    report_task = TaskPlan(intent="ratio components", route="SQL", sql_tasks=[
+        "提取 product_006 在 2026 年第二季度的已赚保费、已发生赔款和已发生赔付率数据"])
+    report_artifact = asyncio.run(DataAnalystAgent(MetricModel(), MetricTools()).run(
+        report_task))[0]
+    assert report_artifact.result["earned_premium"] == "2183750.57"
+    assert report_artifact.result["incurred_amount"] == "2937010.48"
 
 
 def test_data_analyst_reads_live_mcp_input_schemas_and_fails_if_missing():

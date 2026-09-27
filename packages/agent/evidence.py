@@ -11,7 +11,9 @@ NUMBER = re.compile(r"(?<![A-Za-z])\d[\d,]*(?:\.\d+)?")
 
 def numbers(value: str) -> set[Decimal]:
     found = set()
-    for raw in NUMBER.findall(value):
+    # Artifact labels identify sources; their ordinals are not business results.
+    without_artifact_ids = re.sub(r"\bsql:\d+\b", "", value, flags=re.IGNORECASE)
+    for raw in NUMBER.findall(without_artifact_ids):
         try:
             found.add(Decimal(raw.replace(",", "")))
         except InvalidOperation:

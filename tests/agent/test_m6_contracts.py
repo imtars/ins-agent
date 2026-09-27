@@ -11,7 +11,7 @@ from packages.agent.agents.roles import PlannerAgent, SynthesisAnalystAgent, Ver
 from packages.agent.contracts import (ContractViolation, NODE_CONTRACTS,
                                      NodeContract, VerifierInput, VerifierOutput,
                                      checked_node, validate_registry)
-from packages.agent.evidence import label_source_scope, validate_claim_evidence
+from packages.agent.evidence import label_source_scope, numbers, validate_claim_evidence
 from packages.agent.graph import build_workflow, run_query
 from packages.agent.models import (AnalysisResult, Evidence, RagArtifact,
                                    SqlArtifact, TaskPlan)
@@ -86,6 +86,21 @@ def test_planner_repairs_extra_json_field_once_without_relaxing_contract():
         asyncio.run(PlannerAgent(model).plan("count"))
     assert len(model.calls) == 2
 
+    class OverSplitModel:
+        def __init__(self):
+            self.calls = []
+
+        async def complete_json(self, role, system, user, *, max_tokens=1200):
+            self.calls.append(user)
+            assert "at most two SQL tasks" in system
+            return {"intent": "report", "route": "REPORT",
+                    "sql_tasks": ["ratio", "rate", "premium"] if len(self.calls) == 1
+                    else ["ratio and rate"], "rag_tasks": ["waiting period"]}
+
+    split = OverSplitModel()
+    assert len(asyncio.run(PlannerAgent(split).plan("report")).sql_tasks) == 1
+    assert "at most two tasks per branch" in split.calls[1]
+
 
 class BrokenModel:
     def __init__(self, route):
@@ -136,6 +151,8 @@ def test_invalid_mcp_tool_output_blocks_before_synthesis(route):
 
 
 def test_each_claim_needs_current_numeric_or_exact_quote_support():
+    assert numbers("sql:3 的已赚保费为 2183750.57") == numbers("已赚保费为 2183750.57")
+    assert numbers("sql:3 的已赚保费为 99999") == numbers("已赚保费为 99999")
     sql = SqlArtifact(artifact_id="sql:1", task="count", tool="data_execute_readonly_query",
                       arguments={"sql": "SELECT count(*) FROM policies"},
                       result={"rows": [{"n": 30000}], "row_count": 1},
@@ -188,6 +205,10 @@ def test_each_claim_needs_current_numeric_or_exact_quote_support():
         evidence=[conflicting])], labeled)
     assert any("conflicting RAG evidence" in issue for issue in conflict_result)
     assert any("number absent" in item for item in issues(sql_text="有 99999 张保单。"))
+    assert not any("number absent" in item for item in issues(
+        sql_text="sql:1 中有 30000 张保单。"))
+    assert any("number absent" in item for item in issues(
+        sql_text="sql:1 中有 99999 张保单。"))
     assert any("exact quote" in item for item in issues(quote="等待期为 30 天"))
     assert any("number absent" in item for item in issues(rag_text=text + "另有 30 天。"))
     assert any("unknown source" in item for item in issues(sql_id="sql:other"))
@@ -217,6 +238,7 @@ def test_each_claim_needs_current_numeric_or_exact_quote_support():
             assert "SQL results are synthetic operational data" in system
             assert "Current source scope: SQL results are synthetic operational data." in system
             assert "Retrieved public documents are consultation drafts" not in system
+            assert "Put every numeric result in its own cited claim" in system
             return {"summary": "合成业务查询", "claims": [
                 {"text": "有 30000 张保单。", "source_ids": ["sql:1"]}]}
 
@@ -224,6 +246,29 @@ def test_each_claim_needs_current_numeric_or_exact_quote_support():
     summary = asyncio.run(SynthesisAnalystAgent(InspectSynthesis()).compose(
         pure_sql, [sql], []))
     assert "运营结果为合成演示数据" in summary.summary
+
+    class RepairSynthesis:
+        def __init__(self, always_invalid=False):
+            self.calls = []
+            self.always_invalid = always_invalid
+
+        async def complete_json(self, role, system, user, *, max_tokens=1200):
+            self.calls.append(user)
+            bad = self.always_invalid or len(self.calls) == 1
+            return {"summary": "合成业务查询", "claims": [{
+                "text": "有 99999 张保单。" if bad else "有 30000 张保单。",
+                "source_ids": ["sql:1"]}]}
+
+    repair = RepairSynthesis()
+    corrected = asyncio.run(SynthesisAnalystAgent(repair).compose(pure_sql, [sql], []))
+    assert len(repair.calls) == 2
+    assert "number absent from SQL artifact" in repair.calls[1]
+    assert validate_claim_evidence(pure_sql, [sql], [], corrected) == []
+    unresolved = RepairSynthesis(always_invalid=True)
+    invalid = asyncio.run(SynthesisAnalystAgent(unresolved).compose(pure_sql, [sql], []))
+    assert len(unresolved.calls) == 2
+    assert asyncio.run(VerificationAgent(NeverPassModel()).verify(
+        pure_sql, [sql], [], invalid)).status == "BLOCK"
 
     class InspectVerifier:
         async def complete_json(self, role, system, user, *, max_tokens=1200):
