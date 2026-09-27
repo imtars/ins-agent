@@ -1,0 +1,341 @@
+{
+  "base_git_commit": "ca3bbf475013405be57099828b08f203ee47907a",
+  "code_sha256": {
+    "apps/api/m8.py": "85fc50d298ce0466d209645efc4bad89cd6e002ea341c00301d2a155ababfa4f",
+    "apps/runner/worker.py": "964f6984b716004cbbaf9e21f55ecf02b88c92726a17866b72df75c38970fab9",
+    "packages/agent/m8_graph.py": "5d6997cbfa544dad8f35684df7fa8b552be3ee5c9585c6d83cba80ffa8a87bf7",
+    "packages/persistence/artifacts.py": "20be3ed568bec6a7469e2e63bb2037bc0f79b143d1674201cf2bd148a2b6a134",
+    "packages/persistence/checkpoints.py": "cb36310281dd5f99848b1e878f15f6e1e004e2f4485f00f5916343ff7e8dd329",
+    "packages/persistence/jobs.py": "a2b698e87b54d83f73fa510c597d74e38c34680025b9d497d06a1f799b1dd120",
+    "packages/persistence/reviews.py": "b93a7c358f3f265306a182c3f8571e8ee94673b76f823649c93926527524bdca",
+    "scripts/run_m8_demo.py": "b561ba1868da55c2dc70c05e0ca42d4c08f0c57a9d24882fca6c572cf376f265"
+  },
+  "crashed": {
+    "exit_code": 73
+  },
+  "crashed_state": {
+    "approval": null,
+    "cycle": 1,
+    "job": {
+      "attempt": 1,
+      "id": "fc2b6f06-6107-403a-8a29-b3f95f6eb867",
+      "last_error": null,
+      "locked_by": "xubei-OMEN:650135",
+      "status": "RUNNING"
+    },
+    "next": [
+      "fork"
+    ],
+    "publication": null,
+    "refs": {},
+    "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+    "status": "RUNNING",
+    "thread_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+    "trace": [
+      "planner"
+    ]
+  },
+  "final": {
+    "approval": {
+      "approval_id": "5b7d79a0-379d-40df-8208-a2dfb09e6183",
+      "artifact": {
+        "artifact_id": "c67dc465-d211-4810-aaa7-fc3d8bc42516",
+        "content_hash": "21e06ab0fbe8a3643aa26d12981af62ad8f58e1ace6cfdd5ae6b3dce985c01fd",
+        "generation": 2,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "analysis",
+        "version": 2
+      },
+      "comment": "",
+      "cycle": 2,
+      "reviewer_id": "m8_local_reviewer",
+      "revision_targets": [],
+      "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+      "status": "APPROVED"
+    },
+    "cycle": 2,
+    "job": {
+      "attempt": 1,
+      "id": "92aed57c-e420-4ec6-b4d6-c951e1639402",
+      "last_error": null,
+      "locked_by": null,
+      "status": "COMPLETED"
+    },
+    "next": [],
+    "publication": {
+      "approval_id": "5b7d79a0-379d-40df-8208-a2dfb09e6183",
+      "artifact_id": "c67dc465-d211-4810-aaa7-fc3d8bc42516",
+      "artifact_version": 2,
+      "content_hash": "21e06ab0fbe8a3643aa26d12981af62ad8f58e1ace6cfdd5ae6b3dce985c01fd",
+      "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb"
+    },
+    "refs": {
+      "analysis": {
+        "artifact_id": "c67dc465-d211-4810-aaa7-fc3d8bc42516",
+        "content_hash": "21e06ab0fbe8a3643aa26d12981af62ad8f58e1ace6cfdd5ae6b3dce985c01fd",
+        "generation": 2,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "analysis",
+        "version": 2
+      },
+      "rag": {
+        "artifact_id": "e34a7c33-cf6d-44c2-a9b2-8cde22999e53",
+        "content_hash": "c0a79117575dbd58fe3953963e4ab69fcb324362572f358533ba755283ada9e0",
+        "generation": 2,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "rag",
+        "version": 2
+      },
+      "sql": {
+        "artifact_id": "bfa56f10-70c2-48ee-aa0b-6793e1b147a8",
+        "content_hash": "c0578f240277551334e77434494fd68363a47cda5857474ed39af5df6461306c",
+        "generation": 1,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "sql",
+        "version": 1
+      },
+      "verification": {
+        "artifact_id": "ca94e47e-0aad-47c8-ae76-cbff91097915",
+        "content_hash": "6379e68cbfd578d875761a025c60335b7e61ca184a28204643ecdf22cfed37d5",
+        "generation": 2,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "verification",
+        "version": 2
+      }
+    },
+    "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+    "status": "PUBLISHED",
+    "thread_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier",
+      "human_review",
+      "revision_router",
+      "knowledge_researcher",
+      "synthesis",
+      "verifier",
+      "human_review",
+      "publish"
+    ]
+  },
+  "generated_at": "2026-09-27T11:32:02.694746+00:00",
+  "git_worktree_dirty": false,
+  "publication_row_count": 1,
+  "publish_worker": {
+    "exit_code": 0,
+    "result": {
+      "attempt": 1,
+      "model_response_ids": [],
+      "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+      "status": "COMPLETED"
+    }
+  },
+  "query": "请生成 2026 年第二季度合成产品 product_006 的业务与条款综合简报，只列出已发生赔付率、理赔频率（次/在保保单年）以及疾病责任等待期，分别引用运营数据和产品条款。",
+  "recovered_worker": {
+    "exit_code": 0,
+    "result": {
+      "attempt": 2,
+      "model_response_ids": [
+        "deepseek-flash",
+        "deepseek-flash",
+        "deepseek-flash",
+        "deepseek-flash"
+      ],
+      "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+      "status": "WAITING_APPROVAL"
+    }
+  },
+  "replay_worker": {
+    "exit_code": 0,
+    "result": {
+      "attempt": 1,
+      "model_response_ids": [
+        "deepseek-flash",
+        "deepseek-flash",
+        "deepseek-flash"
+      ],
+      "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+      "status": "WAITING_APPROVAL"
+    }
+  },
+  "review_rows": [
+    [
+      "REJECTED",
+      1,
+      1
+    ],
+    [
+      "APPROVED",
+      2,
+      2
+    ]
+  ],
+  "revised": {
+    "approval": {
+      "approval_id": "28c705fb-0676-4599-9c9c-4f7f8259d997",
+      "artifact": {
+        "artifact_id": "4d6102a7-6f84-43f2-acd5-578f3130b7a8",
+        "content_hash": "7d1093f2f9bf65317e50cb9ff6e5568f67131226254d03719bc00e95fdc68ba1",
+        "generation": 1,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "analysis",
+        "version": 1
+      },
+      "comment": "",
+      "cycle": 1,
+      "reviewer_id": "m8_local_reviewer",
+      "revision_targets": [
+        "rag"
+      ],
+      "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+      "status": "REJECTED"
+    },
+    "cycle": 2,
+    "job": {
+      "attempt": 1,
+      "id": "82b56c27-7b57-4308-a9df-e944fbfb1c43",
+      "last_error": null,
+      "locked_by": null,
+      "status": "WAITING_APPROVAL"
+    },
+    "next": [
+      "human_review"
+    ],
+    "publication": null,
+    "refs": {
+      "analysis": {
+        "artifact_id": "c67dc465-d211-4810-aaa7-fc3d8bc42516",
+        "content_hash": "21e06ab0fbe8a3643aa26d12981af62ad8f58e1ace6cfdd5ae6b3dce985c01fd",
+        "generation": 2,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "analysis",
+        "version": 2
+      },
+      "rag": {
+        "artifact_id": "e34a7c33-cf6d-44c2-a9b2-8cde22999e53",
+        "content_hash": "c0a79117575dbd58fe3953963e4ab69fcb324362572f358533ba755283ada9e0",
+        "generation": 2,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "rag",
+        "version": 2
+      },
+      "sql": {
+        "artifact_id": "bfa56f10-70c2-48ee-aa0b-6793e1b147a8",
+        "content_hash": "c0578f240277551334e77434494fd68363a47cda5857474ed39af5df6461306c",
+        "generation": 1,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "sql",
+        "version": 1
+      },
+      "verification": {
+        "artifact_id": "ca94e47e-0aad-47c8-ae76-cbff91097915",
+        "content_hash": "6379e68cbfd578d875761a025c60335b7e61ca184a28204643ecdf22cfed37d5",
+        "generation": 2,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "verification",
+        "version": 2
+      }
+    },
+    "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+    "status": "WAITING_APPROVAL",
+    "thread_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier",
+      "human_review",
+      "revision_router",
+      "knowledge_researcher",
+      "synthesis",
+      "verifier"
+    ]
+  },
+  "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+  "stage_versions": {
+    "analysis": [
+      1,
+      2
+    ],
+    "rag": [
+      1,
+      2
+    ],
+    "sql": [
+      1
+    ],
+    "verification": [
+      1,
+      2
+    ]
+  },
+  "stale_approval_status": 409,
+  "thread_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+  "unauthorized_status": 403,
+  "waiting": {
+    "approval": null,
+    "cycle": 1,
+    "job": {
+      "attempt": 2,
+      "id": "fc2b6f06-6107-403a-8a29-b3f95f6eb867",
+      "last_error": null,
+      "locked_by": null,
+      "status": "WAITING_APPROVAL"
+    },
+    "next": [
+      "human_review"
+    ],
+    "publication": null,
+    "refs": {
+      "analysis": {
+        "artifact_id": "4d6102a7-6f84-43f2-acd5-578f3130b7a8",
+        "content_hash": "7d1093f2f9bf65317e50cb9ff6e5568f67131226254d03719bc00e95fdc68ba1",
+        "generation": 1,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "analysis",
+        "version": 1
+      },
+      "rag": {
+        "artifact_id": "718d59d0-6417-4744-826e-a676ba3167e4",
+        "content_hash": "c0a79117575dbd58fe3953963e4ab69fcb324362572f358533ba755283ada9e0",
+        "generation": 1,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "rag",
+        "version": 1
+      },
+      "sql": {
+        "artifact_id": "bfa56f10-70c2-48ee-aa0b-6793e1b147a8",
+        "content_hash": "c0578f240277551334e77434494fd68363a47cda5857474ed39af5df6461306c",
+        "generation": 1,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "sql",
+        "version": 1
+      },
+      "verification": {
+        "artifact_id": "95fb114d-3c88-4ba2-a91e-351a8a97bc7a",
+        "content_hash": "6379e68cbfd578d875761a025c60335b7e61ca184a28204643ecdf22cfed37d5",
+        "generation": 1,
+        "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+        "stage": "verification",
+        "version": 1
+      }
+    },
+    "run_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+    "status": "WAITING_APPROVAL",
+    "thread_id": "e9a3b20d-4c8b-4ca4-89d4-b543069a6eeb",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier"
+    ]
+  }
+}
