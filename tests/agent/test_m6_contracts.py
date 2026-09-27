@@ -144,6 +144,18 @@ def test_each_claim_needs_current_numeric_or_exact_quote_support():
     assert labeled.claims[0].text.startswith("合成运营数据：")
     assert labeled.claims[1].text.startswith("合成演示产品条款：")
     assert validate_claim_evidence(plan, [sql], [rag], labeled) == []
+    repeated = RagArtifact(artifact_id="rag:2", task="another query",
+                           query="same chunk", evidence=[evidence.model_copy(
+                               update={"rerank_score": 0.2})])
+    assert validate_claim_evidence(plan, [sql], [rag, repeated], labeled) == []
+    changed_text = "疾病责任等待期为 30 天。"
+    conflicting = Evidence.model_validate({**evidence.model_dump(),
+        "text": changed_text,
+        "content_hash": hashlib.sha256(changed_text.encode()).hexdigest()})
+    conflict_result = validate_claim_evidence(plan, [sql], [rag, RagArtifact(
+        artifact_id="rag:2", task="another query", query="conflict",
+        evidence=[conflicting])], labeled)
+    assert any("conflicting RAG evidence" in issue for issue in conflict_result)
     assert any("number absent" in item for item in issues(sql_text="有 99999 张保单。"))
     assert any("exact quote" in item for item in issues(quote="等待期为 30 天"))
     assert any("number absent" in item for item in issues(rag_text=text + "另有 30 天。"))

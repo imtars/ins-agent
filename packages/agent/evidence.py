@@ -54,9 +54,20 @@ def validate_claim_evidence(plan: TaskPlan, sql: list[SqlArtifact],
     """Require a current source, exact RAG quote, and source-backed numerals per claim."""
     issues = []
     sql_by_id = {item.artifact_id: item for item in sql}
-    rag_by_id = {evidence.evidence_id: evidence for item in rag for evidence in item.evidence}
-    if len(sql_by_id) != len(sql) or len(rag_by_id) != sum(len(item.evidence) for item in rag):
-        issues.append("duplicate source ID in current artifacts")
+    rag_by_id = {}
+    if len(sql_by_id) != len(sql):
+        issues.append("duplicate SQL artifact ID")
+    for item in rag:
+        for evidence in item.evidence:
+            previous = rag_by_id.get(evidence.evidence_id)
+            if previous is not None:
+                identity = ("doc_id", "chunk_id", "section", "text", "source_type",
+                            "source_url", "product_code", "content_hash")
+                if any(getattr(previous, field) != getattr(evidence, field)
+                       for field in identity):
+                    issues.append("conflicting RAG evidence for the same source ID")
+            else:
+                rag_by_id[evidence.evidence_id] = evidence
     if not analysis.claims:
         issues.append("analysis has no factual claims")
     plan_numbers = numbers(json.dumps(plan.model_dump(), ensure_ascii=False))
