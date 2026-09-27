@@ -170,6 +170,7 @@ class Evidence(RoleOutput):
     content_hash: str
     text: str
     rerank_score: float
+    score_method: Literal["reranker", "rrf_fallback"] = "reranker"
 
     @model_validator(mode="after")
     def provenance_matches_text(self):

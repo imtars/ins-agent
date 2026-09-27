@@ -97,5 +97,6 @@ def retrieve_evidence_with_status(store, embedder, reranker, query: str, *,
                          "source_url": item["source_url"],
                          "product_code": item["product_code"] or None,
                          "content_hash": item["content_hash"],
-                         "text": item["text"], "rerank_score": float(scores[index])})
+                         "text": item["text"], "rerank_score": float(scores[index]),
+                         "score_method": "rrf_fallback" if degraded_flags else "reranker"})
     return evidence, degraded_flags

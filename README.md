@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M8 已完成本机验收；M9 故障注入实现待最终真实验收**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M8 增加本机 worker 与定向重跑；M9 增加受控故障、重试和降级。完整 API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M9 已完成本机验收**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M8 增加本机 worker 与定向重跑；M9 增加受控故障、重试和降级。完整 API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -170,7 +170,7 @@ uv run --locked python -m scripts.run_m8_demo
 
 ## M9 故障注入与恢复
 
-`FAULT_INJECTION_ENABLED=1` 且设置合法 `FAULT_CASE` 时，worker 才启用本地故障点；API 请求无法指定故障。支持 `llm_timeout`、`llm_invalid_json`、`postgres_timeout`、`milvus_timeout`、`reranker_failure`、`mcp_failure`、`runner_crash`、`verifier_failure`；`FAULT_STAGE` 可限定模型角色或工具名，`FAULT_OCCURRENCES` 控制注入次数。`runner_crash` 在 Planner 同步 checkpoint 后令测试 worker 退出。除 Verifier 故障必须 `BLOCK` 外，超时、429 和明确的暂时性 MCP/数据库连接错误最多尝试 3 次并指数退避；无效工具参数、契约错误不做传输层重试。Reranker 故障时保留已算出的 dense/sparse RRF 候选，并在 RAG artifact 与 run 状态中写 `degraded_flags=["reranker_unavailable"]`；Milvus 故障不会伪造条款证据。每个 run 的 checkpoint writer 持有 PostgreSQL 会话级 advisory lock，租约接管者等待旧 writer 释放后再恢复。
+`FAULT_INJECTION_ENABLED=1` 且设置合法 `FAULT_CASE` 时，worker 才启用本地故障点；API 请求无法指定故障。支持 `llm_timeout`、`llm_invalid_json`、`postgres_timeout`、`milvus_timeout`、`reranker_failure`、`mcp_failure`、`runner_crash`、`verifier_failure`；`FAULT_STAGE` 可限定模型角色或工具名，`FAULT_OCCURRENCES` 控制注入次数。`runner_crash` 在 Planner 同步 checkpoint 后令测试 worker 退出。Verifier 故障必须 `BLOCK`；超时、429 和明确的暂时性 MCP/数据库连接错误最多尝试 3 次并指数退避；无效工具参数、契约错误不做传输层重试。Reranker 故障时保留已算出的 dense/sparse RRF 候选，并在 RAG artifact 与 run 状态中写 `degraded_flags=["reranker_unavailable"]`；每条 evidence 的 `score_method=rrf_fallback` 标明分数语义。Milvus 故障不会伪造条款证据。每个 run 的 checkpoint writer 持有 PostgreSQL 会话级 advisory lock，租约接管者等待旧 writer 释放后再恢复。
 
 创建两个独立数据库后运行 M9 验收：
 
@@ -185,6 +185,8 @@ uv run --locked python -m scripts.run_m9_faults
 ```
 
 脚本从干净源码基线对真实 DeepSeek Planner 注入一次超时，验证重试后经真实 MCP/PostgreSQL/Milvus/BGE 到达人工审核，再批准并检查唯一发布回执；随后运行 `tests/fault`。后者使用受控模型/工具故障、真实 PostgreSQL checkpoint 和真实 Milvus/BGE reranker 故障路径。全部通过才写 [M9 故障报告](evaluation/reports/m9_fault_injection.json)。此处的通过数量是本机测试，不是外部服务可靠性指标。
+
+最终本机验收：真实 DeepSeek Planner 的一次受控超时被记录为一次 `dependency_timeout` 重试，之后流程到达 Verifier `PASS` 与人工审核；批准后的 worker 没有再调用模型，PostgreSQL 只有一条发布回执。故障套件 **28 passed**，完整本机 pytest **106 passed**。受控故障证明代码路径和状态转换，不表示外部服务实际发生过对应故障；这些数字也不是 CI 结果。
 
 ## 设计文档
 

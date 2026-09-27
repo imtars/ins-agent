@@ -43,7 +43,7 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-M7 历史图及其 checkpoint/审核表保留。M8 新图保留五角色和 M4 MCP 专家调用，但 checkpoint 中的 SQL/RAG/Analysis/Verification 只保存 `ArtifactRef`；完整内容和规范化 SHA-256 存入版本化 `run_artifacts`。`agent_jobs` 的租约管理与 checkpoint 分开，worker 通过 `FOR UPDATE SKIP LOCKED` 认领并续租，崩溃后的新 worker 用相同 `run_id/thread_id` 恢复。审核记录绑定具体 analysis artifact ID、版本和哈希，发布路径只接受仍为最新版本的已批准产物。完整 JWT/RBAC 与前端属于 M10，M9 故障注入仍未实现。
+M7 历史图及其 checkpoint/审核表保留。M8 新图保留五角色和 M4 MCP 专家调用，但 checkpoint 中的 SQL/RAG/Analysis/Verification 只保存 `ArtifactRef`；完整内容和规范化 SHA-256 存入版本化 `run_artifacts`。`agent_jobs` 的租约管理与 checkpoint 分开，worker 通过 `FOR UPDATE SKIP LOCKED` 认领并续租，崩溃后的新 worker 用相同 `run_id/thread_id` 恢复。审核记录绑定具体 analysis artifact ID、版本和哈希，发布路径只接受仍为最新版本的已批准产物。M9 增加有限次数依赖重试、明确的检索降级标记和故障测试。完整 JWT/RBAC 与前端仍属于 M10。
 
 ## 后续待验证的工程问题
 

@@ -29,5 +29,7 @@ def test_real_milvus_reranker_failure_uses_rrf_and_marks_artifact():
             assert artifacts[0].degraded_flags == ["reranker_unavailable"]
             assert artifacts[0].evidence
             assert all(item.product_code == "product_006" for item in artifacts[0].evidence)
+            assert all(item.score_method == "rrf_fallback"
+                       for item in artifacts[0].evidence)
             assert any("等待期" in item.section for item in artifacts[0].evidence)
     asyncio.run(scenario())

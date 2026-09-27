@@ -99,7 +99,8 @@ async def work_once(database_url: str, reader_url: str, milvus_uri: str,
                 psycopg_url(database_url), serde=checkpoint_serializer()) as saver:
             await saver.setup()
             async with ClientGroup({"data": Client(data_server(engine)),
-                    "knowledge": Client(build_real_server(milvus_uri))}) as tools:
+                    "knowledge": Client(build_real_server(milvus_uri,
+                                                         injector=injector))}) as tools:
                 model = FaultTolerantModel(select_chat_client(provider), policy, injector)
                 resilient_tools = FaultTolerantTools(tools, policy, injector)
                 job = await policy.run("postgres:claim", lambda: queue.claim(
