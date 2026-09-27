@@ -1,0 +1,628 @@
+{
+  "base_git_commit": "edcb75e39d49eab7144e279df3fefabd51ded486",
+  "case_count": 4,
+  "cases": [
+    {
+      "analysis": {
+        "claims": [
+          {
+            "source_ids": [
+              "sql:1"
+            ],
+            "text": "product_001 的保单数量为 2542。"
+          }
+        ],
+        "summary": "运营数据为合成数据；公开咨询稿与合成产品数据是分开的。"
+      },
+      "expected_route": "SQL",
+      "name": "sql",
+      "plan": {
+        "intent": "查询 product_001 的保单数量",
+        "rag_tasks": [],
+        "required_outputs": [
+          "保单数量"
+        ],
+        "route": "SQL",
+        "sql_tasks": [
+          "统计 product_001 的保单数量"
+        ]
+      },
+      "query": "产品 product_001 有多少张保单？",
+      "rag_results": [],
+      "run_id": "50985c5d-f3d7-495b-9d62-35cec45c248e",
+      "sql_results": [
+        {
+          "arguments": {
+            "sql": "SELECT COUNT(*) AS policy_count FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_001';"
+          },
+          "artifact_id": "sql:1",
+          "attempts": [
+            {
+              "arguments": {
+                "sql": "SELECT COUNT(*) AS policy_count FROM policies JOIN products ON policies.product_id = products.id WHERE products.product_code = 'product_001';"
+              },
+              "number": 0,
+              "status": "success",
+              "tool": "data_execute_readonly_query"
+            }
+          ],
+          "result": {
+            "row_count": 1,
+            "rows": [
+              {
+                "policy_count": 2542
+              }
+            ]
+          },
+          "task": "统计 product_001 的保单数量",
+          "tool": "data_execute_readonly_query"
+        }
+      ],
+      "status": "PASS",
+      "trace": [
+        "planner",
+        "data_analyst",
+        "synthesis",
+        "verifier"
+      ],
+      "verification": {
+        "issues": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "analysis": {
+        "claims": [
+          {
+            "source_ids": [
+              "product_006:等待期:a4602185dffad7bc8a86dc04"
+            ],
+            "text": "疾病责任等待期为15天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。"
+          }
+        ],
+        "summary": "product_006 是合成演示产品；以下为合成产品条款信息。运营数据为合成数据；公开咨询草案与合成产品是分开的。"
+      },
+      "expected_route": "RAG",
+      "name": "rag",
+      "plan": {
+        "intent": "查询合成产品 product_006 的等待期及条款证据",
+        "rag_tasks": [
+          "查找 product_006 的等待期天数及相关条款原文"
+        ],
+        "required_outputs": [
+          "等待期天数",
+          "条款证据"
+        ],
+        "route": "RAG",
+        "sql_tasks": []
+      },
+      "query": "合成产品 product_006 的等待期是多少天？请给出条款证据。",
+      "rag_results": [
+        {
+          "artifact_id": "rag:1",
+          "evidence": [
+            {
+              "chunk_id": "9c22a5e8dc29c4e86ce920a9",
+              "content_hash": "b0ade4aa61e6af44d66b2743295a2205c57b9930d5115b00595d818b02de3439",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:犹豫期:9c22a5e8dc29c4e86ce920a9",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": 0.271484375,
+              "section": "犹豫期",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "本演示产品的犹豫期为 15 天，自签收演示保单之日起计算。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "a4602185dffad7bc8a86dc04",
+              "content_hash": "9248c89f22986c735e89cec789b7cd401440ded4b7d5fc094c748d64320585fa",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:等待期:a4602185dffad7bc8a86dc04",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -1.3359375,
+              "section": "等待期",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "2e0e049c5e4740f37c02cd3a",
+              "content_hash": "b0b19093f6ab232aeb26081f601abd1814641d7cc0928c1f1d5785837d68ba17",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:Synthetic 健康尊享版:2e0e049c5e4740f37c02cd3a",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -3.140625,
+              "section": "Synthetic 健康尊享版",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "product_code: product_006\nproduct_type: health",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "0cb472216969964ff25e2842",
+              "content_hash": "f1484d008965ec6e55a62fbcb9833668208ac74f3d3cf31ea685c5c0e794ea93",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:保险期间:0cb472216969964ff25e2842",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -4.6953125,
+              "section": "保险期间",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "保险期间为保单起始日（含）至终止日（不含），具体日期以合成保单记录为准。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "620655d8308293d692c4cf3f",
+              "content_hash": "ba793fd9abd7bf10246a2493a00095fbbfef00fa1dd6a59d565765267f911891",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:保险责任:620655d8308293d692c4cf3f",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -6.47265625,
+              "section": "保险责任",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "在保险期间内，保障以下演示事件：疾病住院、急诊门诊及普通门诊产生的合规医疗费用。",
+              "title": "Synthetic 健康尊享版"
+            }
+          ],
+          "query": "product_006 等待期天数 相关条款原文",
+          "task": "查找 product_006 的等待期天数及相关条款原文"
+        }
+      ],
+      "run_id": "fa37a5ba-9244-4e59-a9d6-39b4b9ce5836",
+      "sql_results": [],
+      "status": "PASS",
+      "trace": [
+        "planner",
+        "knowledge_researcher",
+        "synthesis",
+        "verifier"
+      ],
+      "verification": {
+        "issues": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "analysis": {
+        "claims": [
+          {
+            "source_ids": [
+              "sql:1"
+            ],
+            "text": "product_006 在 2026 年第二季度的已发生赔付率为 1.3449（ratio）。"
+          },
+          {
+            "source_ids": [
+              "product_006:等待期:a4602185dffad7bc8a86dc04"
+            ],
+            "text": "product_006 的疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。"
+          }
+        ],
+        "summary": "运营数据为合成数据；公共咨询草案与这些合成产品数据相互独立。本答复中的产品条款信息来自合成演示产品资料。"
+      },
+      "expected_route": "BOTH",
+      "name": "both",
+      "plan": {
+        "intent": "查询 product_006 在 2026 年第二季度的已发生赔付率及等待期",
+        "rag_tasks": [
+          "查询 product_006 的等待期是多少天"
+        ],
+        "required_outputs": [
+          "product_006 在 2026 年第二季度的已发生赔付率",
+          "product_006 的等待期天数"
+        ],
+        "route": "BOTH",
+        "sql_tasks": [
+          "查询 product_006 在 2026 年第二季度的已发生赔付率"
+        ]
+      },
+      "query": "产品 product_006 在 2026 年第二季度的已发生赔付率是多少？该产品等待期是多少天？",
+      "rag_results": [
+        {
+          "artifact_id": "rag:1",
+          "evidence": [
+            {
+              "chunk_id": "9c22a5e8dc29c4e86ce920a9",
+              "content_hash": "b0ade4aa61e6af44d66b2743295a2205c57b9930d5115b00595d818b02de3439",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:犹豫期:9c22a5e8dc29c4e86ce920a9",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": 0.79736328125,
+              "section": "犹豫期",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "本演示产品的犹豫期为 15 天，自签收演示保单之日起计算。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "a4602185dffad7bc8a86dc04",
+              "content_hash": "9248c89f22986c735e89cec789b7cd401440ded4b7d5fc094c748d64320585fa",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:等待期:a4602185dffad7bc8a86dc04",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -1.0927734375,
+              "section": "等待期",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "2e0e049c5e4740f37c02cd3a",
+              "content_hash": "b0b19093f6ab232aeb26081f601abd1814641d7cc0928c1f1d5785837d68ba17",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:Synthetic 健康尊享版:2e0e049c5e4740f37c02cd3a",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -3.728515625,
+              "section": "Synthetic 健康尊享版",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "product_code: product_006\nproduct_type: health",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "0cb472216969964ff25e2842",
+              "content_hash": "f1484d008965ec6e55a62fbcb9833668208ac74f3d3cf31ea685c5c0e794ea93",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:保险期间:0cb472216969964ff25e2842",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -4.20703125,
+              "section": "保险期间",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "保险期间为保单起始日（含）至终止日（不含），具体日期以合成保单记录为准。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "620655d8308293d692c4cf3f",
+              "content_hash": "ba793fd9abd7bf10246a2493a00095fbbfef00fa1dd6a59d565765267f911891",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:保险责任:620655d8308293d692c4cf3f",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -8.8046875,
+              "section": "保险责任",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "在保险期间内，保障以下演示事件：疾病住院、急诊门诊及普通门诊产生的合规医疗费用。",
+              "title": "Synthetic 健康尊享版"
+            }
+          ],
+          "query": "product_006 等待期 天数",
+          "task": "查询 product_006 的等待期是多少天"
+        }
+      ],
+      "run_id": "12e40b57-94f8-48d4-b427-80e0fb9d4192",
+      "sql_results": [
+        {
+          "arguments": {
+            "end_date": "2026-07-01",
+            "kind": "incurred",
+            "product_code": "product_006",
+            "start_date": "2026-04-01"
+          },
+          "artifact_id": "sql:1",
+          "attempts": [
+            {
+              "arguments": {
+                "end_date": "2026-07-01",
+                "kind": "incurred",
+                "product_code": "product_006",
+                "start_date": "2026-04-01"
+              },
+              "number": 0,
+              "status": "success",
+              "tool": "data_compute_loss_ratio"
+            }
+          ],
+          "result": {
+            "earned_premium": "2183750.57",
+            "end_date": "2026-07-01",
+            "incurred_amount": "2937010.48",
+            "metric": "incurred_loss_ratio",
+            "paid_amount": "2172304.76",
+            "product_code": "product_006",
+            "region": null,
+            "start_date": "2026-04-01",
+            "unit": "ratio",
+            "value": "1.3449"
+          },
+          "task": "查询 product_006 在 2026 年第二季度的已发生赔付率",
+          "tool": "data_compute_loss_ratio"
+        }
+      ],
+      "status": "PASS",
+      "trace": [
+        "planner",
+        "fork",
+        "knowledge_researcher",
+        "data_analyst",
+        "synthesis",
+        "verifier"
+      ],
+      "verification": {
+        "issues": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "analysis": {
+        "claims": [
+          {
+            "source_ids": [
+              "sql:1"
+            ],
+            "text": "已发生赔付率为1.3449（ratio）。计算口径为该季度已发生金额除以已赚保费；查询结果分别为已发生金额2,937,010.48、已赚保费2,183,750.57。数据来源：合成业务数据查询。"
+          },
+          {
+            "source_ids": [
+              "sql:2"
+            ],
+            "text": "理赔频率为0.3969次/在保保单年。计算口径采用在保天数作为暴露基础，未按等待期调整；查询结果包含220件理赔和554.2438在保保单年。数据来源：合成业务数据查询。"
+          },
+          {
+            "source_ids": [
+              "product_006:等待期:a4602185dffad7bc8a86dc04"
+            ],
+            "text": "疾病责任等待期为15天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。条款来源：product_006《Synthetic 健康尊享版》“等待期”条款。"
+          }
+        ],
+        "summary": "2026年第二季度 product_006 综合简报。注意：业务运营数据为合成数据；公开咨询稿与这些合成产品及其数据相互独立，不应混为一谈。"
+      },
+      "expected_route": "REPORT",
+      "name": "report",
+      "plan": {
+        "intent": "生成 2026 年第二季度合成产品 product_006 的业务与条款综合简报，包含已发生赔付率、理赔频率、等待期及数据和条款来源。",
+        "rag_tasks": [
+          "检索 product_006 条款中的等待期及其适用条件，提供条款来源"
+        ],
+        "required_outputs": [
+          "综合简报",
+          "已发生赔付率及计算口径",
+          "理赔频率及计算口径",
+          "等待期及适用条件",
+          "业务数据来源",
+          "条款来源"
+        ],
+        "route": "REPORT",
+        "sql_tasks": [
+          "查询 2026 年第二季度 product_006 的已发生赔付率，并注明计算口径和数据来源",
+          "查询 2026 年第二季度 product_006 的理赔频率，并注明计算口径和数据来源"
+        ]
+      },
+      "query": "请生成 2026 年第二季度合成产品 product_006 的业务与条款综合简报：列出已发生赔付率、理赔频率和等待期，附上数据和条款来源。",
+      "rag_results": [
+        {
+          "artifact_id": "rag:1",
+          "evidence": [
+            {
+              "chunk_id": "9c22a5e8dc29c4e86ce920a9",
+              "content_hash": "b0ade4aa61e6af44d66b2743295a2205c57b9930d5115b00595d818b02de3439",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:犹豫期:9c22a5e8dc29c4e86ce920a9",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -0.8564453125,
+              "section": "犹豫期",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "本演示产品的犹豫期为 15 天，自签收演示保单之日起计算。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "2e0e049c5e4740f37c02cd3a",
+              "content_hash": "b0b19093f6ab232aeb26081f601abd1814641d7cc0928c1f1d5785837d68ba17",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:Synthetic 健康尊享版:2e0e049c5e4740f37c02cd3a",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -2.689453125,
+              "section": "Synthetic 健康尊享版",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "product_code: product_006\nproduct_type: health",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "a4602185dffad7bc8a86dc04",
+              "content_hash": "9248c89f22986c735e89cec789b7cd401440ded4b7d5fc094c748d64320585fa",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:等待期:a4602185dffad7bc8a86dc04",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -2.779296875,
+              "section": "等待期",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "0cb472216969964ff25e2842",
+              "content_hash": "f1484d008965ec6e55a62fbcb9833668208ac74f3d3cf31ea685c5c0e794ea93",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:保险期间:0cb472216969964ff25e2842",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -5.828125,
+              "section": "保险期间",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "保险期间为保单起始日（含）至终止日（不含），具体日期以合成保单记录为准。",
+              "title": "Synthetic 健康尊享版"
+            },
+            {
+              "chunk_id": "74037205194ed5ced242cd34",
+              "content_hash": "d6baac3542742d5bfb04dc666b85ddde8f5c8c4731d1187da3aaa80133c60c89",
+              "doc_id": "product_006",
+              "evidence_id": "product_006:赔付条件:74037205194ed5ced242cd34",
+              "page": null,
+              "product_code": "product_006",
+              "rerank_score": -6.6328125,
+              "section": "赔付条件",
+              "source_name": "Synthetic demo product",
+              "source_type": "synthetic_product",
+              "source_url": "",
+              "text": "事故须符合保险责任且不属于责任免除。每次免赔额为 0 元，免赔后自付比例为 0%，演示年度赔付限额为 1000000 元。",
+              "title": "Synthetic 健康尊享版"
+            }
+          ],
+          "query": "product_006 条款 等待期 适用条件 条款来源",
+          "task": "检索 product_006 条款中的等待期及其适用条件，提供条款来源"
+        }
+      ],
+      "run_id": "bf711aac-8e3d-4e93-ba83-6990a1a32597",
+      "sql_results": [
+        {
+          "arguments": {
+            "end_date": "2026-07-01",
+            "kind": "incurred",
+            "product_code": "product_006",
+            "start_date": "2026-04-01"
+          },
+          "artifact_id": "sql:1",
+          "attempts": [
+            {
+              "arguments": {
+                "end_date": "2026-07-01",
+                "kind": "incurred",
+                "product_code": "product_006",
+                "start_date": "2026-04-01"
+              },
+              "number": 0,
+              "status": "success",
+              "tool": "data_compute_loss_ratio"
+            }
+          ],
+          "result": {
+            "earned_premium": "2183750.57",
+            "end_date": "2026-07-01",
+            "incurred_amount": "2937010.48",
+            "metric": "incurred_loss_ratio",
+            "paid_amount": "2172304.76",
+            "product_code": "product_006",
+            "region": null,
+            "start_date": "2026-04-01",
+            "unit": "ratio",
+            "value": "1.3449"
+          },
+          "task": "查询 2026 年第二季度 product_006 的已发生赔付率，并注明计算口径和数据来源",
+          "tool": "data_compute_loss_ratio"
+        },
+        {
+          "arguments": {
+            "end_date": "2026-07-01",
+            "product_code": "product_006",
+            "start_date": "2026-04-01"
+          },
+          "artifact_id": "sql:2",
+          "attempts": [
+            {
+              "arguments": {
+                "end_date": "2026-07-01",
+                "product_code": "product_006",
+                "start_date": "2026-04-01"
+              },
+              "number": 0,
+              "status": "success",
+              "tool": "data_compute_claim_rate"
+            }
+          ],
+          "result": {
+            "claim_count": 220,
+            "end_date": "2026-07-01",
+            "exposure_basis": "in_force_days_not_waiting_period_adjusted",
+            "in_force_policy_years": "554.2438",
+            "metric": "claims_per_in_force_policy_year",
+            "product_code": "product_006",
+            "region": null,
+            "start_date": "2026-04-01",
+            "unit": "claims_per_in_force_policy_year",
+            "value": "0.3969"
+          },
+          "task": "查询 2026 年第二季度 product_006 的理赔频率，并注明计算口径和数据来源",
+          "tool": "data_compute_claim_rate"
+        }
+      ],
+      "status": "PASS",
+      "trace": [
+        "planner",
+        "fork",
+        "knowledge_researcher",
+        "data_analyst",
+        "synthesis",
+        "verifier"
+      ],
+      "verification": {
+        "issues": [],
+        "status": "PASS"
+      }
+    }
+  ],
+  "code_sha256": {
+    "packages/agent/agents/roles.py": "8ec60ef1b7f611ae2af0c3a72a3e8d297fac9741cf520548f11e8f67c4cceb6f",
+    "packages/agent/graph.py": "a46f3462d4372a222661d12cd54e0024d0efc7456aacd1b2df179720d08deabb",
+    "packages/agent/models.py": "e03a78215af5532849ab8d24a809c6b1bb54268cf62ccb6a0f2f2fdaec401b81",
+    "packages/llm/client.py": "7261fec0fde0959c5ced7ffba5201b91e1844189320e3cb33ed84be4ed4307ee",
+    "scripts/run_m5_demo.py": "83bcb058a8b7ab471953126f5d22bd3fde5d012dd608f14209babf4b9b198c6f",
+    "services/mcp_data/server.py": "2ca345c5012ea18e1b62ff93ca65feadbc5fbc25525cbea19894d77666ea4ceb",
+    "services/mcp_knowledge/server.py": "6f8a379deb908c0e392ad69d7f92a416feec787107c4fa0a4a662b81cc11261b"
+  },
+  "generated_at": "2026-09-27T06:55:58.399208+00:00",
+  "git_worktree_dirty": false,
+  "json_parse_failures": [],
+  "milvus_uri": "http://127.0.0.1:19530",
+  "model_roles_called": [
+    "planner",
+    "data_analyst",
+    "synthesis",
+    "verifier",
+    "planner",
+    "knowledge_researcher",
+    "synthesis",
+    "verifier",
+    "planner",
+    "knowledge_researcher",
+    "data_analyst",
+    "synthesis",
+    "verifier",
+    "planner",
+    "knowledge_researcher",
+    "data_analyst",
+    "data_analyst",
+    "synthesis",
+    "verifier"
+  ],
+  "observed_response_model_ids": [
+    "gpt-6-luna"
+  ],
+  "provider": "CLIProxyAPI",
+  "requested_model": "gpt-6-luna",
+  "response_model_missing_count": 0
+}

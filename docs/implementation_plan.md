@@ -99,7 +99,9 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 
 审查原 M5 报告发现 4 个 SQL task 的第一次工具参数均被 M4 拒绝，第二次靠错误反馈修正。Data Analyst 当时只接收业务 schema 和手写工具用途，没有收到 MCP 的真实输入契约。M5.1 改为在任务开始时调用 `ClientGroup.list_tools()`，选取五个数据工具的实际 namespaced 名称、描述及完整 `input_schema` 放入 Data Analyst context；缺少任一工具契约直接失败。原有业务指标语义 guard 和有限 repair 仍在，M4 的 Pydantic 工具校验仍是执行边界。真实 `ClientGroup` 集成测试核对 `sql` 必填、`additionalProperties=false`、赔付率工具没有 `metric` 入参；单元测试验证五份契约确实传入模型。
 
-验收脚本现在要求每条 demo 的 Verification 状态严格为 `PASS`，`REVISE` 与 `BLOCK` 都使脚本失败，且不会写入成功报告；状态判定有独立回归测试。原 [M5 报告](../evaluation/reports/m5_demo.json)不覆盖，M5.1 另写 [新报告](../evaluation/reports/m51_demo.json)。新的四题真实运行结果和本机完整 pytest 结果以该报告与本节后续验收记录为准；不把 demo 当成准确率 benchmark，也不宣称 CI 通过。
+验收脚本现在要求每条 demo 的 Verification 状态严格为 `PASS`，`REVISE` 与 `BLOCK` 都使脚本失败，且不会写入新的成功报告；状态判定有独立回归测试。原 [M5 报告](../evaluation/reports/m5_demo.json)不覆盖，M5.1 另写 [新报告](../evaluation/reports/m51_demo.json)。不把 demo 当成准确率 benchmark，也不宣称 CI 通过。
+
+从干净提交 `edcb75e` 连续重跑真实四题：SQL `1 SQL / 0 RAG`、RAG `0 / 1`、混合 `1 / 1`、简报 `2 / 1`，路由、合流和最终状态均正确，四题严格 `PASS`。共 4 个 SQL task，**4/4 第一次工具调用成功**，修复次数为 0；前轮 4/4 第一次参数拒绝的问题未再出现。报告记录 `git_worktree_dirty=false`、7 份源码 SHA-256、19 次模型响应均报告 `gpt-6-luna`、模型 ID 缺失 0、JSON 解析失败 0。独立复核四题节点集合、引用 ID、业务指标、源码哈希与基线提交，原 M5 报告 SHA-256 保持 `de6943c9e67bc7aa23d58b56b11f623948d0b3ee05c1ca50499d4068c869a608`。真实依赖环境下完整本机 pytest 为 **64 passed**。这些是固定四题的流程验收事实，不能据此声称新题泛化或底层模型权重版本。M5/M5.1 PASS，可以冻结并进入 M6；本轮未实现 M6。
 
 ## 关键实施细节
 
