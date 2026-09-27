@@ -145,6 +145,8 @@ M8 另建专用图与 `agent_jobs`、`run_artifacts`、`m8_reviews`、`m8_public
 
 第一次真实进程验收暴露出认领 lease 早于 BGE/Milvus 初始化，4 秒 lease 在 Planner 前过期；没有生成成功报告。调整为初始化后认领，并从空 M8 演示库重跑。最终 [M8 报告](../evaluation/reports/m8_runner_replay.json)记录：第一个 worker 在 Planner checkpoint 后主动退出，第二个 worker 租约到期接管同一 `run_id/thread_id`（attempt 2），Planner trace 只有一次；初稿进入 `WAITING_APPROVAL`。Reviewer 拒绝并指定只重跑 RAG 后，RAG/Analysis/Verification 版本变为 v2，SQL ID、版本和 SHA-256 均与 v1 完全一致，Planner 与 SQL 专家 trace 未增加。旧 analysis 审批得到 HTTP 409，新版本批准后生成唯一发布回执。恢复、重跑、发布 worker 分别记录 4、3、0 次 `deepseek-flash` 响应；崩溃进程的 Planner 响应未计入。完整本机测试 **78 passed**，其中 M8 PostgreSQL 测试覆盖租约接管、旧 worker 拒绝、同阶段幂等、artifact 篡改检测、RAG 单阶段重跑及版本绑定审批。此为本机验收，不是 CI、性能指标或新题泛化结果。M8 PASS，停在 M8；M9 尚未实现。
 
+补强发布时对 PostgreSQL 实际 `content_json` 的哈希复核后，第一次重新验收在 RAG 定向重跑后的 Verifier 返回 `BLOCK`：其模型调用抛出 `RuntimeError`，图按 fail-closed 规则终止，没有发布，也没有生成新的成功报告。保留该本机失败记录；再次从空演示库运行同一脚本后通过。当前 M8 不实施 M9 的自动故障重试或降级；单次外部模型失败仍会让该 run 结束为 `BLOCK`。
+
 ## 关键实施细节
 
 **M1。** 建表顺序为分支、代理、客户、产品、保单、理赔、赔付；外键、日期、保费/赔款非负约束由迁移定义。生成器将批量记录排序后序列化并计算 hash，配置和生成器版本一并写入 manifest。公开文档 URL 必须从来源页核实，不能只从聊天摘录复制。

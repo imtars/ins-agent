@@ -1,6 +1,7 @@
 """Live M8 acceptance: crash, lease takeover, RAG replay, bound approval."""
 
 import argparse
+import ast
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -14,6 +15,7 @@ import tempfile
 import time
 
 import httpx
+from psycopg import Connection
 
 from scripts.run_m7_demo import DEMO_QUERY
 
@@ -44,7 +46,10 @@ def worker(env: dict, *, crash: bool = False) -> dict:
         return {"exit_code": result.returncode}
     if result.returncode:
         raise RuntimeError(f"worker failed: {result.returncode} {result.stderr[-2500:]}")
-    return {"exit_code": 0, "stdout": result.stdout.strip()}
+    output = ast.literal_eval(result.stdout.strip())
+    if output.get("status") not in {"WAITING_APPROVAL", "COMPLETED"}:
+        raise RuntimeError("worker did not report a completed execution state")
+    return {"exit_code": 0, "result": output}
 
 
 def wait_api(client: httpx.Client, process: subprocess.Popen):
@@ -160,6 +165,13 @@ def main():
                     or final["publication"]["content_hash"] != revised["refs"]["analysis"]["content_hash"]
                     or final["trace"].count("publish") != 1):
                 raise RuntimeError(f"bound publish failed acceptance: {final}")
+            for name, record in (("recovery", recovered_worker),
+                                 ("replay", replay_worker)):
+                ids = record["result"]["model_response_ids"]
+                if not ids or any(item != "deepseek-flash" for item in ids):
+                    raise RuntimeError(f"{name} model provenance is incomplete")
+            if publish_worker["result"]["model_response_ids"]:
+                raise RuntimeError("publish worker unexpectedly called the model")
     finally:
         process.terminate()
         try:
@@ -167,6 +179,28 @@ def main():
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait()
+    with Connection.connect(args.database_url) as conn:
+        artifact_rows = conn.execute("""
+            SELECT stage, array_agg(version ORDER BY version)
+            FROM run_artifacts WHERE run_id = %s GROUP BY stage ORDER BY stage
+        """, (run_id,)).fetchall()
+        review_rows = conn.execute("""
+            SELECT status, cycle, artifact_version FROM m8_reviews
+            WHERE run_id = %s ORDER BY cycle
+        """, (run_id,)).fetchall()
+        publication_rows = conn.execute("""
+            SELECT artifact_id, artifact_version, content_hash
+            FROM m8_publications WHERE run_id = %s
+        """, (run_id,)).fetchall()
+    stage_versions = {stage: versions for stage, versions in artifact_rows}
+    if (stage_versions != {"analysis": [1, 2], "rag": [1, 2],
+                           "sql": [1], "verification": [1, 2]}
+            or review_rows != [("REJECTED", 1, 1), ("APPROVED", 2, 2)]
+            or len(publication_rows) != 1
+            or str(publication_rows[0][0]) != revised["refs"]["analysis"]["artifact_id"]
+            or publication_rows[0][1] != 2
+            or publication_rows[0][2].strip() != revised["refs"]["analysis"]["content_hash"]):
+        raise RuntimeError("PostgreSQL artifact/review/publication rows failed acceptance")
     report = {"generated_at": datetime.now(timezone.utc).isoformat(),
         "base_git_commit": base_commit, "git_worktree_dirty": False,
         "code_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -176,7 +210,10 @@ def main():
         "waiting": waiting, "replay_worker": replay_worker,
         "revised": revised, "publish_worker": publish_worker,
         "final": final, "unauthorized_status": denied.status_code,
-        "stale_approval_status": stale.status_code}
+        "stale_approval_status": stale.status_code,
+        "stage_versions": stage_versions,
+        "review_rows": review_rows,
+        "publication_row_count": len(publication_rows)}
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2,
                                  sort_keys=True) + "\n", encoding="utf-8")
