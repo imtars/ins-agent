@@ -59,8 +59,10 @@ def test_artifact_stage_retry_is_idempotent_and_detects_tampering():
     async def scenario():
         queue = JobQueue(URL)
         artifacts = ArtifactStore(URL)
+        reviews = ReviewStore(URL, artifacts)
         await queue.setup()
         await artifacts.setup()
+        await reviews.setup()
         await isolate_queue()
         run_id = str(uuid4())
         await queue.enqueue(run_id, "START", {"query": "route_rag"})
@@ -81,6 +83,8 @@ def test_artifact_stage_retry_is_idempotent_and_detects_tampering():
         again, _ = await artifacts.load_or_compute(run_id, "analysis", 1,
             adapter, compute, assert_lease=lease)
         assert first == again and calls == 1
+        decision = await reviews.decide(run_id, 1, first, status="APPROVED",
+                                         reviewer_id="reviewer")
         async with await AsyncConnection.connect(URL) as conn:
             await conn.execute("""
                 UPDATE run_artifacts SET content_json = '{"summary":"tampered","claims":[]}'
@@ -88,6 +92,9 @@ def test_artifact_stage_retry_is_idempotent_and_detects_tampering():
             """, (first.artifact_id,))
         with pytest.raises(ArtifactConflict, match="hash mismatch"):
             await artifacts.load(first, adapter)
+        with pytest.raises(PublishGuardViolation, match="analysis changed"):
+            await reviews.publish(run_id, decision, first,
+                VerificationResult(status="PASS", issues=[]))
         await queue.finish(job, "FAILED", "test tamper completed")
     asyncio.run(scenario())
 

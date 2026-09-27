@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from packages.agent.models import VerificationResult
 from packages.persistence.approvals import PublishGuardViolation, psycopg_url
-from packages.persistence.artifacts import ArtifactRef, ArtifactStore
+from packages.persistence.artifacts import ArtifactRef, ArtifactStore, content_hash
 
 
 class ReviewDecision(BaseModel):
@@ -88,11 +88,20 @@ class ReviewStore:
                 or artifact.run_id != run_id or artifact.stage != "analysis"
                 or artifact.generation != cycle):
             raise ValueError("invalid or mismatched review decision")
-        latest = await self.artifacts.latest(run_id, "analysis")
-        if latest != artifact:
-            raise PublishGuardViolation("review target is no longer the current analysis")
         async with await AsyncConnection.connect(self.database_url, row_factory=dict_row) as conn:
             async with conn.transaction():
+                await conn.execute("SELECT pg_advisory_xact_lock(hashtext(%s))",
+                                   (f"{run_id}:analysis",))
+                latest = await (await conn.execute("""
+                    SELECT artifact_id, version, content_hash, content_json
+                    FROM run_artifacts WHERE run_id = %s AND stage = 'analysis'
+                    ORDER BY version DESC LIMIT 1
+                """, (run_id,))).fetchone()
+                if (latest is None or str(latest["artifact_id"]) != artifact.artifact_id
+                        or latest["version"] != artifact.version
+                        or latest["content_hash"].strip() != artifact.content_hash
+                        or content_hash(latest["content_json"]) != artifact.content_hash):
+                    raise PublishGuardViolation("review target is no longer the current analysis")
                 await conn.execute("""
                     INSERT INTO m8_reviews (run_id, cycle, approval_id, status,
                         reviewer_id, comment, revision_targets, artifact_id,
@@ -121,19 +130,22 @@ class ReviewStore:
             raise PublishGuardViolation("publication requires PASS on approved artifact")
         async with await AsyncConnection.connect(self.database_url, row_factory=dict_row) as conn:
             async with conn.transaction():
+                await conn.execute("SELECT pg_advisory_xact_lock(hashtext(%s))",
+                                   (f"{run_id}:analysis",))
                 row = await (await conn.execute("""
                     SELECT * FROM m8_reviews WHERE run_id = %s AND cycle = %s FOR UPDATE
                 """, (run_id, decision.cycle))).fetchone()
                 if row is None or self._decision(row) != decision:
                     raise PublishGuardViolation("decision does not match stored review")
                 current = await (await conn.execute("""
-                    SELECT artifact_id, version, content_hash FROM run_artifacts
+                    SELECT artifact_id, version, content_hash, content_json FROM run_artifacts
                     WHERE run_id = %s AND stage = 'analysis'
                     ORDER BY version DESC LIMIT 1
                 """, (run_id,))).fetchone()
                 if (current is None or str(current["artifact_id"]) != analysis_ref.artifact_id
                         or current["version"] != analysis_ref.version
-                        or current["content_hash"].strip() != analysis_ref.content_hash):
+                        or current["content_hash"].strip() != analysis_ref.content_hash
+                        or content_hash(current["content_json"]) != analysis_ref.content_hash):
                     raise PublishGuardViolation("analysis changed after approval")
                 await conn.execute("""
                     INSERT INTO m8_publications (run_id, approval_id, artifact_id,

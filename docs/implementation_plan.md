@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M7 已冻结；当前实施 M8 worker 与定向重跑，尚未进入 M9。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M8 已通过本机验收；当前停在 M8，尚未进入 M9。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -138,6 +138,12 @@ Verifier 批准前逐条校验 claim 的当前来源 ID：SQL 数字必须在所
 第一轮真实两进程验收使用 M6 的宽泛综合简报题，Verifier 返回 `REVISE`，因此图正确结束而没有进入人工审核，脚本失败且未写报告。checkpoint 显示 Planner 自行把原题扩展出“平均有效保单数”和“等待期例外”两个额外要求，现有 SQL/条款产物未覆盖；这属于回答计划与证据范围问题，不是 checkpoint 故障。M7 验收题现明确限定为三个已有工具可支持的输出：已发生赔付率、按在保保单年计的理赔频率、疾病责任等待期。M7 用它检验持久化/HITL，不把单题成功解释为工作流泛化成绩；失败运行的 checkpoint 仍保留在本机专用库供诊断。
 
 最终从干净源码提交 `82053a57c2581fd2743f1e754bef68dbda332c7d` 运行真实 DeepSeek、M4 MCP、PostgreSQL reader 与 Milvus/BGE：第一个独立 Uvicorn 进程完成 `REPORT → SQL/RAG → Synthesis → Verifier PASS`，在 `human_review` 中断，返回 `WAITING_APPROVAL`。实际停止该进程后启动第二个进程，按相同 `thread_id` 读回原 checkpoint 和 trace；无效审核 token 得到 HTTP 403，合法 reviewer 批准后 `Command(resume)` 到达 `publish`，状态为 `PUBLISHED`。第二个进程在恢复前后模型响应计数均为 0，trace 中 `human_review` 和 `publish` 各一次，数据库只有 1 条匹配的 approval 和 publication。首次进程 5 次模型响应均报告 `deepseek-flash`，model ID 缺失 0。独立复核 [M7 报告](../evaluation/reports/m7_durable_demo.json)中的 7 份源码哈希、checkpoint 状态、数据库回执与历史 M6 报告哈希；完整本机测试为 **75 passed**，包括真实 PostgreSQL checkpoint、伪造 resume/reviewer、非 PASS、直接 publish、拒绝审核和幂等重试测试。M7 PASS，可冻结并进入 M8；本轮不实现 M8。
+
+## M8 验收记录（2026-09-27）
+
+M8 另建专用图与 `agent_jobs`、`run_artifacts`、`m8_reviews`、`m8_publications`，保留 M7 历史路径。`agent_jobs` 使用 `FOR UPDATE SKIP LOCKED` 和有时限的 lease；worker 在知识服务初始化完成后认领 job，执行期间续租。checkpoint 只保存引用，artifact 按 `(run_id, stage, generation)` 幂等写入，实际内容使用规范化 JSON 的 SHA-256 核验。每个拒绝并重跑的审核轮次增加 generation 与 stage version。审批和发布均绑定当前 analysis 的 ID、版本与哈希。图继续经 M4 ClientGroup 调用 SQL/RAG 工具，Synthesis/Verifier 无工具权限。
+
+第一次真实进程验收暴露出认领 lease 早于 BGE/Milvus 初始化，4 秒 lease 在 Planner 前过期；没有生成成功报告。调整为初始化后认领，并从空 M8 演示库重跑。最终 [M8 报告](../evaluation/reports/m8_runner_replay.json)记录：第一个 worker 在 Planner checkpoint 后主动退出，第二个 worker 租约到期接管同一 `run_id/thread_id`（attempt 2），Planner trace 只有一次；初稿进入 `WAITING_APPROVAL`。Reviewer 拒绝并指定只重跑 RAG 后，RAG/Analysis/Verification 版本变为 v2，SQL ID、版本和 SHA-256 均与 v1 完全一致，Planner 与 SQL 专家 trace 未增加。旧 analysis 审批得到 HTTP 409，新版本批准后生成唯一发布回执。恢复、重跑、发布 worker 分别记录 4、3、0 次 `deepseek-flash` 响应；崩溃进程的 Planner 响应未计入。完整本机测试 **78 passed**，其中 M8 PostgreSQL 测试覆盖租约接管、旧 worker 拒绝、同阶段幂等、artifact 篡改检测、RAG 单阶段重跑及版本绑定审批。此为本机验收，不是 CI、性能指标或新题泛化结果。M8 PASS，停在 M8；M9 尚未实现。
 
 ## 关键实施细节
 

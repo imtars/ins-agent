@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M7 已完成本机验收；M8 待真实进程验收**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M8 增加本机 worker 与定向重跑，完整 API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M8 已完成本机验收**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M8 增加本机 worker 与定向重跑，完整 API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -165,6 +165,8 @@ uv run --locked python -m scripts.run_m8_demo
 ```
 
 脚本在干净源码提交上启动独立 API/worker 进程，故意让第一个 worker 在 Planner checkpoint 后退出，等租约到期后由另一个 worker 接管；随后拒绝并只重跑 RAG，验证 SQL 引用完全一致，再批准当前 analysis 并验证发布回执。只有全部断言通过才写 [M8 本机报告](evaluation/reports/m8_runner_replay.json)。`M8_TEST_DATABASE_URL` 应指向专用测试数据库，完整 pytest 中的 M8 集成测试会清理其中遗留的活跃测试作业。
+
+本机真实进程验收中，崩溃前已保存 Planner checkpoint；接管者以同一 run/thread 的第 2 次 attempt 执行。RAG、Analysis、Verification 进入 v2，SQL 仍为同一 v1 引用和 SHA-256。旧版本审批得到 HTTP 409，当前版本获批后只写一条发布回执。恢复、重跑、发布三个 worker 进程分别记录 4、3、0 次 `deepseek-flash` 响应；崩溃进程的 Planner 响应没有写入报告，不能计入这些数字。完整本机 pytest 为 **78 passed**，不是 CI 结果。
 
 ## 设计文档
 
