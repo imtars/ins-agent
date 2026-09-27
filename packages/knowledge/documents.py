@@ -92,8 +92,8 @@ def parse_and_chunk(source: RegisteredSource) -> list[dict]:
     if not source.path.is_file() or file_sha256(source.path) != source.sha256:
         raise ValueError(f"source missing or SHA-256 mismatch: {source.doc_id}")
     chunks = []
+    section = "前言"
     for page, lines in _pages(source):
-        section = "前言"
         body = []
 
         def flush() -> None:

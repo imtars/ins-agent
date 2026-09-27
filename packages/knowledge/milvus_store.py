@@ -1,6 +1,7 @@
 """BGE-M3 dense/sparse vectors in Milvus 2.6 with explicit collection schemas."""
 
 from datetime import datetime, timezone
+from importlib.metadata import version
 import json
 from pathlib import Path
 
@@ -15,6 +16,13 @@ KNOWLEDGE_COLLECTION = "insurance_knowledge"
 MAX_INDEX_CHARS = 1800
 MAX_MODEL_TOKENS = 512
 VECTOR_DIM = 1024
+SCHEMA_VERSION = 1
+INDEX_CONFIG = {
+    "dense": {"index_type": "HNSW", "metric_type": "COSINE",
+              "params": {"M": 16, "efConstruction": 200}},
+    "sparse": {"index_type": "SPARSE_INVERTED_INDEX", "metric_type": "IP",
+               "params": {"drop_ratio_build": 0.0}},
+}
 
 
 def index_text(value: str) -> str:
@@ -65,10 +73,9 @@ def create_collection(store: MilvusClient, name: str) -> None:
     schema.add_field(field_name="dense_vector", datatype=DataType.FLOAT_VECTOR, dim=VECTOR_DIM)
     schema.add_field(field_name="sparse_vector", datatype=DataType.SPARSE_FLOAT_VECTOR)
     indexes = store.prepare_index_params()
-    indexes.add_index(field_name="dense_vector", index_type="HNSW", metric_type="COSINE",
-                      params={"M": 16, "efConstruction": 200})
-    indexes.add_index(field_name="sparse_vector", index_type="SPARSE_INVERTED_INDEX",
-                      metric_type="IP", params={"drop_ratio_build": 0.0})
+    for field, settings in (("dense_vector", INDEX_CONFIG["dense"]),
+                            ("sparse_vector", INDEX_CONFIG["sparse"])):
+        indexes.add_index(field_name=field, **settings)
     store.create_collection(collection_name=name, schema=schema, index_params=indexes)
 
 
@@ -105,14 +112,22 @@ def index_jsonl(store: MilvusClient, model, name: str, corpus: Path,
                 "model_weights_sha256": next(item["sha256"] for item in model_manifest["files"]
                                              if item["filename"] == "pytorch_model.bin"),
                 "max_index_chars": MAX_INDEX_CHARS,
-                "max_model_tokens": MAX_MODEL_TOKENS}
+                "max_model_tokens": MAX_MODEL_TOKENS,
+                "schema_version": SCHEMA_VERSION,
+                "vector_dim": VECTOR_DIM,
+                "index_config": INDEX_CONFIG,
+                "index_code_sha256": file_sha256(Path(__file__)),
+                "model_files_sha256": {item["filename"]: item["sha256"]
+                                        for item in model_manifest["files"]},
+                "encoder_dependencies": {name: version(name) for name in
+                                         ("FlagEmbedding", "transformers", "torch")}}
     exists = store.has_collection(name)
     if exists and not rebuild:
         if not marker_path.is_file():
             raise ValueError(f"collection {name} exists without matching index marker")
         marker = json.loads(marker_path.read_text(encoding="utf-8"))
         if any(marker.get(key) != value for key, value in expected.items()):
-            raise ValueError(f"collection {name} does not match current corpus/model")
+            raise ValueError(f"collection {name} does not match current corpus/model/index code and config")
         if int(store.get_collection_stats(name)["row_count"]) != marker["row_count"]:
             raise ValueError(f"collection {name} row count changed")
         store.load_collection(name)

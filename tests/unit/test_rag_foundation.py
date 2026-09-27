@@ -5,6 +5,7 @@ import pytest
 
 from evaluation.rag.dataset import normalize_text, prepare, stable_id
 from evaluation.rag.run import metrics, rrf
+from packages.knowledge import documents, milvus_store
 from packages.knowledge.documents import RegisteredSource, parse_and_chunk, registered_sources
 
 
@@ -36,7 +37,9 @@ def test_multi_positive_recall_and_rrf_use_only_ranked_ids():
     row = {"query_id": "q", "positive_ids": ["a", "b"]}
     ranked = {"q": ["x", "a", "b"]}
     assert metrics([row], ranked) == {"Recall@1": 0.0, "Recall@5": 1.0,
-                                      "Recall@10": 1.0, "MRR@10": 0.5}
+                                      "Recall@10": 1.0, "MRR@10": 0.5,
+                                      "Hit@10": 1.0}
+    assert metrics([row], {"q": ["x"]})["Hit@10"] == 0.0
     dense = [{"id": "a"}, {"id": "b"}]
     sparse = [{"id": "b"}, {"id": "c"}]
     assert [hit["id"] for hit in rrf(dense, sparse)] == ["b", "a", "c"]
@@ -62,3 +65,73 @@ def test_document_allowlist_excludes_generator_manifest_and_preserves_citation(t
     path.write_text("changed", encoding="utf-8")
     with pytest.raises(ValueError, match="SHA-256 mismatch"):
         parse_and_chunk(source)
+
+
+def test_pdf_page_continuation_keeps_previous_section(tmp_path, monkeypatch):
+    path = tmp_path / "policy.pdf"
+    path.write_bytes(b"fixture")
+    source = RegisteredSource("policy", path, "示范条款", "public_consultation_draft",
+                              "source", "https://example.org/policy", None,
+                              documents.file_sha256(path))
+    monkeypatch.setattr(documents, "_pages", lambda _: iter([
+        (1, ["第一条 保险责任", "AAA"]),
+        (2, ["BBB", "第二条 责任免除", "CCC"]),
+    ]))
+    chunks = parse_and_chunk(source)
+    assert [(chunk["page"], chunk["section"], chunk["text"]) for chunk in chunks] == [
+        (1, "第一条 保险责任", "AAA"),
+        (2, "第一条 保险责任", "BBB"),
+        (2, "第二条 责任免除", "CCC"),
+    ]
+
+
+def test_existing_milvus_index_reuse_requires_config_and_code_hash(tmp_path, monkeypatch):
+    corpus = tmp_path / "corpus.jsonl"
+    corpus.write_text('{"text":"fixture"}\n', encoding="utf-8")
+    manifest = tmp_path / "model.json"
+    manifest.write_text(json.dumps({"revision": "test-revision", "files": [
+        {"filename": "pytorch_model.bin", "sha256": "weights-sha"}]}), encoding="utf-8")
+    monkeypatch.setattr(milvus_store, "MODEL_MANIFEST", manifest)
+
+    class ExistingStore:
+        def has_collection(self, name):
+            return True
+
+        def get_collection_stats(self, name):
+            return {"row_count": 1}
+
+        def load_collection(self, name):
+            pass
+
+    marker = {
+        "collection": "test_index",
+        "corpus_sha256": milvus_store.file_sha256(corpus),
+        "model_revision": "test-revision", "model_weights_sha256": "weights-sha",
+        "max_index_chars": milvus_store.MAX_INDEX_CHARS,
+        "max_model_tokens": milvus_store.MAX_MODEL_TOKENS,
+        "schema_version": milvus_store.SCHEMA_VERSION,
+        "vector_dim": milvus_store.VECTOR_DIM,
+        "index_config": milvus_store.INDEX_CONFIG,
+        "index_code_sha256": milvus_store.file_sha256(Path(milvus_store.__file__)),
+        "model_files_sha256": {"pytorch_model.bin": "weights-sha"},
+        "encoder_dependencies": {name: milvus_store.version(name) for name in
+                                 ("FlagEmbedding", "transformers", "torch")},
+        "row_count": 1,
+    }
+    marker_path = tmp_path / "test_index_index.json"
+    marker_path.write_text(json.dumps(marker), encoding="utf-8")
+    assert milvus_store.index_jsonl(ExistingStore(), None, "test_index", corpus,
+                                   benchmark=True) == marker
+
+    marker["index_config"] = {"dense": {"index_type": "FLAT"}}
+    marker_path.write_text(json.dumps(marker), encoding="utf-8")
+    with pytest.raises(ValueError, match="index code and config"):
+        milvus_store.index_jsonl(ExistingStore(), None, "test_index", corpus,
+                                benchmark=True)
+
+    marker["index_config"] = milvus_store.INDEX_CONFIG
+    marker["index_code_sha256"] = "old-code-hash"
+    marker_path.write_text(json.dumps(marker), encoding="utf-8")
+    with pytest.raises(ValueError, match="index code and config"):
+        milvus_store.index_jsonl(ExistingStore(), None, "test_index", corpus,
+                                benchmark=True)

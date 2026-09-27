@@ -28,6 +28,7 @@ def metrics(rows: list[dict], rankings: dict[str, list[str]]) -> dict:
         raise ValueError("rankings and holdout query IDs differ")
     totals = {1: 0.0, 5: 0.0, 10: 0.0}
     reciprocal = 0.0
+    hit_at_10 = 0
     for row in rows:
         gold = set(row["positive_ids"])
         if not gold:
@@ -39,11 +40,13 @@ def metrics(rows: list[dict], rankings: dict[str, list[str]]) -> dict:
             totals[k] += len(gold.intersection(ranked[:k])) / len(gold)
         reciprocal += next((1 / rank for rank, passage_id in enumerate(ranked[:10], 1)
                             if passage_id in gold), 0.0)
+        hit_at_10 += bool(gold.intersection(ranked[:10]))
     n = len(rows)
     if n == 0:
         raise ValueError("empty holdout")
     return {"Recall@1": totals[1] / n, "Recall@5": totals[5] / n,
-            "Recall@10": totals[10] / n, "MRR@10": reciprocal / n}
+            "Recall@10": totals[10] / n, "MRR@10": reciprocal / n,
+            "Hit@10": hit_at_10 / n}
 
 
 def _search(store, vector: dict, field: str) -> list[dict]:
@@ -148,7 +151,7 @@ def run(uri: str, rebuild: bool = False) -> dict:
         "rrf_k": RRF_K,
         "rerank_input": "hybrid RRF top 20",
         "rerank_output": "top 10",
-        "metric_definition": "Macro mean of per-query fraction of all positive IDs found at k; MRR@10 uses the first positive ID and zero beyond rank 10.",
+        "metric_definition": "Recall@k is the macro mean of the per-query fraction of all positive IDs found at k. MRR@10 uses the first positive ID and zero beyond rank 10. Hit@10 is the fraction of queries with at least one positive ID in the top 10.",
         "caveats": ["Source is labeled retriever training data, not an official test split.",
                     "The 256-query holdout is selected by a fixed hash rule; remaining queries are development data.",
                     "Corpus includes all unique positive and negative passages from all source rows; a passage can be positive for one query and negative for another.",
@@ -173,12 +176,13 @@ def run(uri: str, rebuild: bool = False) -> dict:
                     encoding="utf-8")
     lines = ["# Insur-QA 本地 holdout 检索消融", "",
              f"查询数：{len(holdout)}；完整去重语料：{dataset['unique_passages']} passages。", "",
-             "| Pipeline | Recall@1 | Recall@5 | Recall@10 | MRR@10 |",
-             "| --- | ---: | ---: | ---: | ---: |"]
+             "| Pipeline | Recall@1 | Recall@5 | Recall@10 | MRR@10 | Hit@10 |",
+             "| --- | ---: | ---: | ---: | ---: | ---: |"]
     for mode in MODES:
         values = result[mode]
         lines.append(f"| {mode} | {values['Recall@1']:.4f} | {values['Recall@5']:.4f} | "
-                     f"{values['Recall@10']:.4f} | {values['MRR@10']:.4f} |")
+                     f"{values['Recall@10']:.4f} | {values['MRR@10']:.4f} | "
+                     f"{values['Hit@10']:.4f} |")
     lines.extend(["", "数字由 `python -m evaluation.rag.run` 实际生成；限制与参数见同名 JSON。", ""])
     (REPORT_DIR / "rag_ablation.md").write_text("\n".join(lines), encoding="utf-8")
     readme_path = Path("README.md")
