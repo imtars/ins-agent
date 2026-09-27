@@ -20,7 +20,7 @@ InsQABench Clause QA 的已选段落不能冒充开放检索的 Recall@k 评测�
 
 M3 casebook 目前固定为 110 题：100 题可回答、5 题不可回答、5 题不安全请求。参考 SQL 模板独立于 Agent 输出，先验证数据库与 M1 synthetic manifest 的逐表哈希，再执行参考 SQL 写入静态 `expected_result`；`tests/sql/test_gold_cases.py` 用原始合成记录在 Python 中独立计算全部 110 题的预期结果。Agent 只接收问题与数据库 schema，不读取参考 SQL 或期望结果。精确数值按容差比较，需排序的 top-N 题严格比较顺序。修复最多两次，报告同时展示首轮准确率与修复后准确率，不以修复成功掩盖首轮错误。
 
-季度口径：保单区间 `[start_date,end_date)` 与季度区间重叠的天数为在保暴露天数；`annual_premium × overlap_days / 365` 为已赚保费。已发生赔款按 `claim_date` 落入季度、且状态为 settled/open 的 `claim_amount` 合计；拒赔金额不作为已发生赔款。现金赔付按 `payment_date` 单独统计。库中没有条款等待期的结构化字段，SQL 阶段的在保暴露不能冒称为扣等待期的可出险暴露。真实模型评测缺少凭据时不生成指标。
+季度口径：保单区间 `[start_date,end_date)` 与季度区间重叠的天数为在保暴露天数；`annual_premium × overlap_days / 365` 为已赚保费。已发生赔款按 `claim_date` 落入季度、且状态为 settled/open 的 `claim_amount` 合计；拒赔金额不作为已发生赔款。现金赔付按 `payment_date` 单独统计。库中没有条款等待期的结构化字段，SQL 阶段的在保暴露不能冒称为扣等待期的可出险暴露。真实评测使用本机 CLIProxyAPI 的 `gpt-6-luna`，110 题完整结果及源码哈希见 [SQL 评测报告](../evaluation/reports/sql_evaluation.json)。100 道可回答题中 85 道结果正确；15 道错误分别为分组排名 10、季度赔付率 4、赔付汇总 1。该题本已用于错误分析，后续若改提示词或实现，应另设未接触的新题本检验泛化。服务端模型版本未固定，因此不能保证跨时逐字节复现。
 
 ## 工作流（M5–M9）
 

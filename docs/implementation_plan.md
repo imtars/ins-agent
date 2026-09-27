@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M2 RAG 检索与评测已冻结；当前进入 M3 SQL 阶段，但真实模型评测仍未验收。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M2 RAG 检索与评测已冻结；M3 SQL 阶段已实际验收，尚未进入 M4。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 
 `evaluation/sql/cases.yaml` 由手工设计的参考查询模板及固定数据库实际结果生成，共 110 题，覆盖过滤、聚合、多表连接、日期区间、分组排名、嵌套聚合和季度赔付率；100 题可回答，5 题不可回答，5 题不安全请求。生成前逐表核对 M1 manifest 哈希；实际运行 `python -m evaluation.sql.run --check-gold` 校验全部静态结果；独立 Python oracle 对全部 110 题复核通过。casebook SHA-256 为 `704f344bc6f07b1630c075750eceaf17250fedb0833c8fe58f83df42be5668f6`。季度已赚保费使用在保天数 / 365；已发生赔款排除 denied，赔付现金按付款日另算。当前 SQL 业务表没有结构化等待期，因此在保暴露指标不能声称是等待期后可出险暴露。
 
-真实 DeepSeek SQL 生成、两次修复上限与逐题执行结果评测的代码已就位；但本机当前没有 `DEEPSEEK_API_KEY`。实际执行 `python -m evaluation.sql.run` 明确失败，且没有生成 `sql_evaluation.json`；不能宣称模型结果准确率或 M3 PASS。完整测试在 M1 数据、下载文件、Milvus 与 M3 reader 环境变量齐备时为 **38 passed**。M3 需补真实 110 题模型运行与报告验收后才能进入 M4。
+在干净源码提交 `0a59370` 上，以本机 CLIProxyAPI 的 `gpt-6-luna` 执行 `python -m evaluation.sql.run --provider proxy`，全部 110 题实际完成，报告记录 `git_worktree_dirty=false`、题本和源码哈希及逐题尝试。100 道可回答题执行成功 100/100，结果正确 85/100，首轮正确 85/100；5 道不可回答题及 5 道危险请求均拒绝。没有任何修复尝试，修复成功率为 `null`，不能宣称修复效果。15 道结果错误集中在分组排名 10、季度赔付率 4、赔付汇总 1；没有在看过这些错误后修改提示词并重跑同一题本。独立核对报告的 110 个 ID、分母、指标、题本和源码 SHA-256 均通过；`--check-gold` 再次验证 110 题；完整测试在 M1 数据、下载文件、Milvus 与 M3 reader 环境变量齐备时为 **41 passed**。DeepSeek 备用 key 未使用，故本次指标仅代表 CLIProxyAPI 路由的 Luna。服务端模型版本未锁定，跨时结果可能变化。规格未规定最低准确率门槛；按所列真实结果、权限和测试验收，**M3 PASS，可以进入 M4**，本轮停在 M3。
 
 ## 关键实施细节
 

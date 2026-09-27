@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M2 已冻结，M3 SQL 阶段正在验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融，以及 SQL 只读执行与固定 gold case。M3 的真实模型生成评测尚缺 API Key；MCP、Graph、API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M2 已冻结，M3 SQL 阶段已完成验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融，以及 SQL 只读执行与固定 gold case。M3 的 110 题真实模型评测已运行；MCP、Graph、API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -86,13 +86,13 @@ M3_TEST_READER_DATABASE_URL="$M3_READER_DATABASE_URL" uv run --locked pytest -q 
 
 `cases.yaml` 含 110 条固定问题（100 条可回答、5 条不可回答、5 条不安全请求）及由独立参考查询产生的期望结果；测试另用 Python 对全部 gold 结果进行独立计算。reader 只获 7 张业务表的 SELECT 权限；执行器还要求单条 SELECT、业务表白名单、函数白名单、只读事务、5 秒超时和最多 200 行。季度已赚保费按保单在季度内的有效天数占 365 天的比例计算；已发生赔款排除拒赔，赔付现金按付款日期另计。`claims_per_in_force_policy_year` 使用在保天数，不能称为扣除等待期后的可出险频率。
 
-真实 SQL Agent 评测需要在本机 `.env` 配置 `DEEPSEEK_API_KEY`，然后执行：
+真实 SQL Agent 评测优先连接本机 CLIProxyAPI（默认读取 `~/.cli-proxy-api/config.yaml` 的端口及 API key），固定使用 `gpt-6-luna`。`--provider auto` 在启动前发现本机服务不可用时才使用 `.env` 中的 `DEEPSEEK_API_KEY` 或 `/home/xubei/projects/jobs/dsv4_key` 首行；一次评测不会中途换模型。也可显式使用 `--provider proxy` 或 `--provider deepseek`。密钥不会写入报告。
 
 ```bash
-uv run --locked python -m evaluation.sql.run
+uv run --locked python -m evaluation.sql.run --provider proxy
 ```
 
-缺少 Key 或服务失败时不会产生成功率报告。当前尚未实际完成该评测，**不能宣称 M3 PASS 或 SQL Agent 成功率**。SQL 结果评测不比对 SQL 字符串，单列执行成功率、结果准确率、首轮准确率、拒绝率和修复成功率；逐题保留尝试记录。
+本机 CLIProxyAPI + `gpt-6-luna` 已真实运行全部 110 题：[逐题报告](evaluation/reports/sql_evaluation.json)记录 100 道可回答题全部执行成功、85 道结果正确（85%），以及 5 道不可回答题和 5 道危险请求全部拒绝。没有触发修复，修复成功率为 `null`。SQL 结果评测不比对 SQL 字符串，单列执行成功率、结果准确率、首轮准确率、拒绝率和修复成功率；逐题保留尝试记录。模型服务的实际版本可能变化，报告中的结果属于该次调用，不能视为固定权重的跨时复现成绩。
 
 ## 设计文档
 
