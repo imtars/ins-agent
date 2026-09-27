@@ -1,6 +1,6 @@
 # M6 handoff contracts
 
-M6 仍是单进程、内存图。`packages/agent/contracts.py` 的 `NODE_CONTRACTS` 为主图和两个子图的每个节点声明 `requires`、`optional`、`produces`、Pydantic 输入/输出 schema 与上游节点。构图时比较注册表与实际节点，检查必需字段有类型匹配的上游 producer，特别检查 Verifier 消费 `AnalysisResult`。未建的 publish 节点及 `ApprovalResult` 属于 M7，当前注册表不伪造它们。
+M6 基线是单进程、内存图。`packages/agent/contracts.py` 的 `NODE_CONTRACTS` 为主图和两个子图的每个节点声明 `requires`、`optional`、`produces`、Pydantic 输入/输出 schema 与上游节点。构图时比较注册表与实际节点，检查必需字段有类型匹配的上游 producer，特别检查 Verifier 消费 `AnalysisResult`。M7 的持久化模式另加 `DURABLE_NODE_CONTRACTS`，注册 `human_review` 与 `publish`，并检查 publish 的唯一前驱及 `ApprovalResult` 输入；非持久化模式仍沿用原注册集合。
 
 | 节点 | 必需输入 | 输出 |
 | --- | --- | --- |

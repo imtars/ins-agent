@@ -1,4 +1,4 @@
-"""Validated role, tool, and evidence outputs for the in-memory workflow."""
+"""Validated role, tool, evidence, and approval outputs for the workflow."""
 
 import hashlib
 import operator
@@ -223,6 +223,20 @@ class VerificationResult(RoleOutput):
         return value.upper() if isinstance(value, str) else value
 
 
+class ApprovalResult(RoleOutput):
+    run_id: str
+    approval_id: str
+    status: Literal["APPROVED", "REJECTED"]
+    reviewer_id: str = Field(min_length=1)
+    comment: str = ""
+
+
+class PublicationReceipt(RoleOutput):
+    run_id: str
+    approval_id: str
+    content_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 class RunState(TypedDict, total=False):
     run_id: str
     user_query: str
@@ -231,6 +245,8 @@ class RunState(TypedDict, total=False):
     rag_results: list[RagArtifact]
     analysis: AnalysisResult
     verification: VerificationResult
+    approval: ApprovalResult
+    publication: PublicationReceipt
     status: str
     trace: Annotated[list[str], operator.add]
 

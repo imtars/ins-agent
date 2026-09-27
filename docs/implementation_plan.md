@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M5.1 已冻结；M6 handoff contract 已在本机实际验收，尚未进入 M7。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M6 已冻结；当前实施 M7 持久化与 HITL，尚未进入 M8。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -126,6 +126,14 @@ Verifier 批准前逐条校验 claim 的当前来源 ID：SQL 数字必须在所
 随后简报单题还暴露 Planner 过度拆分：一次生成 6 个 SQL task、4 个 RAG task，超出问题本身所需，并使 Synthesis 生成没有业务数字的 SQL claim。Planner 现在要求合并单个分析工具可返回的相关指标，每个分支最多两个 task，超限时最多修正一次。Synthesis 对确定性证据检查失败也最多修正一次，只可引用同一批产物；仍失败则由原 Verifier 校验返回 `BLOCK`，不会放宽数值或引用规则。两条界限有确定性测试。
 
 最终从干净基线 `8c3639ef69700c4045314001bc5d4286f2f7ff76` 连续执行四条真实 DeepSeek 路径：SQL `1 SQL / 0 RAG`、RAG `0 / 1`、BOTH `1 / 1`、REPORT `2 / 2`，四条均 `PASS`，每条只经过一次 Synthesis 和 Verifier，确定性 evidence issues 全部为空。报告记录 `git_worktree_dirty=false`、10 个节点的输入/输出 schema hash、8 份源码 SHA-256、20 次模型调用均报告 `deepseek-flash`，model ID 缺失 0、JSON 解析失败 0；独立复算源码与 schema hash、逐题证据校验均吻合。完整本机真实依赖 pytest 为 **72 passed**。这是固定四题的本机流程与契约验收，不是 CI 或新题泛化成绩。M6 PASS，可冻结并进入 M7；本轮未实现 M7。
+
+## M7 PostgreSQL checkpoint、人工审核与发布保护
+
+持久化模式在原 M5/M6 图的 Verifier 后增加 `human_review` 和 `publish`；只有 Verifier `PASS` 才进入 `interrupt()`，其余状态直接结束。图使用 `AsyncPostgresSaver`，`run_id` 是 UUID 并在 Planner、审核、发布节点强制等于 `thread_id`。重启后的服务重新构建同一图，并用同一线程的 `Command(resume={"approval_id": ...})` 恢复；无需重跑 Planner/SQL/RAG/Synthesis/Verifier。原非持久化图及 M6 报告保留。
+
+审核决定写入独立 PostgreSQL 数据库的 `agent_approvals`，唯一键为 `run_id`；`human_review` 在恢复时核对数据库决定和 resume ID。`publish` 是唯一后继，运行时再次检查 Verifier `PASS`、`ApprovalResult`、数据库 reviewer 与审批 ID，并以 `run_id` 为幂等键写入 `agent_publications`，同一内容重复执行返回同一回执。checkpoint 序列化只允许项目实际用到的状态模型。审批表和发布表由 M7 初始化过程创建，业务 M1 数据库不增加表。
+
+`apps/api/m7.py` 仅提供绑定本机的创建、查询、审核入口，审核身份由服务端固定 reviewer ID 与独立 token 确定；它不是 M10 的 JWT/RBAC 公共 API。M7 不提供后台 worker、作业 lease、版本化 artifact、定向重跑或前端。拒绝审核只结束为 `REJECTED`，对应的重跑路由留给 M8。真实进程重启验收脚本与本机 PostgreSQL 集成测试须证明：暂停后新 API 进程能读原 checkpoint；无 token、伪造 resume、伪造 reviewer、非 PASS 和直接 publish 均被拒；批准后只生成一次发布回执。
 
 ## 关键实施细节
 

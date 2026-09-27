@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M5.1 已冻结，M6 handoff contract 已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和单进程 Agent 图。API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M6 已冻结，M7 持久化与人工审核正在验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和单进程 Agent 图。M7 仅增加本地审核控制入口，完整 API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -120,7 +120,7 @@ uv run --locked python -m scripts.run_m5_demo --provider proxy
 
 ## M6 Handoff contract
 
-每个图节点在执行前后校验注册的 Pydantic 输入/输出模型。M4 SQL/知识工具返回也按类型和来源元数据校验；缺字段、类型错误或无效工具返回触发 `ContractViolation`，下游节点不会运行。Planner 的格式/任务拆分及 Synthesis 的证据草稿各最多修正一次，最终仍必须通过原契约。Synthesis 根据产物来源确定性地标注合成数据或公开草案；Verifier 批准前逐条检查 SQL 数字与被引产物、RAG 原文引文与当前 evidence。完整规则及其语义限制见 [M6 契约说明](docs/handoff_contracts.md)。当前仍无 checkpoint、审批或持久化运行状态。
+每个图节点在执行前后校验注册的 Pydantic 输入/输出模型。M4 SQL/知识工具返回也按类型和来源元数据校验；缺字段、类型错误或无效工具返回触发 `ContractViolation`，下游节点不会运行。Planner 的格式/任务拆分及 Synthesis 的证据草稿各最多修正一次，最终仍必须通过原契约。Synthesis 根据产物来源确定性地标注合成数据或公开草案；Verifier 批准前逐条检查 SQL 数字与被引产物、RAG 原文引文与当前 evidence。完整规则及其语义限制见 [M6 契约说明](docs/handoff_contracts.md)。M6 历史验收使用非持久化图；M7 才启用 checkpoint 与审核。
 
 在 M5 所需真实依赖可用时运行四题 M6 验收：
 
@@ -131,6 +131,21 @@ M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-l
 该脚本只在四题均 `PASS` 且所有 claim 的确定性证据检查通过后生成 [M6 本机报告](evaluation/reports/m6_contract_demo.json)；原 M5/M5.1 报告不覆盖。本机 CLIProxyAPI 当前返回 429，因此 M6 使用此前配置的 DeepSeek 备用 key；JSON 请求显式设置 `reasoning_effort=high`，并给 DeepSeek 至少 8,192 token 的输出上限。设齐上述测试依赖变量后，`uv run --locked pytest -q` 执行完整本机测试。
 
 本次从干净提交连续验收结果：SQL、RAG、BOTH、REPORT 四路全部 `PASS`，确定性证据问题均为空；DeepSeek 返回 20 次 `deepseek-flash` model ID，缺失 0、JSON 解析失败 0。完整本机真实依赖测试为 **72 passed**。这些是本机验收结果，不是 CI 或新题泛化成绩。
+
+## M7 PostgreSQL checkpoint 与人工审核
+
+持久化模式在 Verifier `PASS` 后暂停于 `human_review`。同一 UUID 同时用作 `run_id` 与 LangGraph `thread_id`；审批记录与幂等发布回执写入独立的 M7 PostgreSQL 数据库，M1 业务库保持只读。M7 本机控制 API 有 `POST /runs`、`GET /runs/{run_id}` 和 `POST /runs/{run_id}/review`；审核请求要求服务端设置的 reviewer 身份及 `X-Review-Token`。这是本机验收入口，尚无 M10 的 JWT/RBAC、公开部署、worker、定向重跑或前端。
+
+已有 M1/M2/M4 真实依赖可用时，创建单独的 checkpoint 数据库并运行自动的两进程验收：
+
+```bash
+docker compose exec -T postgres createdb -U insurance_app insurance_m7_demo
+export M7_CHECKPOINT_DATABASE_URL='postgresql://insurance_app:change-me-local-only@127.0.0.1:5432/insurance_m7_demo'
+export M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_demo'
+uv run --locked python -m scripts.run_m7_demo --provider deepseek
+```
+
+脚本启动第一个独立 API 进程，真实执行综合简报直到 `WAITING_APPROVAL`，停止进程，再启动第二个进程读取相同 checkpoint、拒绝无效审核 token、批准并确认 `PUBLISHED` 与唯一发布回执。成功后写入 [M7 本机报告](evaluation/reports/m7_durable_demo.json)，失败不会写成功报告。`M7_TEST_DATABASE_URL` 指向同一类独立数据库时，完整 pytest 也执行 PostgreSQL checkpoint/guard 集成测试；未设置则跳过该测试。
 
 ## 设计文档
 
@@ -143,6 +158,7 @@ M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-l
 - [原 M5 本机 demo 报告](evaluation/reports/m5_demo.json)
 - [M6 契约说明](docs/handoff_contracts.md)
 - [M6 本机报告](evaluation/reports/m6_contract_demo.json)
+- [M7 本机报告](evaluation/reports/m7_durable_demo.json)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)

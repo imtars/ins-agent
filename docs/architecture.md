@@ -43,10 +43,10 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-上面的持久化、审批与发布流程描述目标架构。当前 M5/M6 实现单进程、内存态主图：Planner 选择 SQL、RAG、BOTH、REPORT；SQL/RAG 子图分别由 Data Analyst/Knowledge Researcher 运行，混合路径并行后合流；Synthesis 仅消费结果，Verification 给出结论。两个专家角色只通过 M4 `ClientGroup` 调用命名空间工具，Graph 没有直连 `packages/sql` 或 `packages/knowledge`；Data Analyst 从该组的 `list_tools()` 读取实际输入 schema。M6 的 `NodeContract` 注册表在每个节点前后验证 Pydantic schema，并核对 producer/consumer。`RunState` 暂存本次结果与 trace；没有 checkpoint、数据库 run artifact、worker、HITL、API 和前端。M1–M5.1 的数据、检索、SQL、MCP 与图流程验收保持冻结。
+当前已实现 M7 持久化模式：原 M5/M6 主图和两个 MCP 专家边界保持不变；仅在 Verifier `PASS` 后进入 `human_review`，以 PostgreSQL checkpoint 保存中断位置，由同一 `run_id/thread_id` 恢复到审核决定和受保护的 publish 节点。审批决定与幂等发布回执存在独立 PostgreSQL 表，不存进 M1 业务数据库；checkpoint 不充当作业队列。M7 checkpoint 目前仍保存 M6 的完整 SQL/RAG 状态，目标架构中的小型引用和版本化 `run_artifacts` 留给 M8。最小本机 API 仅供 M7 进程重启验收，使用服务端 reviewer 身份和 token。完整 JWT/RBAC、worker/lease、版本化 run artifact、定向重跑和前端尚未实现，分别属于 M8/M10。M0–M6 历史验收保持冻结。
 
 ## 后续待验证的工程问题
 
 - M3 后续质量判断：初始诊断的错误已用于 M3.1 同题回归修正；回归分数不能冒称独立泛化结果。若未来需要泛化结论，须另设未参与开发的题本。
-- M7：Postgres checkpointer 在目标版本的恢复语义，尤其是 `interrupt()` 节点的重放。M5 只验证内存图的 fan-out/fan-in。
+- M7：需要用真实进程重启验收 PostgreSQL checkpoint、`interrupt()` 的重放和发布幂等，单进程生命周期测试不能替代它。
 - M8：worker lease、checkpoint 与 artifact 写入之间的幂等事务边界。

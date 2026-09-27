@@ -1,12 +1,12 @@
 """M6 node registry and fail-closed handoff validation."""
 
 from dataclasses import dataclass
-from typing import Awaitable, Callable, Mapping
+from typing import Awaitable, Callable, Literal, Mapping
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from packages.agent.models import (AnalysisResult, RagArtifact, SqlArtifact,
-                                   TaskPlan, VerificationResult)
+from packages.agent.models import (AnalysisResult, ApprovalResult, PublicationReceipt,
+                                   RagArtifact, SqlArtifact, TaskPlan, VerificationResult)
 
 
 class ContractViolation(ValueError):
@@ -96,6 +96,42 @@ class VerifierOutput(BoundaryModel):
         return self
 
 
+class ReviewInput(VerifierInput):
+    run_id: str
+    verification: VerificationResult
+
+    @model_validator(mode="after")
+    def only_pass_reaches_review(self):
+        if self.verification.status != "PASS" or self.verification.issues:
+            raise ValueError("only PASS may enter human review")
+        return self
+
+
+class ReviewOutput(BoundaryModel):
+    approval: ApprovalResult
+    status: str
+    trace: list[str]
+
+    @model_validator(mode="after")
+    def status_matches_approval(self):
+        if self.status != self.approval.status:
+            raise ValueError("review status differs from approval")
+        return self
+
+
+class PublishInput(BoundaryModel):
+    run_id: str
+    analysis: AnalysisResult
+    verification: VerificationResult
+    approval: ApprovalResult
+
+
+class PublishOutput(BoundaryModel):
+    publication: PublicationReceipt
+    status: Literal["PUBLISHED"]
+    trace: list[str]
+
+
 @dataclass(frozen=True)
 class NodeContract:
     name: str
@@ -159,27 +195,43 @@ NODE_CONTRACTS = {
 }
 
 
-def validate_registry(main_nodes: set[str], subgraph_nodes: set[str]) -> None:
-    registered = set(NODE_CONTRACTS)
+DURABLE_NODE_CONTRACTS = {
+    "human_review": NodeContract("human_review", ReviewInput, ReviewOutput,
+                                 ("verifier", "planner", "synthesis")),
+    "publish": NodeContract("publish", PublishInput, PublishOutput,
+                            ("human_review",)),
+}
+
+
+def validate_registry(main_nodes: set[str], subgraph_nodes: set[str],
+                      *, durable: bool = False) -> None:
+    contracts = {**NODE_CONTRACTS, **DURABLE_NODE_CONTRACTS} if durable else NODE_CONTRACTS
+    registered = set(contracts)
     actual = main_nodes | subgraph_nodes
     if registered != actual:
         raise ContractViolation(f"registry nodes differ: missing={sorted(actual-registered)}, "
                                 f"extra={sorted(registered-actual)}")
-    if "analysis" not in NODE_CONTRACTS["verifier"].requires:
+    if "analysis" not in contracts["verifier"].requires:
         raise ContractViolation("verifier must consume AnalysisResult")
-    if NODE_CONTRACTS["verifier"].input_model.model_fields["analysis"].annotation \
+    if contracts["verifier"].input_model.model_fields["analysis"].annotation \
             is not AnalysisResult:
         raise ContractViolation("verifier analysis input has wrong schema")
+    if durable:
+        if contracts["publish"].upstream != ("human_review",):
+            raise ContractViolation("human_review must be publish's only predecessor")
+        if contracts["publish"].input_model.model_fields["approval"].annotation \
+                is not ApprovalResult:
+            raise ContractViolation("publish must consume ApprovalResult")
 
     def upstream_outputs(name: str, seen: set[str] | None = None) -> dict[str, set[object]]:
         seen = set() if seen is None else seen
         if name in seen:
             raise ContractViolation("contract registry contains a dependency cycle")
         result: dict[str, set[object]] = {}
-        for upstream in NODE_CONTRACTS[name].upstream:
-            if upstream not in NODE_CONTRACTS:
+        for upstream in contracts[name].upstream:
+            if upstream not in contracts:
                 raise ContractViolation(f"unknown producer: {upstream}")
-            parent = NODE_CONTRACTS[upstream]
+            parent = contracts[upstream]
             for field in parent.produces:
                 result.setdefault(field, set()).add(
                     parent.output_model.model_fields[field].annotation)
@@ -187,18 +239,20 @@ def validate_registry(main_nodes: set[str], subgraph_nodes: set[str]) -> None:
                 result.setdefault(field, set()).update(types)
         return result
 
-    for name, contract in NODE_CONTRACTS.items():
+    for name, contract in contracts.items():
         available = upstream_outputs(name)
         for field in contract.requires:
-            if name == "planner" and field == "user_query":
-                continue  # The user query is the one external graph input.
+            if ((name == "planner" and field == "user_query")
+                    or (durable and name in {"human_review", "publish"}
+                        and field == "run_id")):
+                continue  # These fields originate in the external graph input.
             expected = contract.input_model.model_fields[field].annotation
             if expected not in available.get(field, set()):
                 raise ContractViolation(f"{name} requires {field} without a typed producer")
 
 
 def checked_node(name: str, node: Callable[[dict], Awaitable[dict]]):
-    contract = NODE_CONTRACTS[name]
+    contract = {**NODE_CONTRACTS, **DURABLE_NODE_CONTRACTS}[name]
 
     async def invoke(state: dict) -> dict:
         checked = contract.validate_input(state)
