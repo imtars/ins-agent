@@ -38,11 +38,12 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `packages/domain` | 配置、Pydantic 领域契约 | M0/M6 |
 | `packages/persistence` | 数据模型、作业、artifact | M1/M8 |
 | `packages/knowledge`, `evaluation/rag` | 文档解析、BGE-M3、Milvus 检索与评测 | M2 |
-| `packages/agent` | SQL/RAG 子图和主 LangGraph | M3/M5 |
+| `packages/sql`, `evaluation/sql` | M3 只读 SQL 生成、执行、确定性指标与结果评测 | M3 |
+| `packages/agent` | SQL/RAG 子图和主 LangGraph | M5 |
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-本文件描述目标架构。M1 已实现 PostgreSQL 业务 schema、合成数据与公开数据 provenance；M2 已实现显式注册的条款语料、Milvus 检索和本地 holdout 评测。Agent、MCP、API 和前端仍未实现。真实接口和版本约束在每个里程碑的验收中确定。
+本文件描述目标架构。M1 已实现 PostgreSQL 业务 schema、合成数据与公开数据 provenance；M2 已实现显式注册的条款语料、Milvus 检索和本地 holdout 评测。M3 的只读 SQL 与 gold case 已实现，真实模型评测待凭据验收。MCP、主 Graph、API 和前端仍未实现。真实接口和版本约束在每个里程碑的验收中确定。
 
 ## 后续待验证的工程问题
 

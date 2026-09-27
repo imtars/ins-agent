@@ -18,6 +18,10 @@ InsQABench Clause QA 的已选段落不能冒充开放检索的 Recall@k 评测�
 
 以合成数据库的固定版本构造 80–120 条自然语言问题。每题给结构化 gold result、数据类型、排序语义与数值容差；`gold_sql` 可保留作为审计，不以 SQL 字符串相同为通过条件。类别覆盖过滤、聚合、多表 JOIN、日期、比率、嵌套计算、不可回答及不安全请求。报告执行成功率、结果准确率、拒绝不安全 SQL 比率和修复成功率。未运行的类别不能算作通过。
 
+M3 casebook 目前固定为 110 题：100 题可回答、5 题不可回答、5 题不安全请求。参考 SQL 模板独立于 Agent 输出，先验证数据库与 M1 synthetic manifest 的逐表哈希，再执行参考 SQL 写入静态 `expected_result`；`tests/sql/test_gold_cases.py` 用原始合成记录在 Python 中独立计算全部 110 题的预期结果。Agent 只接收问题与数据库 schema，不读取参考 SQL 或期望结果。精确数值按容差比较，需排序的 top-N 题严格比较顺序。修复最多两次，报告同时展示首轮准确率与修复后准确率，不以修复成功掩盖首轮错误。
+
+季度口径：保单区间 `[start_date,end_date)` 与季度区间重叠的天数为在保暴露天数；`annual_premium × overlap_days / 365` 为已赚保费。已发生赔款按 `claim_date` 落入季度、且状态为 settled/open 的 `claim_amount` 合计；拒赔金额不作为已发生赔款。现金赔付按 `payment_date` 单独统计。库中没有条款等待期的结构化字段，SQL 阶段的在保暴露不能冒称为扣等待期的可出险暴露。真实模型评测缺少凭据时不生成指标。
+
 ## 工作流（M5–M9）
 
 软件正确性单列：无批准不发布、Verifier 失败阻断、契约错误阻断、不安全 SQL 阻断、worker 崩溃恢复、RAG-only 重跑后 SQL artifact 哈希不变、SQL-only 重跑后 RAG 哈希不变。故障注入报告注入点、期望状态、实际状态和 trace。性能和费用报告 p50/p95 延迟、token 与模型调用成本；不以这些数字声称实际企业价值。

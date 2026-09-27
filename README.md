@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。当前完成 **M2：文档检索与本地 holdout 评测**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引和四组检索消融。Agent、MCP、API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M2 已冻结，M3 SQL 阶段正在验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融，以及 SQL 只读执行与固定 gold case。M3 的真实模型生成评测尚缺 API Key；MCP、Graph、API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -70,6 +70,29 @@ M2_TEST_MILVUS_URI=http://127.0.0.1:19530 uv run --locked pytest -q
 ```
 
 完整集成测试同时设置 M1 的两个环境变量和 `M2_TEST_MILVUS_URI`。不设置时依赖外部数据库、下载文件或 Milvus 的检查会跳过。
+
+## M3 SQL 安全与评测
+
+使用已迁移并导入固定 M1 数据的数据库，由管理员创建权限受限的 `insurance_reader` 登录。下面的口令仅供本机示例；实际使用时自行替换。`M3_READER_DATABASE_URL` 必须以 `insurance_reader` 连接，不能传管理员账号。
+
+```bash
+export M3_READER_PASSWORD='change-me-reader-local-only'
+uv run --locked python -m scripts.setup_m3_reader --database-url 'postgresql+asyncpg://insurance_app:change-me-local-only@127.0.0.1:5432/insurance_m1_demo'
+export M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_demo'
+uv run --locked python -m evaluation.sql.prepare_cases
+uv run --locked python -m evaluation.sql.run --check-gold
+M3_TEST_READER_DATABASE_URL="$M3_READER_DATABASE_URL" uv run --locked pytest -q tests/sql
+```
+
+`cases.yaml` 含 110 条固定问题（100 条可回答、5 条不可回答、5 条不安全请求）及由独立参考查询产生的期望结果；测试另用 Python 对全部 gold 结果进行独立计算。reader 只获 7 张业务表的 SELECT 权限；执行器还要求单条 SELECT、业务表白名单、函数白名单、只读事务、5 秒超时和最多 200 行。季度已赚保费按保单在季度内的有效天数占 365 天的比例计算；已发生赔款排除拒赔，赔付现金按付款日期另计。`claims_per_in_force_policy_year` 使用在保天数，不能称为扣除等待期后的可出险频率。
+
+真实 SQL Agent 评测需要在本机 `.env` 配置 `DEEPSEEK_API_KEY`，然后执行：
+
+```bash
+uv run --locked python -m evaluation.sql.run
+```
+
+缺少 Key 或服务失败时不会产生成功率报告。当前尚未实际完成该评测，**不能宣称 M3 PASS 或 SQL Agent 成功率**。SQL 结果评测不比对 SQL 字符串，单列执行成功率、结果准确率、首轮准确率、拒绝率和修复成功率；逐题保留尝试记录。
 
 ## 设计文档
 

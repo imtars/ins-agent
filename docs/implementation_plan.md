@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。当前已完成 M2 RAG 检索与评测，尚未进入 M3。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M2 RAG 检索与评测已冻结；当前进入 M3 SQL 阶段，但真实模型评测仍未验收。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -66,6 +66,14 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 先在干净源码提交 `f3e0daf` 上保持 HNSW 配置再次 `--rebuild`：与上一轮相比，256 题中 dense 排名变化 3 题、sparse 0 题、hybrid 1 题、rerank 13 题；完整 rankings SHA 不同。不能将全部重排变化归因于 HNSW，但该配置下的排名级复现未通过。随后仅把评测集合 dense 索引改为精确 `FLAT/COSINE`，运行时知识集合继续用 `HNSW/COSINE`；两者 sparse 都是 `SPARSE_INVERTED_INDEX/IP`。Milvus 实际 `describe_index` 和两集合行数（21,953 / 365）与配置一致。
 
 在干净源码提交 `91addef` 上**连续两次**强制重建并运行四组消融。两次的 `rag_rankings.jsonl` SHA-256 都是 `7dc23f5af2b6aa89dbad69550b4714666bb3ccd8f4563c14da1eae61bb25ea88`，四条路线的逐题排名差异均为 0；报告均记录 `git_worktree_dirty=false`。最终报告以第二次重建为准：dense / sparse / hybrid / hybrid_rerank 的 Recall@10 分别为 **0.3203 / 0.3525 / 0.3682 / 0.4082**，最终重排的 MRR@10 为 **0.1951**、Hit@10 为 **0.4141**。这些是固定 256 条本地 query holdout 的结果，模型预训练及数据集来源的限制仍适用；未调 512 token、候选数或 RRF 参数。M2 评测封存，未进入 M3。
+
+## M3 SQL 构建与当前验收（2026-09-27）
+
+在固定 M1 数据库中实际建立 `insurance_reader` 登录，只授予 7 张业务表 SELECT，重复运行权限配置脚本成功。直接用该账号查询 `has_table_privilege` 得到 SELECT=true、INSERT/UPDATE/DELETE=false；尝试绕过 AST 直接 INSERT 仍由 PostgreSQL 拒绝。SQL 执行器要求专用账号、单条 SELECT/CTE、业务表和函数白名单；在只读事务内设置 5 秒语句超时，最多返回 200 行。危险 SQL、系统 schema、锁定读取及副作用函数均有拒绝测试。schema introspection 从实际 information_schema 生成。
+
+`evaluation/sql/cases.yaml` 由手工设计的参考查询模板及固定数据库实际结果生成，共 110 题，覆盖过滤、聚合、多表连接、日期区间、分组排名、嵌套聚合和季度赔付率；100 题可回答，5 题不可回答，5 题不安全请求。生成前逐表核对 M1 manifest 哈希；实际运行 `python -m evaluation.sql.run --check-gold` 校验全部静态结果；独立 Python oracle 对全部 110 题复核通过。casebook SHA-256 为 `704f344bc6f07b1630c075750eceaf17250fedb0833c8fe58f83df42be5668f6`。季度已赚保费使用在保天数 / 365；已发生赔款排除 denied，赔付现金按付款日另算。当前 SQL 业务表没有结构化等待期，因此在保暴露指标不能声称是等待期后可出险暴露。
+
+真实 DeepSeek SQL 生成、两次修复上限与逐题执行结果评测的代码已就位；但本机当前没有 `DEEPSEEK_API_KEY`。实际执行 `python -m evaluation.sql.run` 明确失败，且没有生成 `sql_evaluation.json`；不能宣称模型结果准确率或 M3 PASS。完整测试在 M1 数据、下载文件、Milvus 与 M3 reader 环境变量齐备时为 **38 passed**。M3 需补真实 110 题模型运行与报告验收后才能进入 M4。
 
 ## 关键实施细节
 
