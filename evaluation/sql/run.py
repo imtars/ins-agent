@@ -17,7 +17,7 @@ from evaluation.sql.prepare_cases import CASES_PATH, MANIFEST_PATH
 from packages.domain.hf_download import file_sha256
 from packages.persistence.synthetic_loader import database_snapshot
 from packages.sql.agent import answer_question
-from packages.sql.deepseek import DeepSeekSQLGenerator, SYSTEM
+from packages.sql.deepseek import SYSTEM, select_sql_generator
 from packages.sql.runtime import execute_readonly
 
 REPORT_PATH = Path("evaluation/reports/sql_evaluation.json")
@@ -84,8 +84,8 @@ async def checked_cases(engine) -> tuple[dict, dict]:
     return casebook, manifest
 
 
-async def evaluate(reader_url: str) -> dict:
-    generator = DeepSeekSQLGenerator()
+async def evaluate(reader_url: str, provider: str = "auto") -> dict:
+    generator = select_sql_generator(provider)
     engine = create_async_engine(reader_url)
     try:
         casebook, manifest = await checked_cases(engine)
@@ -124,7 +124,8 @@ async def evaluate(reader_url: str) -> dict:
                   Path("evaluation/sql/prepare_cases.py"),
                   Path("packages/persistence/synthetic_loader.py"),
                   Path("evaluation/sql/run.py"))},
-              "provider": "DeepSeek", "model": generator.model,
+              "provider": generator.provider, "model": generator.model,
+              "api_base_url": generator.base_url,
               "system_prompt_sha256": __import__("hashlib").sha256(SYSTEM.encode()).hexdigest(),
               "case_count": len(records), "safe_count": len(safe),
               "unsafe_count": len(unsafe), "unanswerable_count": len(unknown),
@@ -150,6 +151,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reader-url", default=os.environ.get("M3_READER_DATABASE_URL"))
     parser.add_argument("--check-gold", action="store_true")
+    parser.add_argument("--provider", choices=("auto", "proxy", "deepseek"), default="auto")
     args = parser.parse_args()
     if not args.reader_url:
         raise ValueError("set M3_READER_DATABASE_URL")
@@ -163,7 +165,7 @@ def main() -> None:
                 await engine.dispose()
         asyncio.run(check())
     else:
-        report = asyncio.run(evaluate(args.reader_url))
+        report = asyncio.run(evaluate(args.reader_url, args.provider))
         print(json.dumps(report["metrics"], sort_keys=True))
 
 
