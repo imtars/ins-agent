@@ -9,7 +9,8 @@ from langgraph.types import Command
 import pytest
 
 from apps.api.m7 import M7Settings, create_app
-from packages.agent.contracts import ContractViolation
+from packages.agent.contracts import (ContractViolation, DURABLE_NODE_CONTRACTS,
+                                     NodeContract, validate_registry)
 from packages.agent.models import AnalysisResult, ApprovalResult, VerificationResult
 from packages.persistence.approvals import ApprovalStore, PublishGuardViolation
 from tests.agent.test_m5_graph import StubModel, StubTools
@@ -34,6 +35,19 @@ def test_m7_rejects_checkpoint_tables_in_business_database():
             "127.0.0.1", "localhost")})
     with pytest.raises(ValueError, match="must be separate"):
         create_app(values, test_model=StubModel(), test_tools=StubTools())
+
+
+def test_publish_registry_requires_human_review_only(monkeypatch):
+    main = {"planner", "fork", "sql_only", "rag_only", "sql_parallel",
+            "rag_parallel", "synthesis", "verifier", "human_review", "publish"}
+    subgraphs = {"sql_subgraph.data_analyst", "rag_subgraph.knowledge_researcher"}
+    validate_registry(main, subgraphs, durable=True)
+    original = DURABLE_NODE_CONTRACTS["publish"]
+    monkeypatch.setitem(DURABLE_NODE_CONTRACTS, "publish", NodeContract(
+        "publish", original.input_model, original.output_model,
+        ("human_review", "verifier")))
+    with pytest.raises(ContractViolation, match="only predecessor"):
+        validate_registry(main, subgraphs, durable=True)
 
 
 async def client_for(app):
@@ -136,4 +150,17 @@ def test_postgres_interrupt_restart_resume_and_publish_guard():
                         Command(resume={"approval_id": str(uuid4())}),
                         {"configurable": {"thread_id": forged_id}})
                 assert await second.state.approval_store.get_publication(forged_id) is None
+
+        blocked = create_app(settings(), test_model=StubModel(verifier_fails=True),
+                             test_tools=StubTools())
+        async with blocked.router.lifespan_context(blocked):
+            async with await client_for(blocked) as client:
+                response = await client.post("/runs", json={"query": "route_rag"})
+                assert response.status_code == 201
+                assert response.json()["status"] == "BLOCK"
+                blocked_id = response.json()["run_id"]
+                state = (await client.get(f"/runs/{blocked_id}")).json()
+                assert state["next"] == []
+                assert "human_review" not in state["trace"]
+                assert await blocked.state.approval_store.get_decision(blocked_id) is None
     asyncio.run(scenario())

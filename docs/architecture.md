@@ -48,5 +48,5 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 ## 后续待验证的工程问题
 
 - M3 后续质量判断：初始诊断的错误已用于 M3.1 同题回归修正；回归分数不能冒称独立泛化结果。若未来需要泛化结论，须另设未参与开发的题本。
-- M7：需要用真实进程重启验收 PostgreSQL checkpoint、`interrupt()` 的重放和发布幂等，单进程生命周期测试不能替代它。
+- M7：真实两进程验收已验证 PostgreSQL checkpoint、`interrupt()` 恢复和发布幂等；详见 [M7 本机报告](../evaluation/reports/m7_durable_demo.json)。
 - M8：worker lease、checkpoint 与 artifact 写入之间的幂等事务边界。

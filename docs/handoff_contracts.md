@@ -10,6 +10,8 @@ M6 基线是单进程、内存图。`packages/agent/contracts.py` 的 `NODE_CONT
 | RAG 子图 / RAG 分支 | `plan` | `rag_results`（分支另有 `trace`） |
 | synthesis | `plan`，且路线所需产物齐全 | `analysis`, `trace` |
 | verifier | `plan`, `analysis`，且路线所需产物齐全 | `verification`, `status`, `trace` |
+| human_review（M7 持久化模式） | `run_id`, `plan`, `analysis`, `verification=PASS`，且路线所需产物齐全 | 恢复后 `approval`, `status`, `trace`；暂停时无输出 |
+| publish（M7 持久化模式） | `run_id`, `analysis`, `verification`, `approval` | `publication`, `PUBLISHED`, `trace` |
 
 每个 LangGraph 节点执行 `validate_input() → node() → validate_output()`。边界会拒绝缺字段、错误类型、未声明输出、产物数量与计划不一致、最终状态与 Verification 不一致，抛出 `ContractViolation`，不会调用下游。M4 工具调用也有输出模型：SQL 五种结果按工具分别验证，知识检索验证查询/产品匹配、结果数量、Evidence 字段、内容 SHA-256 和来源 ID；无效工具返回立即阻断，不能当作 LLM 参数错误进行 repair。
 

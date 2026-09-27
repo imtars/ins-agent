@@ -1,0 +1,197 @@
+{
+  "approval_reviewer_id": "m7_local_reviewer",
+  "approval_row_status": "APPROVED",
+  "base_git_commit": "82053a57c2581fd2743f1e754bef68dbda332c7d",
+  "code_sha256": {
+    "apps/api/m7.py": "a9eb275ad2aa98186851e24b5213e11f7cdcd3ca6765f4eaa740136aa40fbaa3",
+    "packages/agent/contracts.py": "35324386dfc8400579d3882bf8d727a80e95762e0eac08742797e0e9dd7a5a23",
+    "packages/agent/graph.py": "4d3e55017c5e52c8b96c819424b2bd01b80aef72ccc56f9666969e57868c7074",
+    "packages/agent/models.py": "4bc96294007c16fcb7f84449642382dbb7626ef8bb29ece2a3a8525027c906c7",
+    "packages/persistence/approvals.py": "4d35adfc4fe17817d56ba2c5a1d2ff1acbfd1d4addb7cf47998c6a9476cee58a",
+    "packages/persistence/checkpoints.py": "7638af9fe8e6e52787407e63dda866fd989d82f4a90212ca322698ac03b6f1c2",
+    "scripts/run_m7_demo.py": "1802614416e9513cc81ce924a0bcec6a8949caa8728224d196cb08713fea99ec"
+  },
+  "final": {
+    "analysis": {
+      "claims": [
+        {
+          "evidence_quote": null,
+          "source_ids": [
+            "sql:1"
+          ],
+          "text": "合成运营数据：product_006 在 2026 年第二季度（2026-04-01 至 2026-07-01）的已发生赔付率为 1.3449。"
+        },
+        {
+          "evidence_quote": null,
+          "source_ids": [
+            "sql:1"
+          ],
+          "text": "合成运营数据：product_006 在 2026 年第二季度（2026-04-01 至 2026-07-01）的理赔频率为 0.3969 次/在保保单年。"
+        },
+        {
+          "evidence_quote": "疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。",
+          "source_ids": [
+            "product_006:等待期:a4602185dffad7bc8a86dc04"
+          ],
+          "text": "合成演示产品条款：疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。"
+        }
+      ],
+      "summary": "运营结果为合成演示数据。合成产品条款仅用于演示。Synthetic operational data and synthetic product clause demonstration documents only."
+    },
+    "approval": {
+      "approval_id": "92f173a1-8fee-4f30-97f0-7fafd785d83c",
+      "comment": "",
+      "reviewer_id": "m7_local_reviewer",
+      "run_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+      "status": "APPROVED"
+    },
+    "next": [],
+    "publication": {
+      "approval_id": "92f173a1-8fee-4f30-97f0-7fafd785d83c",
+      "content_hash": "640bff00d3ec191cd15b0499cbd387cec33aca497170979f41d663e7eb7307db",
+      "run_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8"
+    },
+    "run_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+    "status": "PUBLISHED",
+    "thread_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier",
+      "human_review",
+      "publish"
+    ],
+    "verification": {
+      "issues": [],
+      "status": "PASS"
+    }
+  },
+  "first_process_health": {
+    "model_response_count": 0,
+    "status": "ok"
+  },
+  "generated_at": "2026-09-27T10:55:04.047976+00:00",
+  "git_worktree_dirty": false,
+  "historical_m6_report_sha256": "cf1e434acef6948cc44df75cf84c502064255bf03ad7cbb4c1018216a268687b",
+  "provider": {
+    "observed_response_model_ids": [
+      "deepseek-flash"
+    ],
+    "provider": "DeepSeek",
+    "requested_model": "deepseek-flash",
+    "response_count": 5,
+    "response_model_missing_count": 0
+  },
+  "publication_row_count": 1,
+  "query": "请生成 2026 年第二季度合成产品 product_006 的业务与条款综合简报，只列出已发生赔付率、理赔频率（次/在保保单年）以及疾病责任等待期，分别引用运营数据和产品条款。",
+  "recovered": {
+    "analysis": {
+      "claims": [
+        {
+          "evidence_quote": null,
+          "source_ids": [
+            "sql:1"
+          ],
+          "text": "合成运营数据：product_006 在 2026 年第二季度（2026-04-01 至 2026-07-01）的已发生赔付率为 1.3449。"
+        },
+        {
+          "evidence_quote": null,
+          "source_ids": [
+            "sql:1"
+          ],
+          "text": "合成运营数据：product_006 在 2026 年第二季度（2026-04-01 至 2026-07-01）的理赔频率为 0.3969 次/在保保单年。"
+        },
+        {
+          "evidence_quote": "疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。",
+          "source_ids": [
+            "product_006:等待期:a4602185dffad7bc8a86dc04"
+          ],
+          "text": "合成演示产品条款：疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。"
+        }
+      ],
+      "summary": "运营结果为合成演示数据。合成产品条款仅用于演示。Synthetic operational data and synthetic product clause demonstration documents only."
+    },
+    "approval": null,
+    "next": [
+      "human_review"
+    ],
+    "publication": null,
+    "run_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+    "status": "WAITING_APPROVAL",
+    "thread_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier"
+    ],
+    "verification": {
+      "issues": [],
+      "status": "PASS"
+    }
+  },
+  "run_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+  "second_process_final_health": {
+    "model_response_count": 0,
+    "status": "ok"
+  },
+  "second_process_initial_health": {
+    "model_response_count": 0,
+    "status": "ok"
+  },
+  "thread_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+  "unauthorized_review_status": 403,
+  "waiting": {
+    "analysis": {
+      "claims": [
+        {
+          "evidence_quote": null,
+          "source_ids": [
+            "sql:1"
+          ],
+          "text": "合成运营数据：product_006 在 2026 年第二季度（2026-04-01 至 2026-07-01）的已发生赔付率为 1.3449。"
+        },
+        {
+          "evidence_quote": null,
+          "source_ids": [
+            "sql:1"
+          ],
+          "text": "合成运营数据：product_006 在 2026 年第二季度（2026-04-01 至 2026-07-01）的理赔频率为 0.3969 次/在保保单年。"
+        },
+        {
+          "evidence_quote": "疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。",
+          "source_ids": [
+            "product_006:等待期:a4602185dffad7bc8a86dc04"
+          ],
+          "text": "合成演示产品条款：疾病责任等待期为 15 天，自保单起始日起计算；等待期内的疾病事故不计入可赔责任。"
+        }
+      ],
+      "summary": "运营结果为合成演示数据。合成产品条款仅用于演示。Synthetic operational data and synthetic product clause demonstration documents only."
+    },
+    "approval": null,
+    "next": [
+      "human_review"
+    ],
+    "publication": null,
+    "run_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+    "status": "WAITING_APPROVAL",
+    "thread_id": "5a8dc00f-4f8e-46af-9148-93cc5d3599c8",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier"
+    ],
+    "verification": {
+      "issues": [],
+      "status": "PASS"
+    }
+  }
+}

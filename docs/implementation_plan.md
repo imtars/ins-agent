@@ -137,6 +137,8 @@ Verifier 批准前逐条校验 claim 的当前来源 ID：SQL 数字必须在所
 
 第一轮真实两进程验收使用 M6 的宽泛综合简报题，Verifier 返回 `REVISE`，因此图正确结束而没有进入人工审核，脚本失败且未写报告。checkpoint 显示 Planner 自行把原题扩展出“平均有效保单数”和“等待期例外”两个额外要求，现有 SQL/条款产物未覆盖；这属于回答计划与证据范围问题，不是 checkpoint 故障。M7 验收题现明确限定为三个已有工具可支持的输出：已发生赔付率、按在保保单年计的理赔频率、疾病责任等待期。M7 用它检验持久化/HITL，不把单题成功解释为工作流泛化成绩；失败运行的 checkpoint 仍保留在本机专用库供诊断。
 
+最终从干净源码提交 `82053a57c2581fd2743f1e754bef68dbda332c7d` 运行真实 DeepSeek、M4 MCP、PostgreSQL reader 与 Milvus/BGE：第一个独立 Uvicorn 进程完成 `REPORT → SQL/RAG → Synthesis → Verifier PASS`，在 `human_review` 中断，返回 `WAITING_APPROVAL`。实际停止该进程后启动第二个进程，按相同 `thread_id` 读回原 checkpoint 和 trace；无效审核 token 得到 HTTP 403，合法 reviewer 批准后 `Command(resume)` 到达 `publish`，状态为 `PUBLISHED`。第二个进程在恢复前后模型响应计数均为 0，trace 中 `human_review` 和 `publish` 各一次，数据库只有 1 条匹配的 approval 和 publication。首次进程 5 次模型响应均报告 `deepseek-flash`，model ID 缺失 0。独立复核 [M7 报告](../evaluation/reports/m7_durable_demo.json)中的 7 份源码哈希、checkpoint 状态、数据库回执与历史 M6 报告哈希；完整本机测试为 **75 passed**，包括真实 PostgreSQL checkpoint、伪造 resume/reviewer、非 PASS、直接 publish、拒绝审核和幂等重试测试。M7 PASS，可冻结并进入 M8；本轮不实现 M8。
+
 ## 关键实施细节
 
 **M1。** 建表顺序为分支、代理、客户、产品、保单、理赔、赔付；外键、日期、保费/赔款非负约束由迁移定义。生成器将批量记录排序后序列化并计算 hash，配置和生成器版本一并写入 manifest。公开文档 URL 必须从来源页核实，不能只从聊天摘录复制。

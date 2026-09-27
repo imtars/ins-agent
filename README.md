@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M6 已冻结，M7 持久化与人工审核正在验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和单进程 Agent 图。M7 仅增加本地审核控制入口，完整 API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M7 已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M7 仅增加本地审核控制入口，完整 API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -146,6 +146,8 @@ uv run --locked python -m scripts.run_m7_demo --provider deepseek
 ```
 
 脚本启动第一个独立 API 进程，真实执行综合简报直到 `WAITING_APPROVAL`，停止进程，再启动第二个进程读取相同 checkpoint、拒绝无效审核 token、批准并确认 `PUBLISHED` 与唯一发布回执。成功后写入 [M7 本机报告](evaluation/reports/m7_durable_demo.json)，失败不会写成功报告。`M7_TEST_DATABASE_URL` 指向同一类独立数据库时，完整 pytest 也执行 PostgreSQL checkpoint/guard 集成测试；未设置则跳过该测试。
+
+本次真实验收在进程重启前收到 5 次 `deepseek-flash` 响应并暂停；重启后模型调用为 0，审核完成后 PostgreSQL 中仅有 1 条对应发布回执。独立复核报告的 7 份源码哈希和历史 M6 报告哈希，完整本机测试 **75 passed**。此为固定题目、本机服务与数据库验收，不是 CI、未见题准确率或完整生产鉴权验证。
 
 ## 设计文档
 
