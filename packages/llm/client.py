@@ -36,6 +36,10 @@ class JsonChatClient:
                                     {"role": "user", "content": request_user}],
                        "response_format": {"type": "json_object"},
                        "temperature": 0, "max_tokens": max_tokens, "stream": False}
+            if self.provider == "DeepSeek":
+                payload["thinking"] = {"type": "enabled"}
+                payload["reasoning_effort"] = "high"
+                payload["max_tokens"] = max(max_tokens, 8192)
             async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
                 response = await client.post(f"{self.base_url}/chat/completions", json=payload,
                                              headers={"Authorization": f"Bearer {self._api_key}"})

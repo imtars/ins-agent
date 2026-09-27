@@ -1,6 +1,7 @@
 """Malformed JSON is retried once and every actual completion is tracked."""
 
 import asyncio
+import json
 
 import httpx
 import pytest
@@ -58,3 +59,25 @@ def test_json_client_fails_after_two_malformed_responses(monkeypatch):
     with pytest.raises(ValueError, match="single JSON object"):
         asyncio.run(model.complete_json("planner", "system", "user"))
     assert len(model.response_models) == 2
+
+
+@pytest.mark.parametrize("provider,thinking,tokens", [
+    ("DeepSeek", {"type": "enabled"}, 8192), ("CLIProxyAPI", None, 1200)])
+def test_provider_specific_thinking_parameter(monkeypatch, provider, thinking, tokens):
+    requests = []
+
+    def respond(request):
+        requests.append(json.loads(request.content))
+        return httpx.Response(200, json={"model": "deepseek-flash",
+            "choices": [{"finish_reason": "stop", "message": {"content": '{"ok":true}'}}]})
+
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: real_client(
+        transport=httpx.MockTransport(respond), **kwargs))
+    model = JsonChatClient(provider=provider, model="deepseek-flash",
+                           base_url="https://api.deepseek.com", api_key="test-key")
+    assert asyncio.run(model.complete_json("smoke", "Return JSON", "test")) == {"ok": True}
+    assert requests[0].get("thinking") == thinking
+    assert requests[0].get("reasoning_effort") == ("high" if provider == "DeepSeek"
+                                                  else None)
+    assert requests[0]["max_tokens"] == tokens

@@ -37,6 +37,11 @@ def main() -> None:
         raise ValueError("M3_READER_DATABASE_URL is required")
     validate_registry(MAIN_NODES, SUBGRAPH_NODES)
     report = asyncio.run(run(args.reader_url, args.milvus_uri, args.provider, None))
+    report["model_request_parameters"] = (
+        {"thinking": {"type": "enabled"}, "reasoning_effort": "high",
+         "minimum_max_tokens": 8192}
+        if report["provider"] == "DeepSeek" else
+        {"thinking": "provider_default", "max_tokens": "role_specific"})
     for case in report["cases"]:
         issues = validate_claim_evidence(
             TaskPlan.model_validate(case["plan"]),

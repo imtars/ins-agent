@@ -125,10 +125,10 @@ uv run --locked python -m scripts.run_m5_demo --provider proxy
 在 M5 所需真实依赖可用时运行四题 M6 验收：
 
 ```bash
-M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_demo' uv run --locked python -m scripts.run_m6_demo --provider proxy
+M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_demo' uv run --locked python -m scripts.run_m6_demo --provider deepseek
 ```
 
-该脚本只在四题均 `PASS` 且所有 claim 的确定性证据检查通过后生成 [M6 本机报告](evaluation/reports/m6_contract_demo.json)；原 M5/M5.1 报告不覆盖。设齐上述测试依赖变量后，`uv run --locked pytest -q` 执行完整本机测试。
+该脚本只在四题均 `PASS` 且所有 claim 的确定性证据检查通过后生成 [M6 本机报告](evaluation/reports/m6_contract_demo.json)；原 M5/M5.1 报告不覆盖。本机 CLIProxyAPI 当前返回 429，因此 M6 使用此前配置的 DeepSeek 备用 key；JSON 请求显式设置 `reasoning_effort=high`，并给 DeepSeek 至少 8,192 token 的输出上限。设齐上述测试依赖变量后，`uv run --locked pytest -q` 执行完整本机测试。
 
 ## 设计文档
 
