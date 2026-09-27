@@ -42,7 +42,7 @@ M1 集成测试需要已迁移、已导入数据的专用数据库，以及已�
 
 ```bash
 uv sync --locked
-docker compose -f deploy/milvus-compose.yml -p ins-agent-milvus up -d
+docker compose up -d --wait
 uv run --locked python -m scripts.download_m2_models
 uv run --locked python -m evaluation.rag.run
 ```

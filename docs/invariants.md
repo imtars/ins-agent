@@ -14,4 +14,4 @@
 - 不将未经来源验证的公开条款与合成产品事实拼接。
 - 定向重跑保留未选阶段的 artifact 内容和哈希。
 
-截至 M9，SQL 只读、知识来源、节点/工具输出结构及逐条 claim 的来源 ID、数字和原文引文已有运行时保障和测试；自然语言语义蕴含仍由 LLM Verifier 判断，不能把现有确定性检查说成完整事实证明。持久化模式的审批发布由图前驱和独立 PostgreSQL 决定双重保护；定向重跑保留未选阶段引用。Verifier 异常或无效输出必须 `BLOCK`，不得借 reranker 降级绕过；同一 run 的 checkpoint writer 由 PostgreSQL advisory lock 串行化。
+截至 M10，SQL 只读、知识来源、节点/工具输出结构及逐条 claim 的来源 ID、数字和原文引文已有运行时保障和测试；自然语言语义蕴含仍由 LLM Verifier 判断，不能把现有确定性检查说成完整事实证明。持久化模式的审批发布由图前驱和独立 PostgreSQL 决定双重保护；定向重跑保留未选阶段引用。Verifier 异常或无效输出必须 `BLOCK`，不得借 reranker 降级绕过；同一 run 的 checkpoint writer 由 PostgreSQL advisory lock 串行化。M10 API 审核仍调用 `RunControl.review` 和原发布 guard；JWT/RBAC 是角色级控制，不提供多租户 run ownership ACL。`run_events` 是可观察时间线，不是具事务保证的业务事件源。

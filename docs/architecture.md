@@ -4,7 +4,7 @@
 
 系统回答保险运营分析与条款知识问题，输入可以分别路由到 SQL、RAG 或两者。所有业务运营记录和与其通过 `product_code` 关联的产品文档均为合成演示数据。公开条款仅用于独立知识检索，除非有明确、已验证的产品映射，不得把公开条款套用到合成产品。
 
-五个依赖 LLM 的角色固定为 Planner、Data Analyst、Knowledge Researcher、Synthesis Analyst、Verification Agent。计算指标、SQL 校验、检索融合由确定性代码执行。M6 已增加节点输入/输出契约和逐条 claim 的来源 ID、数字、原文引文检查；任意叙述的语义蕴含仍由 LLM Verifier 判断，审批发布属于后续阶段。Provider 抽象位于 `packages/llm`；本机优先 CLIProxyAPI `gpt-6-luna`，DeepSeek 为备用。
+五个依赖 LLM 的角色固定为 Planner、Data Analyst、Knowledge Researcher、Synthesis Analyst、Verification Agent。计算指标、SQL 校验、检索融合由确定性代码执行。M6 增加节点输入/输出契约和逐条 claim 的来源 ID、数字、原文引文检查；任意叙述的语义蕴含仍由 LLM Verifier 判断。M7–M10 已加入 checkpoint、人工审核、后台 worker、JWT API 与前端。Provider 抽象位于 `packages/llm`；本机 CLIProxyAPI 受配额限制时使用 DeepSeek。
 
 ## 目标流程
 
@@ -28,7 +28,7 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 1. SQL 工具使用独立 `insurance_reader` 角色、只读事务、AST 白名单、表白名单、`statement_timeout` 和最大行数。生成 SQL 本身视为不可信输入。
 2. 检索文档与工具返回内容视为数据，不得提升为系统指令。每条事实 claim 必须引用当前 artifact 中存在的 evidence ID。
 3. `product_code` 是合成 SQL 与合成条款的唯一正式关联键。公开文档记录来源、版本与下载哈希，不自动参加运营数据联表。
-4. `run_events` 记录节点耗时、模型、token、重试、错误与输入输出哈希；避免记录密钥或原始个人信息。
+4. `run_events` 记录节点开始/完成、worker attempt、重试、暂停/恢复和审核事件，不记录密钥或原始个人信息。当前尚未采集每节点耗时、模型 token 或输入输出哈希；其角色是观测时间线，持久化业务状态由 checkpoint/job/artifact/review/publication 表决定。
 5. 人工 review 中断之后，只有被授权 reviewer 的批准结果能通过 publish guard。拒绝时按 `sql`、`rag`、`synthesis` 定向重跑，未选阶段的 artifact 哈希保持不变。
 
 ## 技术落点
@@ -41,9 +41,9 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `packages/sql`, `evaluation/sql` | M3 只读 SQL 生成、执行、确定性指标与结果评测 | M3 |
 | `packages/agent` | SQL/RAG 子图和主 LangGraph | M5 |
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
-| `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
+| `apps/api`, `apps/runner`, `apps/web` | HTTP、worker、Vue UI | M8/M10 |
 
-M7 历史图及其 checkpoint/审核表保留。M8 新图保留五角色和 M4 MCP 专家调用，但 checkpoint 中的 SQL/RAG/Analysis/Verification 只保存 `ArtifactRef`；完整内容和规范化 SHA-256 存入版本化 `run_artifacts`。`agent_jobs` 的租约管理与 checkpoint 分开，worker 通过 `FOR UPDATE SKIP LOCKED` 认领并续租，崩溃后的新 worker 用相同 `run_id/thread_id` 恢复。审核记录绑定具体 analysis artifact ID、版本和哈希，发布路径只接受仍为最新版本的已批准产物。M9 增加有限次数依赖重试、明确的检索降级标记和故障测试。完整 JWT/RBAC 与前端仍属于 M10。
+M7 历史图及其 checkpoint/审核表保留。M8 新图保留五角色和 M4 MCP 专家调用，但 checkpoint 中的 SQL/RAG/Analysis/Verification 只保存 `ArtifactRef`；完整内容和规范化 SHA-256 存入版本化 `run_artifacts`。`agent_jobs` 的租约管理与 checkpoint 分开，worker 通过 `FOR UPDATE SKIP LOCKED` 认领并续租，崩溃后的新 worker 用相同 `run_id/thread_id` 恢复。审核记录绑定具体 analysis artifact ID、版本和哈希，发布路径只接受仍为最新版本的已批准产物。M9 增加有限次数依赖重试、明确的检索降级标记和故障测试。M10 在原有控制路径外增加 JWT/RBAC、REST/SSE 和 Vue 工作台，未复制审批或发布逻辑。
 
 ## 后续待验证的工程问题
 

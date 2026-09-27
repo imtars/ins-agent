@@ -1,3 +1,6 @@
+include:
+  - deploy/milvus-compose.yml
+
 services:
   postgres:
     image: postgres:17.6
