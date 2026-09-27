@@ -1,8 +1,59 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M10 已完成本机阶段验收；M11 尚未开始**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务、带 PostgreSQL checkpoint 的 Agent 图、JWT API 和 Vue 工作台。不能用于真实保险业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M11 已完成本机阶段验收**。M1 合成数据基线保持不变；最终重跑报告独立保存在 `evaluation/reports/m11_*`。项目不能用于真实保险业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
+
+## 架构
+
+```mermaid
+flowchart LR
+    UI[Vue 工作台] --> API[FastAPI / JWT / RBAC]
+    API --> Q[PostgreSQL job queue]
+    Q --> W[Worker / LangGraph checkpoint]
+    W --> P[Planner]
+    P --> SQL[Data Analyst / FastMCP / PostgreSQL reader]
+    P --> RAG[Knowledge Researcher / FastMCP / Milvus + BGE]
+    SQL --> S[Synthesis]
+    RAG --> S
+    S --> V[Verifier + evidence contract]
+    V --> H[Human review]
+    H --> G[Publication guard]
+```
+
+Checkpoint、job lease、版本化 artifact、审核决定和 publication 各自存储；最终发布必须绑定当前 analysis 的 ID、版本与哈希。实现边界见[架构文档](docs/architecture.md)和[系统不变量](docs/invariants.md)。
+
+## 数据来源
+
+运营表及 12 份产品条款由 `SEED=202609` 合成，使用 `product_code` 对应；没有真实个人保险数据。Insur-QA 用于本地检索评测；InsQABench 单独下载并保存来源信息。五份中保协公开附件仍是 **draft**，不与 synthetic 产品自动关联。版本、文件哈希、许可边界和实际格式核验见[数据来源](docs/data_sources.md)。
+
+## 最终评测与消融
+
+| 项目 | 本机重跑结果 | 口径 |
+| --- | --- | --- |
+| RAG | hybrid + reranker Recall@10 **0.4082**、MRR@10 **0.1951** | 256 题本地 query holdout；源文件标为训练数据 |
+| SQL | 100/100 可回答题严格结果匹配；10/10 拒绝正确 | 同一已分析过的固定回归题本；DeepSeek 110 次响应均报告 `deepseek-flash` |
+| Workflow | SQL、RAG、BOTH、REPORT 四路 `PASS` | 固定 demo 的一次连续重跑 |
+| 恢复与故障 | 定向重跑后唯一发布；故障套件 **28 passed** | 超时为本地受控注入 |
+| 工程检查 | 完整本机 pytest **109 passed**；Vue build 通过 | 本机验收，不是 CI |
+
+四组消融的 dense Recall@10 为 0.3203，sparse 为 0.3525，RRF hybrid 为 0.3682，hybrid + reranker 为 0.4082；[完整结果、逐题排名与限制](docs/final_evaluation.md)均可复核。M3 初版 Luna 85/100 与 M3.1 同题回归 100/100 的历史报告原样保留，不把 100% 称为新题泛化准确率。
+
+## 演示
+
+四条固定 workflow demo 展示纯 SQL、纯 RAG、混合合流和简报；M8/M9/M10 演示展示 checkpoint 接管、定向重跑、受控故障、JWT 审核及发布。复现命令和源码哈希见[最终验收](docs/final_evaluation.md)。
+
+## 失败案例
+
+M3 初版 85/100 的错误分析、M8 lease 初始化时机、M11 首轮 SQL 输出截断、REPORT Verifier `BLOCK` 和单题 `REVISE` 均保留在[最终失败记录](docs/final_evaluation.md#失败案例与修复记录)。最终固定题本取得 PASS，不抹去这些中间失败，也不把回归成绩称为未见题成绩。
+
+## 设计决策
+
+系统用只读 SQL 与受限数据库账号计算运营指标；MCP 暴露真实工具 schema；Pydantic handoff 和当前 artifact 证据检查阻止无依据的声明；审批和发布由 worker 复用原 guard 执行。Job queue、checkpoint、artifact、审核和观测事件分开存储，职责见[架构文档](docs/architecture.md)。
+
+## 已知限制
+
+RAG 切分不是官方独立测试集；SQL 和 workflow 是固定回归题；模型响应 ID 不证明底层权重版本。`run_events` 是观测时间线，没有事务型 outbox；RBAC 是角色级，没有多租户 run ownership。M10 文档/评测 POST 只核验已有资料或报告；前端 logout 不在服务端撤销 refresh token。未采集 token 使用量或可比的 p50/p95 调用延迟，也没有真实保险企业生产验证。详见[最终验收与证据边界](docs/final_evaluation.md)。
 
 ## 本地构建 M1
 
@@ -215,7 +266,17 @@ cd apps/web && npm ci && npm run dev
 
 `POST /api/documents` 仅核验固定 M2 注册表中的现有文档及 SHA-256；不会上传新文档、更新 Milvus 或把公开草案绑定 synthetic 产品。`POST /api/evaluations/rag|sql` 返回现有固定报告及哈希，状态是 `existing_report`，不会假装重新跑评测。真正的新文档入库、按需重跑评测与 token 使用量采集尚未完成，属于当前限制。M10 本机端到端验收使用 `M10_DATABASE_URL`/`M10_READER_DATABASE_URL` 执行 `uv run --locked python -m scripts.run_m10_demo`，报告写入 `evaluation/reports/m10_api_ui_demo.json`；完整测试另设置 `M10_TEST_DATABASE_URL` 指向专用测试库。M10 的验收数字与结果见 [实施计划](docs/implementation_plan.md)。
 
-本机从干净提交 `d83bec6` 和独立空库进行真实 HTTP/JWT/DeepSeek/MCP 演示：analyst 创建综合 run，受控 Planner 超时触发 1 次持久化 `dependency.retry`，5 次模型响应均报告 `deepseek-flash`，SQL/RAG/analysis/verification 四类 artifact 齐备；analyst 审核返回 403，过期版本和重复审核返回 409，reviewer 批准后第二个 worker 无模型调用，最终报告 `published=true` 且数据库只有 1 条 publication。SSE 回放首条事件成功，最终事件链含 `workflow.resumed`、`publish.completed`、`workflow.completed`。报告源码哈希、事件数和数据库发布行数已独立复核。Vue 生产构建通过，完整本机 pytest **107 passed**。这些是本机验收，不是 CI、未见题准确率或公网部署验证。M10 阶段 gate PASS；没有进入 M11。
+本机从干净提交 `d83bec6` 和独立空库进行真实 HTTP/JWT/DeepSeek/MCP 演示：analyst 创建综合 run，受控 Planner 超时触发 1 次持久化 `dependency.retry`，5 次模型响应均报告 `deepseek-flash`，SQL/RAG/analysis/verification 四类 artifact 齐备；analyst 审核返回 403，过期版本和重复审核返回 409，reviewer 批准后第二个 worker 无模型调用，最终报告 `published=true` 且数据库只有 1 条 publication。SSE 回放首条事件成功，最终事件链含 `workflow.resumed`、`publish.completed`、`workflow.completed`。报告源码哈希、事件数和数据库发布行数已独立复核。Vue 生产构建通过，完整本机 pytest **107 passed**。这些是 M10 当轮的本机验收，不是 CI、未见题准确率或公网部署验证。
+
+## M11 最终重跑
+
+统一 `docker compose up -d --wait` 已实际启动 PostgreSQL、etcd、MinIO 和 Milvus，四个容器均健康，原有 `insurance_knowledge` 与 `insur_qa_corpus` collection 可读。设置全部集成测试数据库及下载核验变量，并准备两个空的 M11 演示库后运行：
+
+```bash
+uv run --locked python -m scripts.run_m11_final
+```
+
+完整环境变量、数据库准备和报告边界见[最终验收文档](docs/final_evaluation.md)。脚本在独立临时 Git worktree 重跑 RAG、SQL、四路 workflow、M8 定向重跑及 M9 故障恢复，最后运行完整 pytest 与 `npm ci`/Vue build；新结果写到 [M11 总报告](evaluation/reports/m11_final.json)及各 `m11_*` 子报告，不覆盖历史报告。最终从干净提交 `283bb06` 执行，完整本机 pytest **109 passed**，四条固定 workflow demo 均 `PASS`。首轮 M11 中止和后续单题 `REVISE` 已写入失败案例；最终 PASS 只描述本次固定流程的结果。
 
 ## 设计文档
 
@@ -233,6 +294,8 @@ cd apps/web && npm ci && npm run dev
 - [M9 故障报告](evaluation/reports/m9_fault_injection.json)
 - [M10 API 契约](docs/m10_api.md)
 - [M10 本机端到端报告](evaluation/reports/m10_api_ui_demo.json)
+- [M11 最终验收与简历证据边界](docs/final_evaluation.md)
+- [M11 总报告](evaluation/reports/m11_final.json)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)

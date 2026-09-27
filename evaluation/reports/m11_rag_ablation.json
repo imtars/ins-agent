@@ -1,0 +1,230 @@
+{
+  "base_git_commit": "283bb068bcf41ab73fdda2de19ce046c32cf7cf0",
+  "benchmark_index": {
+    "collection": "insur_qa_corpus",
+    "corpus_sha256": "f300e2c94c11addc045ff0983897053920df3b8bc23b26484bc431ea5db7e63d",
+    "created_at": "2026-09-27T04:30:18.994546+00:00",
+    "encoder_dependencies": {
+      "FlagEmbedding": "1.4.2",
+      "torch": "2.14.0",
+      "transformers": "5.17.0"
+    },
+    "index_code_sha256": "88046ede83930a932f22f44f2120538e08c30a0945d1eb822476140fc0baeaad",
+    "index_config": {
+      "dense": {
+        "index_type": "FLAT",
+        "metric_type": "COSINE",
+        "params": {}
+      },
+      "sparse": {
+        "index_type": "SPARSE_INVERTED_INDEX",
+        "metric_type": "IP",
+        "params": {
+          "drop_ratio_build": 0.0
+        }
+      }
+    },
+    "max_index_chars": 1800,
+    "max_model_tokens": 512,
+    "milvus_version": "2.6.24",
+    "model_files_sha256": {
+      "colbert_linear.pt": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb",
+      "config.json": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa",
+      "pytorch_model.bin": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+      "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+      "sparse_linear.pt": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9",
+      "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+      "tokenizer.json": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08",
+      "tokenizer_config.json": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4"
+    },
+    "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "model_weights_sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+    "row_count": 21953,
+    "schema_version": 1,
+    "truncated_passages": 300,
+    "vector_dim": 1024
+  },
+  "candidate_limit_each_search": 20,
+  "caveats": [
+    "Source is labeled retriever training data, not an official test split.",
+    "The 256-query holdout is selected by a fixed hash rule; remaining queries are development data.",
+    "Corpus includes all unique positive and negative passages from all source rows; a passage can be positive for one query and negative for another.",
+    "Passages above 1800 Unicode characters are truncated for indexing and reranking; full source text remains in the local processed corpus.",
+    "Public benchmark and model pretraining overlap cannot be ruled out."
+  ],
+  "code_sha256": {
+    "evaluation/rag/dataset.py": "aff251078ce90010fff810f9fd737d33af92f14d7d25aebb3439de2d8a824501",
+    "evaluation/rag/run.py": "6c319a18c51b975125630823f817122deda65f128671e3a61289251abc861034",
+    "packages/domain/hf_download.py": "c3334aa97f780cf463a616db08b36cb837c3b9dd42c3d90e0c42569fa6c9d5a6",
+    "packages/knowledge/documents.py": "36a9a83d8ad154973f23e9ef0fa6bd473dd76418da25863e830d102af12aadb3",
+    "packages/knowledge/milvus_store.py": "88046ede83930a932f22f44f2120538e08c30a0945d1eb822476140fc0baeaad",
+    "packages/knowledge/retrieval.py": "26fb585411676a018108d86afafad4e068c5e4d735eef408e7f4f2f0a224cb38",
+    "scripts/download_m2_models.py": "1ca432ec3dd012e7605921220e86dc602c9f19aebec1914c35fb9fefb4f04970"
+  },
+  "dataset_manifest": {
+    "development_queries": 19686,
+    "files": {
+      "corpus.jsonl": {
+        "bytes": 18033682,
+        "sha256": "f300e2c94c11addc045ff0983897053920df3b8bc23b26484bc431ea5db7e63d"
+      },
+      "development.jsonl": {
+        "bytes": 5046883,
+        "sha256": "79fb7a9cf6ca2d93581122321d81d3ed86bf434cf0ad7fe78725329908b3b910"
+      },
+      "holdout.jsonl": {
+        "bytes": 65316,
+        "sha256": "9487bacea698feeada50704c4b08b8002a55db7c77188fef65369af72571aaf8"
+      }
+    },
+    "holdout_size": 256,
+    "normalization": "Unicode NFKC followed by whitespace collapse and trim",
+    "passages_both_positive_and_negative_across_queries": 7926,
+    "skipped_empty_queries": 1,
+    "source_rows": 20857,
+    "source_sha256": "f24348f270a49f9f720e001312de7afbc3cdac58f9b64eb440f68d11cb183ac4",
+    "split_rule": "sha256(normalized_query) first 64 bits modulo 10 == 0; smallest 256 hashes",
+    "unique_negative_passages": 20758,
+    "unique_passages": 21953,
+    "unique_positive_passages": 9121,
+    "unique_queries": 19942
+  },
+  "dataset_revision": "b2493e3c706d47ea378545a82dea85e00cd60a48",
+  "embedder_files_sha256": {
+    "colbert_linear.pt": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb",
+    "config.json": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa",
+    "pytorch_model.bin": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+    "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+    "sparse_linear.pt": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9",
+    "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+    "tokenizer.json": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08",
+    "tokenizer_config.json": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4"
+  },
+  "evaluation_seconds": 21.31550553100533,
+  "generated_at": "2026-09-27T14:45:47.125016+00:00",
+  "git_worktree_dirty": false,
+  "knowledge_index": {
+    "collection": "insurance_knowledge",
+    "corpus_sha256": "ff0c4768619cbcbfdfaaa449ca47ffc554bdd12ffe7268e71f33ba131688abc8",
+    "created_at": "2026-09-27T04:32:06.932092+00:00",
+    "encoder_dependencies": {
+      "FlagEmbedding": "1.4.2",
+      "torch": "2.14.0",
+      "transformers": "5.17.0"
+    },
+    "index_code_sha256": "88046ede83930a932f22f44f2120538e08c30a0945d1eb822476140fc0baeaad",
+    "index_config": {
+      "dense": {
+        "index_type": "HNSW",
+        "metric_type": "COSINE",
+        "params": {
+          "M": 16,
+          "efConstruction": 200
+        }
+      },
+      "sparse": {
+        "index_type": "SPARSE_INVERTED_INDEX",
+        "metric_type": "IP",
+        "params": {
+          "drop_ratio_build": 0.0
+        }
+      }
+    },
+    "max_index_chars": 1800,
+    "max_model_tokens": 512,
+    "milvus_version": "2.6.24",
+    "model_files_sha256": {
+      "colbert_linear.pt": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb",
+      "config.json": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa",
+      "pytorch_model.bin": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+      "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+      "sparse_linear.pt": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9",
+      "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+      "tokenizer.json": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08",
+      "tokenizer_config.json": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4"
+    },
+    "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "model_weights_sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+    "row_count": 365,
+    "schema_version": 1,
+    "truncated_passages": 0,
+    "vector_dim": 1024
+  },
+  "knowledge_sources": {
+    "chunk_counts": {
+      "iachina_2026_participating_annuity_draft": 60,
+      "iachina_2026_participating_endowment_draft": 59,
+      "iachina_2026_participating_whole_life_draft": 56,
+      "iachina_2026_term_life_draft": 35,
+      "iachina_2026_whole_life_draft": 35,
+      "product_001": 10,
+      "product_002": 10,
+      "product_003": 10,
+      "product_004": 10,
+      "product_005": 10,
+      "product_006": 10,
+      "product_007": 10,
+      "product_008": 10,
+      "product_009": 10,
+      "product_010": 10,
+      "product_011": 10,
+      "product_012": 10
+    },
+    "corpus_path": "data/processed/rag/knowledge.jsonl",
+    "corpus_sha256": "ff0c4768619cbcbfdfaaa449ca47ffc554bdd12ffe7268e71f33ba131688abc8",
+    "source_count": 17
+  },
+  "metric_definition": "Recall@k is the macro mean of the per-query fraction of all positive IDs found at k. MRR@10 uses the first positive ID and zero beyond rank 10. Hit@10 is the fraction of queries with at least one positive ID in the top 10.",
+  "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+  "name": "Insur-QA local query holdout, full deduplicated passage corpus",
+  "query_count": 256,
+  "rankings_sha256": "7dc23f5af2b6aa89dbad69550b4714666bb3ccd8f4563c14da1eae61bb25ea88",
+  "rerank_input": "hybrid RRF top 20",
+  "rerank_output": "top 10",
+  "reranker_files_sha256": {
+    "config.json": "13dcd6c31d9fec9d1d8e158702072f62d7fa7d312a64b9fe057bec9a08cfe41a",
+    "model.safetensors": "d9e3e081faff1eefb84019509b2f5558fd74c1a05a2c7db22f74174fcedb5286",
+    "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+    "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+    "tokenizer.json": "69564b696052886ed0ac63fa393e928384e0f8caada38c1f4864a9bfbf379c15",
+    "tokenizer_config.json": "7e4c1cc848840aeccdd763458c18dd525eb0f795c992e00ebe9c28554e7db2d4"
+  },
+  "reranker_revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+  "results": {
+    "dense": {
+      "Hit@10": 0.328125,
+      "MRR@10": 0.14613560267857145,
+      "Recall@1": 0.08203125,
+      "Recall@10": 0.3203125,
+      "Recall@5": 0.2314453125
+    },
+    "hybrid": {
+      "Hit@10": 0.375,
+      "MRR@10": 0.16484064980158739,
+      "Recall@1": 0.09375,
+      "Recall@10": 0.3681640625,
+      "Recall@5": 0.25390625
+    },
+    "hybrid_rerank": {
+      "Hit@10": 0.4140625,
+      "MRR@10": 0.19505983382936518,
+      "Recall@1": 0.1171875,
+      "Recall@10": 0.408203125,
+      "Recall@5": 0.27734375
+    },
+    "sparse": {
+      "Hit@10": 0.35546875,
+      "MRR@10": 0.1485274057539683,
+      "Recall@1": 0.07421875,
+      "Recall@10": 0.3525390625,
+      "Recall@5": 0.24609375
+    }
+  },
+  "rrf_k": 60,
+  "software_versions": {
+    "FlagEmbedding": "1.4.2",
+    "pymilvus": "2.6.17",
+    "torch": "2.14.0",
+    "transformers": "5.17.0"
+  }
+}

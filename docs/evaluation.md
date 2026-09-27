@@ -26,8 +26,10 @@ M3 初始[题本](../evaluation/sql/cases_m3_v1.yaml)及[报告](../evaluation/r
 
 ## 工作流（M5–M9）
 
-软件正确性单列：无批准不发布、Verifier 失败阻断、契约错误阻断、不安全 SQL 阻断、worker 崩溃恢复、RAG-only 重跑后 SQL artifact 哈希不变、SQL-only 重跑后 RAG 哈希不变。故障注入报告注入点、期望状态、实际状态和 trace。性能和费用报告 p50/p95 延迟、token 与模型调用成本；不以这些数字声称实际企业价值。
+软件正确性单列：无批准不发布、Verifier 失败阻断、契约错误阻断、不安全 SQL 阻断、worker 崩溃恢复、RAG-only 重跑后 SQL artifact 哈希不变、SQL-only 重跑后 RAG 哈希不变。故障注入报告注入点、期望状态、实际状态和 trace。M11 总报告记录各 suite wall time；当前没有采集调用级延迟分布、token 或模型成本，因此不能给出 p50/p95 调用延迟或费用数字，也不能以本机时间声称实际企业价值。
 
 ## 报告生成纪律
 
 每个命令应在缺少模型、Milvus、数据或 API Key 时明确失败，不生成看似正式的零分或模拟成绩。README 和简历只能引用有可复现命令与配置的报告。
+
+M11 使用独立临时 worktree 重跑，不覆盖上述历史报告。[总报告](../evaluation/reports/m11_final.json)包含四组 RAG、同题 SQL、四路 workflow、定向重跑、故障套件、完整 pytest 和 Vue 构建的结果与 SHA-256。SQL 的 8,192 输出上限与 workflow 的 thinking/high、16,384 输出上限是此次评测的显式请求参数；历史默认值和 evaluator 未改。详细失败链、结果限制和复现命令见[最终验收](final_evaluation.md)。

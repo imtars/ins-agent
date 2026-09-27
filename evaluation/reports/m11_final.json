@@ -1,0 +1,185 @@
+{
+  "base_git_commit": "283bb068bcf41ab73fdda2de19ce046c32cf7cf0",
+  "fault": {
+    "fault_suite_summary": "28 passed in 17.73s",
+    "final_status": "PUBLISHED",
+    "publication_row_count": 1
+  },
+  "generated_at": "2026-09-27T14:54:46.443715+00:00",
+  "git_worktree_dirty": false,
+  "limitations": [
+    "SQL and workflow use fixed regression/demo questions, not unseen holdouts.",
+    "Faults are controlled injections, not observed service incidents.",
+    "Wall time is environment-specific; provider token usage was not recorded."
+  ],
+  "rag": {
+    "query_count": 256,
+    "rankings_sha256": "7dc23f5af2b6aa89dbad69550b4714666bb3ccd8f4563c14da1eae61bb25ea88",
+    "results": {
+      "dense": {
+        "Hit@10": 0.328125,
+        "MRR@10": 0.14613560267857145,
+        "Recall@1": 0.08203125,
+        "Recall@10": 0.3203125,
+        "Recall@5": 0.2314453125
+      },
+      "hybrid": {
+        "Hit@10": 0.375,
+        "MRR@10": 0.16484064980158739,
+        "Recall@1": 0.09375,
+        "Recall@10": 0.3681640625,
+        "Recall@5": 0.25390625
+      },
+      "hybrid_rerank": {
+        "Hit@10": 0.4140625,
+        "MRR@10": 0.19505983382936518,
+        "Recall@1": 0.1171875,
+        "Recall@10": 0.408203125,
+        "Recall@5": 0.27734375
+      },
+      "sparse": {
+        "Hit@10": 0.35546875,
+        "MRR@10": 0.1485274057539683,
+        "Recall@1": 0.07421875,
+        "Recall@10": 0.3525390625,
+        "Recall@5": 0.24609375
+      }
+    }
+  },
+  "replay": {
+    "final_status": "PUBLISHED",
+    "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422"
+  },
+  "runner_sha256": "ccb66c16929a16f5f680565b2ee4531973ed252f6050fc7dbd63b320159ba527",
+  "sql": {
+    "case_count": 110,
+    "generation_max_tokens": 8192,
+    "metrics": {
+      "execution_success": 1.0,
+      "first_pass_result_accuracy": 1.0,
+      "repair_attempted_cases": 0,
+      "repair_success": null,
+      "result_accuracy": 1.0,
+      "unanswerable_refusal": 1.0,
+      "unsafe_request_refusal": 1.0
+    },
+    "observed_response_model_ids": [
+      "deepseek-flash"
+    ],
+    "provider": "DeepSeek",
+    "requested_model": "deepseek-flash",
+    "response_model_missing_count": 0
+  },
+  "status": "PASS",
+  "suites": {
+    "fault": {
+      "command": [
+        "/home/xubei/projects/jobs/agent_dev_learn/ins_agent/.venv/bin/python",
+        "-m",
+        "scripts.run_m9_faults"
+      ],
+      "elapsed_seconds": 77.87,
+      "files_sha256": {
+        "m11_fault_injection.json": "7bd8b64f6a5b624b66028765ddf696592e48028edfad797fd90777116a7c6268"
+      },
+      "output_tail": "live timeout recovered to review: 87abbceb-8535-44b1-9558-b8d88cd16909\nM9 acceptance PASS (28 passed in 17.73s); wrote evaluation/reports/m9_fault_injection.json"
+    },
+    "pytest": {
+      "elapsed_seconds": 30.32,
+      "output_tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n109 passed in 28.49s"
+    },
+    "rag": {
+      "command": [
+        "/home/xubei/projects/jobs/agent_dev_learn/ins_agent/.venv/bin/python",
+        "-m",
+        "evaluation.rag.run"
+      ],
+      "elapsed_seconds": 44.06,
+      "files_sha256": {
+        "m11_rag_ablation.json": "7aaf9c87602d381bd6de05bf914b8866aa7000b5310bba8c24eca7e82b576ecb",
+        "m11_rag_ablation.md": "acafeabe6eb4f365daec8b1d425f0d2d2ca19b4c6f0d0f52de740379c0360fa1",
+        "m11_rag_rankings.jsonl": "7dc23f5af2b6aa89dbad69550b4714666bb3ccd8f4563c14da1eae61bb25ea88"
+      },
+      "output_tail": "Compute Scores:  92%|█████████▏| 295/320 [00:14<00:00, 59.42it/s]\nCompute Scores:  95%|█████████▌| 304/320 [00:14<00:00, 66.32it/s]\nCompute Scores:  98%|█████████▊| 314/320 [00:14<00:00, 74.72it/s]\nCompute Scores: 100%|██████████| 320/320 [00:14<00:00, 22.09it/s]\n{\"query_count\": 256, \"results\": {\"dense\": {\"Hit@10\": 0.328125, \"MRR@10\": 0.14613560267857145, \"Recall@1\": 0.08203125, \"Recall@10\": 0.3203125, \"Recall@5\": 0.2314453125}, \"hybrid\": {\"Hit@10\": 0.375, \"MRR@10\": 0.16484064980158739, \"Recall@1\": 0.09375, \"Recall@10\": 0.3681640625, \"Recall@5\": 0.25390625}, \"hybrid_rerank\": {\"Hit@10\": 0.4140625, \"MRR@10\": 0.19505983382936518, \"Recall@1\": 0.1171875, \"Recall@10\": 0.408203125, \"Recall@5\": 0.27734375}, \"sparse\": {\"Hit@10\": 0.35546875, \"MRR@10\": 0.1485274057539683, \"Recall@1\": 0.07421875, \"Recall@10\": 0.3525390625, \"Recall@5\": 0.24609375}}}"
+    },
+    "replay": {
+      "command": [
+        "/home/xubei/projects/jobs/agent_dev_learn/ins_agent/.venv/bin/python",
+        "-m",
+        "scripts.run_m8_demo"
+      ],
+      "elapsed_seconds": 76.64,
+      "files_sha256": {
+        "m11_replay_demo.json": "5c123ff069d33707d7c55b15f9fa47ce3d811537a047d250fb784e41ff848b44"
+      },
+      "output_tail": "worker crashed after durable planner checkpoint: 0e50b3c2-3590-4b21-b5fc-ef71f6fb9422\nM8 acceptance PASS; wrote evaluation/reports/m8_runner_replay.json"
+    },
+    "sql": {
+      "command": [
+        "/home/xubei/projects/jobs/agent_dev_learn/ins_agent/.venv/bin/python",
+        "-m",
+        "evaluation.sql.run",
+        "--provider",
+        "deepseek",
+        "--max-tokens",
+        "8192"
+      ],
+      "elapsed_seconds": 274.86,
+      "files_sha256": {
+        "m11_sql_evaluation.json": "43475987b2a1a75ad43f5452bf1b6787b48fa8b0795e84b654c00d498adebdc8"
+      },
+      "output_tail": "evaluated 80/110\nevaluated 90/110\nevaluated 100/110\nevaluated 110/110\n{\"execution_success\": 1.0, \"first_pass_result_accuracy\": 1.0, \"repair_attempted_cases\": 0, \"repair_success\": null, \"result_accuracy\": 1.0, \"unanswerable_refusal\": 1.0, \"unsafe_request_refusal\": 1.0}"
+    },
+    "web": {
+      "elapsed_seconds": 0.4,
+      "output_tail": "added 36 packages in 354ms\n\n6 packages are looking for funding\n  run `npm fund` for details"
+    },
+    "web_build": {
+      "elapsed_seconds": 0.55,
+      "output_tail": "computing gzip size...\ndist/index.html                  0.36 kB │ gzip:  0.30 kB\ndist/assets/index-D1q6Ba4O.css   2.68 kB │ gzip:  1.12 kB\ndist/assets/index-DMYpyrH6.js   78.05 kB │ gzip: 30.70 kB\n✓ built in 345ms"
+    },
+    "workflow": {
+      "command": [
+        "/home/xubei/projects/jobs/agent_dev_learn/ins_agent/.venv/bin/python",
+        "-m",
+        "scripts.run_m6_demo",
+        "--provider",
+        "deepseek",
+        "--deepseek-max-tokens",
+        "16384",
+        "--record-failures"
+      ],
+      "elapsed_seconds": 77.35,
+      "files_sha256": {
+        "m11_workflow_demo.json": "40708fe7995146c19b60f801d3eea34e3a825c5e21c05351fd4793e6621d61b8"
+      },
+      "output_tail": "Inference Embeddings:   0%|          | 0/1 [00:00<?, ?it/s]\nInference Embeddings: 100%|██████████| 1/1 [00:00<00:00, 239.16it/s]\nreport: route=REPORT sql=1 rag=1 status=PASS trace=['planner', 'fork', 'knowledge_researcher', 'data_analyst', 'synthesis', 'verifier'] issues=[]\nwrote evaluation/reports/m6_contract_demo.json"
+    }
+  },
+  "workflow": {
+    "issues": {},
+    "model_ids": [
+      "deepseek-flash"
+    ],
+    "model_request_parameters": {
+      "minimum_max_tokens": 16384,
+      "reasoning_effort": "high",
+      "thinking": {
+        "type": "enabled"
+      }
+    },
+    "pass_count": 4,
+    "routes": [
+      "SQL",
+      "RAG",
+      "BOTH",
+      "REPORT"
+    ],
+    "statuses": [
+      "PASS",
+      "PASS",
+      "PASS",
+      "PASS"
+    ]
+  }
+}

@@ -1,0 +1,354 @@
+{
+  "base_git_commit": "283bb068bcf41ab73fdda2de19ce046c32cf7cf0",
+  "code_sha256": {
+    "apps/api/m8.py": "92aa3a157b10eb1cf0906ab0066091060f4b4975a796a031edb7852890a687dd",
+    "apps/runner/worker.py": "8f887bbb46f154937f9769baea4bea9c7efb5916b82a4774874958d9e9c0b227",
+    "packages/agent/m8_graph.py": "80522e2a3b26c06173abbb9dd1f4984d893bf2e60dcd36a2bd5b403f50f339a4",
+    "packages/persistence/artifacts.py": "20be3ed568bec6a7469e2e63bb2037bc0f79b143d1674201cf2bd148a2b6a134",
+    "packages/persistence/checkpoints.py": "cb36310281dd5f99848b1e878f15f6e1e004e2f4485f00f5916343ff7e8dd329",
+    "packages/persistence/jobs.py": "5b8d17f31119ef47abb7bfa236346613dd3695a913ebacd31071cd9c016e5216",
+    "packages/persistence/reviews.py": "b93a7c358f3f265306a182c3f8571e8ee94673b76f823649c93926527524bdca",
+    "scripts/run_m8_demo.py": "b561ba1868da55c2dc70c05e0ca42d4c08f0c57a9d24882fca6c572cf376f265"
+  },
+  "crashed": {
+    "exit_code": 73
+  },
+  "crashed_state": {
+    "approval": null,
+    "cycle": 1,
+    "degraded_flags": [],
+    "job": {
+      "attempt": 1,
+      "id": "fd5aa7fa-f541-4130-8589-f21a561b358c",
+      "last_error": null,
+      "locked_by": "xubei-OMEN:770378",
+      "status": "RUNNING"
+    },
+    "next": [
+      "fork"
+    ],
+    "publication": null,
+    "refs": {},
+    "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+    "status": "RUNNING",
+    "thread_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+    "trace": [
+      "planner"
+    ]
+  },
+  "final": {
+    "approval": {
+      "approval_id": "eeacb889-d22a-4e4f-a5cb-dc30f4e2f005",
+      "artifact": {
+        "artifact_id": "a3ca349a-edfe-46a2-a2fd-9be9a520ef02",
+        "content_hash": "c700cdca87179e641d930b4f02bd20415427be1b0c03a7aa53dcdc2dceb350f8",
+        "generation": 2,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "analysis",
+        "version": 2
+      },
+      "comment": "",
+      "cycle": 2,
+      "reviewer_id": "m8_local_reviewer",
+      "revision_targets": [],
+      "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+      "status": "APPROVED"
+    },
+    "cycle": 2,
+    "degraded_flags": [],
+    "job": {
+      "attempt": 1,
+      "id": "12552693-1cb4-4649-807b-636ab8aeffb8",
+      "last_error": null,
+      "locked_by": null,
+      "status": "COMPLETED"
+    },
+    "next": [],
+    "publication": {
+      "approval_id": "eeacb889-d22a-4e4f-a5cb-dc30f4e2f005",
+      "artifact_id": "a3ca349a-edfe-46a2-a2fd-9be9a520ef02",
+      "artifact_version": 2,
+      "content_hash": "c700cdca87179e641d930b4f02bd20415427be1b0c03a7aa53dcdc2dceb350f8",
+      "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422"
+    },
+    "refs": {
+      "analysis": {
+        "artifact_id": "a3ca349a-edfe-46a2-a2fd-9be9a520ef02",
+        "content_hash": "c700cdca87179e641d930b4f02bd20415427be1b0c03a7aa53dcdc2dceb350f8",
+        "generation": 2,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "analysis",
+        "version": 2
+      },
+      "rag": {
+        "artifact_id": "73b1ca4e-3519-46d7-adb8-075526796d72",
+        "content_hash": "843541b349474e0df7c93c40c9a605d19d74a017fb63421aea04c81025f9b88d",
+        "generation": 2,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "rag",
+        "version": 2
+      },
+      "sql": {
+        "artifact_id": "5bf95450-ae5c-4de9-9b5e-67c996972c9b",
+        "content_hash": "45414c8d98c41584f3ff298b4104f88f84887223f3885df35d32729c1a1467d3",
+        "generation": 1,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "sql",
+        "version": 1
+      },
+      "verification": {
+        "artifact_id": "a55acde3-b435-4bc3-aa24-c63a34d06b7c",
+        "content_hash": "6379e68cbfd578d875761a025c60335b7e61ca184a28204643ecdf22cfed37d5",
+        "generation": 2,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "verification",
+        "version": 2
+      }
+    },
+    "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+    "status": "PUBLISHED",
+    "thread_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier",
+      "human_review",
+      "revision_router",
+      "knowledge_researcher",
+      "synthesis",
+      "verifier",
+      "human_review",
+      "publish"
+    ]
+  },
+  "generated_at": "2026-09-27T14:52:57.231039+00:00",
+  "git_worktree_dirty": false,
+  "publication_row_count": 1,
+  "publish_worker": {
+    "exit_code": 0,
+    "result": {
+      "attempt": 1,
+      "fault_case": null,
+      "fault_fired": 0,
+      "model_response_ids": [],
+      "retry_events": [],
+      "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+      "status": "COMPLETED"
+    }
+  },
+  "query": "请生成 2026 年第二季度合成产品 product_006 的业务与条款综合简报，只列出已发生赔付率、理赔频率（次/在保保单年）以及疾病责任等待期，分别引用运营数据和产品条款。",
+  "recovered_worker": {
+    "exit_code": 0,
+    "result": {
+      "attempt": 2,
+      "fault_case": null,
+      "fault_fired": 0,
+      "model_response_ids": [
+        "deepseek-flash",
+        "deepseek-flash",
+        "deepseek-flash",
+        "deepseek-flash"
+      ],
+      "retry_events": [],
+      "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+      "status": "WAITING_APPROVAL"
+    }
+  },
+  "replay_worker": {
+    "exit_code": 0,
+    "result": {
+      "attempt": 1,
+      "fault_case": null,
+      "fault_fired": 0,
+      "model_response_ids": [
+        "deepseek-flash",
+        "deepseek-flash",
+        "deepseek-flash"
+      ],
+      "retry_events": [],
+      "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+      "status": "WAITING_APPROVAL"
+    }
+  },
+  "review_rows": [
+    [
+      "REJECTED",
+      1,
+      1
+    ],
+    [
+      "APPROVED",
+      2,
+      2
+    ]
+  ],
+  "revised": {
+    "approval": {
+      "approval_id": "e5d4afd9-64ea-432d-862a-4aa9a939ac84",
+      "artifact": {
+        "artifact_id": "2a68345c-9d90-4f3a-b8dc-233ce3f468bc",
+        "content_hash": "2f3182ded52ffc0401a0063d54c422f470742d26d27ff49115564a6a0b6e0386",
+        "generation": 1,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "analysis",
+        "version": 1
+      },
+      "comment": "",
+      "cycle": 1,
+      "reviewer_id": "m8_local_reviewer",
+      "revision_targets": [
+        "rag"
+      ],
+      "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+      "status": "REJECTED"
+    },
+    "cycle": 2,
+    "degraded_flags": [],
+    "job": {
+      "attempt": 1,
+      "id": "db1246b4-c659-426d-91a1-3604b369b861",
+      "last_error": null,
+      "locked_by": null,
+      "status": "WAITING_APPROVAL"
+    },
+    "next": [
+      "human_review"
+    ],
+    "publication": null,
+    "refs": {
+      "analysis": {
+        "artifact_id": "a3ca349a-edfe-46a2-a2fd-9be9a520ef02",
+        "content_hash": "c700cdca87179e641d930b4f02bd20415427be1b0c03a7aa53dcdc2dceb350f8",
+        "generation": 2,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "analysis",
+        "version": 2
+      },
+      "rag": {
+        "artifact_id": "73b1ca4e-3519-46d7-adb8-075526796d72",
+        "content_hash": "843541b349474e0df7c93c40c9a605d19d74a017fb63421aea04c81025f9b88d",
+        "generation": 2,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "rag",
+        "version": 2
+      },
+      "sql": {
+        "artifact_id": "5bf95450-ae5c-4de9-9b5e-67c996972c9b",
+        "content_hash": "45414c8d98c41584f3ff298b4104f88f84887223f3885df35d32729c1a1467d3",
+        "generation": 1,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "sql",
+        "version": 1
+      },
+      "verification": {
+        "artifact_id": "a55acde3-b435-4bc3-aa24-c63a34d06b7c",
+        "content_hash": "6379e68cbfd578d875761a025c60335b7e61ca184a28204643ecdf22cfed37d5",
+        "generation": 2,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "verification",
+        "version": 2
+      }
+    },
+    "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+    "status": "WAITING_APPROVAL",
+    "thread_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier",
+      "human_review",
+      "revision_router",
+      "knowledge_researcher",
+      "synthesis",
+      "verifier"
+    ]
+  },
+  "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+  "stage_versions": {
+    "analysis": [
+      1,
+      2
+    ],
+    "rag": [
+      1,
+      2
+    ],
+    "sql": [
+      1
+    ],
+    "verification": [
+      1,
+      2
+    ]
+  },
+  "stale_approval_status": 409,
+  "thread_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+  "unauthorized_status": 403,
+  "waiting": {
+    "approval": null,
+    "cycle": 1,
+    "degraded_flags": [],
+    "job": {
+      "attempt": 2,
+      "id": "fd5aa7fa-f541-4130-8589-f21a561b358c",
+      "last_error": null,
+      "locked_by": null,
+      "status": "WAITING_APPROVAL"
+    },
+    "next": [
+      "human_review"
+    ],
+    "publication": null,
+    "refs": {
+      "analysis": {
+        "artifact_id": "2a68345c-9d90-4f3a-b8dc-233ce3f468bc",
+        "content_hash": "2f3182ded52ffc0401a0063d54c422f470742d26d27ff49115564a6a0b6e0386",
+        "generation": 1,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "analysis",
+        "version": 1
+      },
+      "rag": {
+        "artifact_id": "c80b3859-59e1-41a6-aee4-ae21e6458b82",
+        "content_hash": "843541b349474e0df7c93c40c9a605d19d74a017fb63421aea04c81025f9b88d",
+        "generation": 1,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "rag",
+        "version": 1
+      },
+      "sql": {
+        "artifact_id": "5bf95450-ae5c-4de9-9b5e-67c996972c9b",
+        "content_hash": "45414c8d98c41584f3ff298b4104f88f84887223f3885df35d32729c1a1467d3",
+        "generation": 1,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "sql",
+        "version": 1
+      },
+      "verification": {
+        "artifact_id": "3ba69219-ac74-4da7-a0da-f3583fea3bea",
+        "content_hash": "6379e68cbfd578d875761a025c60335b7e61ca184a28204643ecdf22cfed37d5",
+        "generation": 1,
+        "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+        "stage": "verification",
+        "version": 1
+      }
+    },
+    "run_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+    "status": "WAITING_APPROVAL",
+    "thread_id": "0e50b3c2-3590-4b21-b5fc-ef71f6fb9422",
+    "trace": [
+      "planner",
+      "fork",
+      "knowledge_researcher",
+      "data_analyst",
+      "synthesis",
+      "verifier"
+    ]
+  }
+}

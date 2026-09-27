@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M10 已通过本机阶段验收；M11 尚未开始。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M11 已通过本机阶段验收。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -162,6 +162,14 @@ M10 只核验 M2 已注册文档的 SHA-256，保留公开草案 `draft` 状态�
 M10 gate：从空专用数据库启动 HTTP API、登录 analyst、创建综合 run、拒绝 analyst 审核、DeepSeek worker 经真实 PostgreSQL/Milvus/BGE/MCP 执行并在注入一次 Planner timeout 后留下持久化 retry event、读取预览/artifact/SSE、reviewer 拒绝过期版本而批准当前版本、再次执行 worker、确认唯一 publication 与报告 `published=true`；并运行完整 pytest 与 Vue build。演示脚本只在全部断言通过后写独立 [M10 报告](../evaluation/reports/m10_api_ui_demo.json)。
 
 最终从干净源码提交 `d83bec6` 和空 `insurance_m10_demo_final` 数据库运行：综合路径在人工审核前生成 SQL/RAG/analysis/verification 四类 artifact，DeepSeek 5 次响应均报告 `deepseek-flash`；一次本地注入的 Planner timeout 写入 `dependency.retry`，并由同一 worker 恢复。SSE 首条为 `workflow.queued`。analyst 审核 403，旧哈希及重复审核 409；reviewer 批准当前 analysis 后，第二个 worker 无模型调用，事件链记录 `workflow.resumed → publish.completed → workflow.completed`。数据库中对应 run 只有一条 publication，报告 `published=true`。独立按基线提交重算 9 个源码 SHA-256，核对报告事件数及 PostgreSQL 发布行数均匹配。Vue build 通过；含真实 PostgreSQL/Milvus/BGE 的完整本机 pytest **107 passed**，不是 CI。M10 阶段 gate PASS。新文档上传/索引、按需重算评测和 token 使用量仍是显式限制，不应对外说成已完成。
+
+## M11 最终评测与文档（2026-09-27）
+
+统一根目录 Compose 使用 `include` 启动原本分开的 PostgreSQL 与 Milvus/etcd/MinIO；实际执行 `docker compose up -d --wait`，四个容器健康，两个已有 Milvus collection 保持可读。`scripts/run_m11_final.py` 对 RAG、SQL、workflow、M8 replay、M9 fault 各建一次性干净 Git worktree，复用本机已核验的大文件，以新文件名保存结果，原冻结报告逐字节不变。脚本要求真实模型/数据库和无 skipped 的完整 pytest；任一组失败不会生成新的 M11 总成功报告。
+
+首轮 M11 SQL 在第 60 题因 DeepSeek `finish_reason=length` 中止，无成功报告。评测客户端改为可显式指定并记录输出上限，M11 SQL 使用 8,192；历史默认 1,200、题本、gold 与 strict evaluator 不变。第二轮 SQL 完成 110 题，REPORT Verifier 在原 8,192 thinking 输出上限下按 fail-closed 返回 `BLOCK`。单题 16,384 上限诊断又出现 `REVISE`：模型质疑季度右端日期的排他上界描述。两次均未写 M11 总成功报告。M11 workflow 后改为以显式 16,384 上限记录四路真实状态；仍保留原 M6 strict 验收默认行为，不放宽 Verifier 或确定性证据检查。
+
+最终从干净提交 `283bb06` 重跑：RAG 四组指标与原 M2 报告一致，hybrid + reranker Recall@10 为 0.4082、MRR@10 为 0.1951；SQL DeepSeek 100/100 可回答题严格结果匹配、10/10 拒绝正确，repair 未触发；四路 workflow 全部 `PASS`；M8 受控崩溃后同一 checkpoint 接管、仅重跑 RAG、SQL v1 不变、唯一发布；M9 受控一次 Planner 超时恢复、故障套件 **28 passed**、唯一发布。完整本机 pytest **109 passed**，`npm ci` 与 Vue build 通过。总报告及每个子报告记录基线、源码哈希、模型信息和运行输出，独立检查均一致。没有 GitHub CI、未见题泛化分数、真实外部故障率或 token 成本。完整复现、失败案例、简历陈述证据及限制见[最终验收文档](final_evaluation.md)。M11 本机阶段 gate PASS；未添加新运行时角色或检索/SQL 实现。
 
 ## 关键实施细节
 
