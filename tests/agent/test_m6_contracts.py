@@ -5,8 +5,9 @@ import hashlib
 from types import SimpleNamespace
 
 import pytest
+from pydantic import ValidationError
 
-from packages.agent.agents.roles import SynthesisAnalystAgent, VerificationAgent
+from packages.agent.agents.roles import PlannerAgent, SynthesisAnalystAgent, VerificationAgent
 from packages.agent.contracts import (ContractViolation, NODE_CONTRACTS,
                                      NodeContract, VerifierInput, VerifierOutput,
                                      checked_node, validate_registry)
@@ -58,6 +59,32 @@ def test_boundary_blocks_missing_input_and_invalid_output_before_handoff():
     sql_plan = TaskPlan(intent="count", route="SQL", sql_tasks=["count"])
     with pytest.raises(ContractViolation, match="route requires SQL artifacts"):
         NODE_CONTRACTS["synthesis"].validate_input({"plan": sql_plan})
+
+
+def test_planner_repairs_extra_json_field_once_without_relaxing_contract():
+    class ExtraFieldModel:
+        def __init__(self, always_invalid=False):
+            self.calls = []
+            self.always_invalid = always_invalid
+
+        async def complete_json(self, role, system, user, *, max_tokens=1200):
+            self.calls.append(user)
+            plan = {"intent": "count", "route": "SQL", "sql_tasks": ["count"]}
+            if self.always_invalid or len(self.calls) == 1:
+                plan["type"] = "json_object"
+            return plan
+
+    model = ExtraFieldModel()
+    assert asyncio.run(PlannerAgent(model).plan("count")) == TaskPlan(
+        intent="count", route="SQL", sql_tasks=["count"])
+    assert len(model.calls) == 2
+    assert "TaskPlan contract" in model.calls[1]
+    assert "Extra inputs are not permitted" in model.calls[1]
+
+    model = ExtraFieldModel(always_invalid=True)
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        asyncio.run(PlannerAgent(model).plan("count"))
+    assert len(model.calls) == 2
 
 
 class BrokenModel:

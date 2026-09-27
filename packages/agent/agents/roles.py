@@ -39,8 +39,19 @@ class PlannerAgent:
                   "and RAG tasks. Do not query tools, invent data, or write the final answer. "
                   "For a pure SQL route leave rag_tasks empty; for pure RAG leave sql_tasks empty. "
                   "Keep exact product codes and requested periods in tasks.")
-        raw = await self.model.complete_json("planner", system, query, max_tokens=650)
-        plan = TaskPlan.model_validate(raw)
+        message = query
+        for attempt in range(2):
+            raw = await self.model.complete_json("planner", system, message,
+                                                 max_tokens=650)
+            try:
+                plan = TaskPlan.model_validate(raw)
+                break
+            except ValidationError as exc:
+                if attempt == 1:
+                    raise
+                message = (query + "\n\nYour previous JSON failed the TaskPlan contract: "
+                           + str(exc)[:500] + "\nReturn only the five specified fields "
+                           "with the required types; do not add metadata fields.")
         if ((plan.route == "SQL" and (not plan.sql_tasks or plan.rag_tasks))
                 or (plan.route == "RAG" and (not plan.rag_tasks or plan.sql_tasks))
                 or (plan.route in {"BOTH", "REPORT"}
