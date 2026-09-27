@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M8 已通过本机验收；当前停在 M8，尚未进入 M9。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M8 已通过本机验收；当前实施 M9 故障注入，尚未进入 M10。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -146,6 +146,12 @@ M8 另建专用图与 `agent_jobs`、`run_artifacts`、`m8_reviews`、`m8_public
 第一次真实进程验收暴露出认领 lease 早于 BGE/Milvus 初始化，4 秒 lease 在 Planner 前过期；没有生成成功报告。调整为初始化后认领，并从空 M8 演示库重跑。最终 [M8 报告](../evaluation/reports/m8_runner_replay.json)记录：第一个 worker 在 Planner checkpoint 后主动退出，第二个 worker 租约到期接管同一 `run_id/thread_id`（attempt 2），Planner trace 只有一次；初稿进入 `WAITING_APPROVAL`。Reviewer 拒绝并指定只重跑 RAG 后，RAG/Analysis/Verification 版本变为 v2，SQL ID、版本和 SHA-256 均与 v1 完全一致，Planner 与 SQL 专家 trace 未增加。旧 analysis 审批得到 HTTP 409，新版本批准后生成唯一发布回执。恢复、重跑、发布 worker 分别记录 4、3、0 次 `deepseek-flash` 响应；崩溃进程的 Planner 响应未计入。完整本机测试 **78 passed**，其中 M8 PostgreSQL 测试覆盖租约接管、旧 worker 拒绝、同阶段幂等、artifact 篡改检测、RAG 单阶段重跑及版本绑定审批。此为本机验收，不是 CI、性能指标或新题泛化结果。M8 PASS，停在 M8；M9 尚未实现。
 
 补强发布时对 PostgreSQL 实际 `content_json` 的哈希复核后，第一次重新验收在 RAG 定向重跑后的 Verifier 返回 `BLOCK`：其模型调用抛出 `RuntimeError`，图按 fail-closed 规则终止，没有发布，也没有生成新的成功报告。保留该本机失败记录；再次从空演示库运行同一脚本后通过。当前 M8 不实施 M9 的自动故障重试或降级；单次外部模型失败仍会让该 run 结束为 `BLOCK`。
+
+## M9 故障注入实施与验收
+
+M9 的故障只由 worker 本地 `FAULT_INJECTION_ENABLED=1` 开启，API 不接受故障参数。HTTP 超时、429/部分 5xx、暂时性 MCP 故障和数据库连接错误最多重试 3 次并指数退避；业务参数/契约错误不做传输层重试。现有 SQL 反馈修正、RAG 空结果重查、JSON 解析重试继续属于 Agent 自身恢复。Verifier 故障或无效输出始终 `BLOCK`，不自动降级通过。仅 reranker 失败时允许使用已取得的 dense/sparse RRF 候选，RAG artifact 和 run 状态记录 `reranker_unavailable`。worker 为每个 run 持有 PostgreSQL advisory lock，保证旧 worker 与接管者不会同时写 checkpoint；artifact 写入仍以 generation 去重。
+
+`tests/fault` 覆盖八类配置故障、429 的真实 HTTP 客户端响应路径、真实 PostgreSQL statement timeout、真实 Milvus/BGE reranker 降级、worker 进程崩溃、artifact 写入后的进程崩溃、租约接管竞争和重复 publish。受控故障用 stub 模型/工具验证确定性状态，不把它们称作真实 DeepSeek/Milvus 故障。最终脚本另对真实 DeepSeek Planner 注入一次本地超时，随后继续调用真实 MCP、业务 PostgreSQL 和 Milvus/BGE，并要求人工审核前 `PASS`、审核后唯一发布；成功才写 [M9 故障报告](../evaluation/reports/m9_fault_injection.json)。验收结果和实际限制将在运行后补录。
 
 ## 关键实施细节
 

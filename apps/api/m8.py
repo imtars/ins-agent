@@ -112,6 +112,7 @@ def create_app(settings: M8Settings | None = None) -> FastAPI:
                         "last_error": job["last_error"]},
                 "cycle": values.get("cycle"), "next": list(snapshot.next),
                 "trace": values.get("trace", []),
+                "degraded_flags": values.get("degraded_flags", []),
                 "refs": {key: ref.model_dump() for key, ref in refs.items()},
                 "approval": values["approval"].model_dump() if values.get("approval") else None,
                 "publication": values.get("publication")}

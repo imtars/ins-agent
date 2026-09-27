@@ -8,6 +8,7 @@ from fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from packages.agent.contracts import ContractViolation
+from packages.agent.faults import error_code, is_transient, InjectedFault
 from packages.agent.evidence import label_source_scope, validate_claim_evidence
 from packages.agent.models import (AnalysisResult, KnowledgeQuery, RagArtifact,
                                    SQL_TOOL_OUTPUTS, SearchOutput, SqlArtifact,
@@ -191,7 +192,8 @@ class KnowledgeResearcherAgent:
                     raise ContractViolation("knowledge retry returned mismatched query or product")
                 evidence = output.evidence
             artifacts.append(RagArtifact(artifact_id=f"rag:{index}", task=task,
-                                         query=args["query"], evidence=evidence))
+                                         query=args["query"], evidence=evidence,
+                                         degraded_flags=output.degraded_flags))
         return artifacts
 
 
@@ -285,5 +287,10 @@ class VerificationAgent:
                 return VerificationResult(status="REVISE", issues=result.issues)
             return result
         except Exception as exc:
+            code = error_code(exc)
+            category = ("verifier_unavailable" if is_transient(exc)
+                        or isinstance(exc, InjectedFault) else
+                        "verifier_invalid_output" if isinstance(exc, (ValueError, ValidationError))
+                        else "verifier_failed")
             return VerificationResult(status="BLOCK",
-                                      issues=[f"verifier failed: {type(exc).__name__}"])
+                                      issues=[f"{category}:{code}"])

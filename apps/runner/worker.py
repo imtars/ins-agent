@@ -12,6 +12,8 @@ from langgraph.types import Command
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from packages.agent.m8_graph import build_m8_workflow
+from packages.agent.faults import (FaultInjector, FaultTolerantModel,
+                                   FaultTolerantTools, RetryPolicy)
 from packages.llm.client import select_chat_client
 from packages.persistence.approvals import psycopg_url
 from packages.persistence.artifacts import ArtifactStore
@@ -25,6 +27,13 @@ from services.mcp_knowledge.server import build_real_server
 async def run_claimed(job: dict, queue: JobQueue, graph, reviews: ReviewStore, *,
                       lease_seconds: int = 30,
                       crash_after_planner: bool = False) -> dict:
+    async with queue.execution_lock(job, lease_seconds):
+        return await _run_claimed_locked(job, queue, graph, reviews,
+            lease_seconds=lease_seconds, crash_after_planner=crash_after_planner)
+
+
+async def _run_claimed_locked(job: dict, queue: JobQueue, graph, reviews: ReviewStore, *,
+                              lease_seconds: int, crash_after_planner: bool) -> dict:
     config = {"configurable": {"thread_id": str(job["run_id"])}}
     snapshot = await graph.aget_state(config)
     if not snapshot.values:
@@ -77,6 +86,8 @@ async def work_once(database_url: str, reader_url: str, milvus_uri: str,
                     *, provider: str = "deepseek", lease_seconds: int = 30,
                     crash_after_planner: bool = False, worker_id: str | None = None):
     queue = JobQueue(database_url)
+    injector = FaultInjector.from_env()
+    policy = RetryPolicy()
     artifacts = ArtifactStore(database_url)
     reviews = ReviewStore(database_url, artifacts)
     await queue.setup()
@@ -89,24 +100,30 @@ async def work_once(database_url: str, reader_url: str, milvus_uri: str,
             await saver.setup()
             async with ClientGroup({"data": Client(data_server(engine)),
                     "knowledge": Client(build_real_server(milvus_uri))}) as tools:
-                model = select_chat_client(provider)
-                job = await queue.claim(worker_id or f"{socket.gethostname()}:{os.getpid()}",
-                                        lease_seconds)
+                model = FaultTolerantModel(select_chat_client(provider), policy, injector)
+                resilient_tools = FaultTolerantTools(tools, policy, injector)
+                job = await policy.run("postgres:claim", lambda: queue.claim(
+                    worker_id or f"{socket.gethostname()}:{os.getpid()}", lease_seconds))
                 if job is None:
                     return None
 
                 async def assert_lease():
                     await queue.assert_lease(job)
 
-                graph = build_m8_workflow(model, tools, artifacts, reviews,
+                graph = build_m8_workflow(model, resilient_tools, artifacts, reviews,
                     checkpointer=saver, assert_lease=assert_lease)
                 try:
                     result = await run_claimed(job, queue, graph, reviews,
                         lease_seconds=lease_seconds,
-                        crash_after_planner=crash_after_planner)
+                        crash_after_planner=(crash_after_planner or
+                                             (injector.enabled and
+                                              injector.case == "runner_crash")))
                     print({"run_id": str(job["run_id"]), "attempt": job["attempt"],
                            "status": result["status"],
-                           "model_response_ids": getattr(model, "response_models", [])},
+                           "model_response_ids": model.response_models,
+                           "fault_case": injector.case if injector.enabled else None,
+                           "fault_fired": injector.fired,
+                           "retry_events": [item.__dict__ for item in policy.events]},
                           flush=True)
                     return result
                 except Exception as exc:

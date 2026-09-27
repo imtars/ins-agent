@@ -187,6 +187,7 @@ class SearchOutput(RoleOutput):
     product_code: str | None
     evidence: list[Evidence]
     count: int = Field(ge=0)
+    degraded_flags: list[Literal["reranker_unavailable"]] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def count_matches_evidence(self):
@@ -200,6 +201,7 @@ class RagArtifact(RoleOutput):
     task: str
     query: str
     evidence: list[Evidence]
+    degraded_flags: list[Literal["reranker_unavailable"]] = Field(default_factory=list)
 
 
 class AnalysisClaim(RoleOutput):

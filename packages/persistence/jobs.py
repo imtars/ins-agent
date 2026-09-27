@@ -1,6 +1,7 @@
 """PostgreSQL lease queue for one durable LangGraph thread per run."""
 
-from datetime import datetime, timedelta, timezone
+import asyncio
+from contextlib import asynccontextmanager
 from uuid import UUID, uuid4
 
 from psycopg import AsyncConnection
@@ -125,3 +126,24 @@ class JobQueue:
                 SELECT * FROM agent_jobs WHERE run_id = %s
                 ORDER BY created_at DESC, id DESC LIMIT 1
             """, (run_id,))).fetchone()
+
+    @asynccontextmanager
+    async def execution_lock(self, job: dict, lease_seconds: int):
+        """Serialize checkpoint writers for a run, including a lease takeover."""
+        key = f"m9:checkpoint:{job['run_id']}"
+        async with await AsyncConnection.connect(self.database_url,
+                                                  autocommit=True) as conn:
+            acquired = False
+            try:
+                while not acquired:
+                    row = await (await conn.execute(
+                        "SELECT pg_try_advisory_lock(hashtext(%s))", (key,))).fetchone()
+                    acquired = row[0]
+                    if not acquired:
+                        await self.renew(job, lease_seconds)
+                        await asyncio.sleep(min(0.25, lease_seconds / 4))
+                await self.assert_lease(job)
+                yield
+            finally:
+                if acquired:
+                    await conn.execute("SELECT pg_advisory_unlock(hashtext(%s))", (key,))

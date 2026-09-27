@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M8 已完成本机验收**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M8 增加本机 worker 与定向重跑，完整 API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M8 已完成本机验收；M9 故障注入实现待最终真实验收**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M8 增加本机 worker 与定向重跑；M9 增加受控故障、重试和降级。完整 API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -168,6 +168,24 @@ uv run --locked python -m scripts.run_m8_demo
 
 本机真实进程验收中，崩溃前已保存 Planner checkpoint；接管者以同一 run/thread 的第 2 次 attempt 执行。RAG、Analysis、Verification 进入 v2，SQL 仍为同一 v1 引用和 SHA-256。旧版本审批得到 HTTP 409，当前版本获批后只写一条发布回执。恢复、重跑、发布三个 worker 进程分别记录 4、3、0 次 `deepseek-flash` 响应；崩溃进程的 Planner 响应没有写入报告，不能计入这些数字。完整本机 pytest 为 **78 passed**，不是 CI 结果。
 
+## M9 故障注入与恢复
+
+`FAULT_INJECTION_ENABLED=1` 且设置合法 `FAULT_CASE` 时，worker 才启用本地故障点；API 请求无法指定故障。支持 `llm_timeout`、`llm_invalid_json`、`postgres_timeout`、`milvus_timeout`、`reranker_failure`、`mcp_failure`、`runner_crash`、`verifier_failure`；`FAULT_STAGE` 可限定模型角色或工具名，`FAULT_OCCURRENCES` 控制注入次数。`runner_crash` 在 Planner 同步 checkpoint 后令测试 worker 退出。除 Verifier 故障必须 `BLOCK` 外，超时、429 和明确的暂时性 MCP/数据库连接错误最多尝试 3 次并指数退避；无效工具参数、契约错误不做传输层重试。Reranker 故障时保留已算出的 dense/sparse RRF 候选，并在 RAG artifact 与 run 状态中写 `degraded_flags=["reranker_unavailable"]`；Milvus 故障不会伪造条款证据。每个 run 的 checkpoint writer 持有 PostgreSQL 会话级 advisory lock，租约接管者等待旧 writer 释放后再恢复。
+
+创建两个独立数据库后运行 M9 验收：
+
+```bash
+docker compose exec -T postgres createdb -U insurance_app insurance_m9_demo
+docker compose exec -T postgres createdb -U insurance_app insurance_m9_acceptance
+export M9_DATABASE_URL='postgresql://insurance_app:change-me-local-only@127.0.0.1:5432/insurance_m9_demo'
+export M9_TEST_DATABASE_URL='postgresql://insurance_app:change-me-local-only@127.0.0.1:5432/insurance_m9_acceptance'
+export M9_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_acceptance'
+export M9_TEST_MILVUS_URI='http://127.0.0.1:19530'
+uv run --locked python -m scripts.run_m9_faults
+```
+
+脚本从干净源码基线对真实 DeepSeek Planner 注入一次超时，验证重试后经真实 MCP/PostgreSQL/Milvus/BGE 到达人工审核，再批准并检查唯一发布回执；随后运行 `tests/fault`。后者使用受控模型/工具故障、真实 PostgreSQL checkpoint 和真实 Milvus/BGE reranker 故障路径。全部通过才写 [M9 故障报告](evaluation/reports/m9_fault_injection.json)。此处的通过数量是本机测试，不是外部服务可靠性指标。
+
 ## 设计文档
 
 - [架构与阶段边界](docs/architecture.md)
@@ -181,6 +199,7 @@ uv run --locked python -m scripts.run_m8_demo
 - [M6 本机报告](evaluation/reports/m6_contract_demo.json)
 - [M7 本机报告](evaluation/reports/m7_durable_demo.json)
 - [M8 本机报告](evaluation/reports/m8_runner_replay.json)
+- [M9 故障报告](evaluation/reports/m9_fault_injection.json)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)

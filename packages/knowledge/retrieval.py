@@ -43,6 +43,15 @@ def rrf(dense: list[dict], sparse: list[dict], k: int = 60,
 
 def retrieve_evidence(store, embedder, reranker, query: str, *, collection: str,
                       product_code: str | None = None, limit: int = 5) -> list[dict]:
+    evidence, _ = retrieve_evidence_with_status(
+        store, embedder, reranker, query, collection=collection,
+        product_code=product_code, limit=limit)
+    return evidence
+
+
+def retrieve_evidence_with_status(store, embedder, reranker, query: str, *,
+                                  collection: str, product_code: str | None = None,
+                                  limit: int = 5, injector=None) -> tuple[list[dict], list[str]]:
     if not query.strip() or limit < 1 or limit > 20:
         raise ValueError("query must be nonempty and limit must be 1–20")
     vector = encode(embedder, [query], batch_size=1)[0]
@@ -52,15 +61,30 @@ def retrieve_evidence(store, embedder, reranker, query: str, *, collection: str,
                            product_code=product_code)
     candidates = rrf(dense, sparse)
     if not candidates:
-        return []
-    scores = reranker.compute_score([[query, hit["entity"]["text"]]
-                                     for hit in candidates], batch_size=16, max_length=512)
-    if isinstance(scores, (float, int)):
-        scores = [scores]
-    if len(scores) != len(candidates):
-        raise RuntimeError("reranker returned wrong number of scores")
-    order = sorted(range(len(candidates)), key=lambda i: (-float(scores[i]), i,
-                                                           candidates[i]["id"]))
+        return [], []
+    try:
+        if injector is not None:
+            injector.fire("reranker_failure", "reranker")
+        scores = reranker.compute_score([[query, hit["entity"]["text"]]
+                                         for hit in candidates], batch_size=16, max_length=512)
+        if isinstance(scores, (float, int)):
+            scores = [scores]
+        if len(scores) != len(candidates):
+            raise RuntimeError("reranker returned wrong number of scores")
+        order = sorted(range(len(candidates)), key=lambda i: (-float(scores[i]), i,
+                                                               candidates[i]["id"]))
+        degraded_flags = []
+    except Exception:
+        # Candidates already passed dense+sparse search and RRF. Keep that order;
+        # the flag distinguishes these fallback scores from reranker scores.
+        fused_scores = {}
+        for ranking in (dense, sparse):
+            for rank, hit in enumerate(ranking, 1):
+                key = str(hit["id"])
+                fused_scores[key] = fused_scores.get(key, 0.0) + 1 / (60 + rank)
+        scores = [fused_scores[hit["id"]] for hit in candidates]
+        order = list(range(len(candidates)))
+        degraded_flags = ["reranker_unavailable"]
     evidence = []
     for index in order[:limit]:
         item = candidates[index]["entity"]
@@ -74,4 +98,4 @@ def retrieve_evidence(store, embedder, reranker, query: str, *, collection: str,
                          "product_code": item["product_code"] or None,
                          "content_hash": item["content_hash"],
                          "text": item["text"], "rerank_score": float(scores[index])})
-    return evidence
+    return evidence, degraded_flags

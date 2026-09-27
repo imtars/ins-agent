@@ -50,3 +50,4 @@ M7 历史图及其 checkpoint/审核表保留。M8 新图保留五角色和 M4 M
 - M3 后续质量判断：初始诊断的错误已用于 M3.1 同题回归修正；回归分数不能冒称独立泛化结果。若未来需要泛化结论，须另设未参与开发的题本。
 - M7：真实两进程验收已验证 PostgreSQL checkpoint、`interrupt()` 恢复和发布幂等；详见 [M7 本机报告](../evaluation/reports/m7_durable_demo.json)。
 - M8：真实 worker 崩溃、lease expiry 恢复和 RAG 定向重跑见 [M8 本机报告](../evaluation/reports/m8_runner_replay.json)；同一阶段 artifact 写入以 `(run_id, stage, generation)` 幂等。
+- M9：暂时性依赖错误在 LLM/MCP 边界有限重试；Verifier 仍 fail closed。Reranker 故障只使用已经取得的 RRF 候选并标记降级。PostgreSQL 会话 advisory lock 串行化同一 run 的 checkpoint writer；详见 [M9 故障报告](../evaluation/reports/m9_fault_injection.json)。

@@ -11,7 +11,8 @@ from packages.knowledge.catalog import document_chunks, document_metadata, index
 from packages.knowledge.documents import build_knowledge_corpus
 from packages.knowledge.milvus_store import (KNOWLEDGE_COLLECTION, client,
                                               embedding_model, index_jsonl)
-from packages.knowledge.retrieval import retrieve_evidence
+from packages.knowledge.retrieval import retrieve_evidence_with_status
+from packages.agent.faults import FaultInjector
 from scripts.download_m2_models import verify_local_model
 
 
@@ -20,6 +21,7 @@ class SearchResult(TypedDict):
     product_code: str | None
     evidence: list[dict]
     count: int
+    degraded_flags: list[str]
 
 
 class ChunkResult(TypedDict):
@@ -59,7 +61,7 @@ class MetadataResult(TypedDict):
     status: str
 
 
-def create_server(store, embedder, reranker) -> FastMCP:
+def create_server(store, embedder, reranker, *, injector=None) -> FastMCP:
     mcp = FastMCP("mcp-knowledge", instructions=(
         "Retrieve cited evidence only from 12 synthetic product documents and five "
         "registered public consultation drafts. Public drafts are not synthetic products."))
@@ -69,11 +71,12 @@ def create_server(store, embedder, reranker) -> FastMCP:
                          product_code: str | None = None,
                          limit: Annotated[int, Field(ge=1, le=10)] = 5) -> SearchResult:
         """Run accepted BGE-M3 dense/sparse, RRF, and reranker retrieval."""
-        evidence = retrieve_evidence(store, embedder, reranker, query,
-                                     collection=KNOWLEDGE_COLLECTION,
-                                     product_code=product_code, limit=limit)
+        evidence, degraded_flags = retrieve_evidence_with_status(
+            store, embedder, reranker, query, collection=KNOWLEDGE_COLLECTION,
+            product_code=product_code, limit=limit, injector=injector)
         return {"query": query, "product_code": product_code,
-                "evidence": evidence, "count": len(evidence)}
+                "evidence": evidence, "count": len(evidence),
+                "degraded_flags": degraded_flags}
 
     @mcp.tool
     def get_chunk(chunk_id: str) -> ChunkResult:
@@ -94,7 +97,7 @@ def create_server(store, embedder, reranker) -> FastMCP:
     return mcp
 
 
-def build_real_server(uri: str) -> FastMCP:
+def build_real_server(uri: str, *, injector=None) -> FastMCP:
     """Validate pinned model bytes and existing M2 index before serving queries."""
     verify_local_model("bge-m3")
     verify_local_model("bge-reranker-v2-m3")
@@ -106,7 +109,9 @@ def build_real_server(uri: str) -> FastMCP:
     from FlagEmbedding import FlagReranker
     reranker = FlagReranker("data/models/bge-reranker-v2-m3", use_fp16=True,
                            devices=["cuda:0"])
-    return create_server(store, embedder, reranker)
+    return create_server(store, embedder, reranker,
+                         injector=injector if injector is not None else
+                         FaultInjector.from_env())
 
 
 def main() -> None:

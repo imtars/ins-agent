@@ -36,6 +36,7 @@ class M8State(TypedDict, total=False):
     approval: ReviewDecision
     publication: dict
     status: str
+    degraded_flags: list[str]
     trace: Annotated[list[str], operator.add]
 
 
@@ -101,7 +102,9 @@ def build_m8_workflow(model: JsonModel, tools: ToolCaller, artifacts: ArtifactSt
             lambda: synthesis.compose(state["plan"], sql, rag),
             assert_lease=assert_lease)
         SynthesisOutput.model_validate({"analysis": value, "trace": ["synthesis"]})
-        return {"refs": {"analysis": ref}, "trace": ["synthesis"]}
+        return {"refs": {"analysis": ref}, "trace": ["synthesis"],
+                "degraded_flags": sorted({flag for item in rag
+                                          for flag in item.degraded_flags})}
 
     async def verifier_node(state: M8State):
         await guard(state)
