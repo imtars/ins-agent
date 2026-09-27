@@ -7,6 +7,7 @@ from evaluation.rag.dataset import normalize_text, prepare, stable_id
 from evaluation.rag.run import metrics, rrf
 from packages.knowledge import documents, milvus_store
 from packages.knowledge.documents import RegisteredSource, parse_and_chunk, registered_sources
+from packages.knowledge.retrieval import search_vector
 
 
 def test_insur_qa_deduplicates_passages_and_unions_repeated_query_positives(tmp_path):
@@ -111,7 +112,7 @@ def test_existing_milvus_index_reuse_requires_config_and_code_hash(tmp_path, mon
         "max_model_tokens": milvus_store.MAX_MODEL_TOKENS,
         "schema_version": milvus_store.SCHEMA_VERSION,
         "vector_dim": milvus_store.VECTOR_DIM,
-        "index_config": milvus_store.INDEX_CONFIG,
+        "index_config": milvus_store.index_config(True),
         "index_code_sha256": milvus_store.file_sha256(Path(milvus_store.__file__)),
         "model_files_sha256": {"pytorch_model.bin": "weights-sha"},
         "encoder_dependencies": {name: milvus_store.version(name) for name in
@@ -129,9 +130,29 @@ def test_existing_milvus_index_reuse_requires_config_and_code_hash(tmp_path, mon
         milvus_store.index_jsonl(ExistingStore(), None, "test_index", corpus,
                                 benchmark=True)
 
-    marker["index_config"] = milvus_store.INDEX_CONFIG
+    marker["index_config"] = milvus_store.index_config(True)
     marker["index_code_sha256"] = "old-code-hash"
     marker_path.write_text(json.dumps(marker), encoding="utf-8")
     with pytest.raises(ValueError, match="index code and config"):
         milvus_store.index_jsonl(ExistingStore(), None, "test_index", corpus,
                                 benchmark=True)
+
+
+def test_benchmark_uses_flat_and_runtime_keeps_hnsw():
+    assert milvus_store.index_config(True)["dense"]["index_type"] == "FLAT"
+    assert milvus_store.index_config(False)["dense"]["index_type"] == "HNSW"
+
+    class SearchStore:
+        def __init__(self):
+            self.params = []
+
+        def search(self, **kwargs):
+            self.params.append(kwargs["search_params"])
+            return [[]]
+
+    store = SearchStore()
+    vector = {"dense_vector": [0.0] * milvus_store.VECTOR_DIM}
+    search_vector(store, milvus_store.BENCHMARK_COLLECTION, vector, "dense_vector")
+    search_vector(store, milvus_store.KNOWLEDGE_COLLECTION, vector, "dense_vector")
+    assert store.params[0]["params"] == {}
+    assert store.params[1]["params"] == {"ef": 128}

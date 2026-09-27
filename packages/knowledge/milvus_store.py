@@ -17,12 +17,17 @@ MAX_INDEX_CHARS = 1800
 MAX_MODEL_TOKENS = 512
 VECTOR_DIM = 1024
 SCHEMA_VERSION = 1
-INDEX_CONFIG = {
-    "dense": {"index_type": "HNSW", "metric_type": "COSINE",
-              "params": {"M": 16, "efConstruction": 200}},
-    "sparse": {"index_type": "SPARSE_INVERTED_INDEX", "metric_type": "IP",
-               "params": {"drop_ratio_build": 0.0}},
-}
+SPARSE_INDEX = {"index_type": "SPARSE_INVERTED_INDEX", "metric_type": "IP",
+                "params": {"drop_ratio_build": 0.0}}
+
+
+def index_config(benchmark: bool) -> dict:
+    """Use exact dense search for evaluation; retain HNSW for runtime knowledge."""
+    dense = ({"index_type": "FLAT", "metric_type": "COSINE", "params": {}}
+             if benchmark else
+             {"index_type": "HNSW", "metric_type": "COSINE",
+              "params": {"M": 16, "efConstruction": 200}})
+    return {"dense": dense, "sparse": SPARSE_INDEX}
 
 
 def index_text(value: str) -> str:
@@ -60,7 +65,7 @@ def client(uri: str = "http://127.0.0.1:19530") -> MilvusClient:
     return result
 
 
-def create_collection(store: MilvusClient, name: str) -> None:
+def create_collection(store: MilvusClient, name: str, *, benchmark: bool) -> None:
     schema = store.create_schema(auto_id=False, enable_dynamic_field=False)
     schema.add_field(field_name="pk", datatype=DataType.VARCHAR, is_primary=True, max_length=64)
     for field, length in (("doc_id", 128), ("chunk_id", 64), ("title", 512),
@@ -73,8 +78,9 @@ def create_collection(store: MilvusClient, name: str) -> None:
     schema.add_field(field_name="dense_vector", datatype=DataType.FLOAT_VECTOR, dim=VECTOR_DIM)
     schema.add_field(field_name="sparse_vector", datatype=DataType.SPARSE_FLOAT_VECTOR)
     indexes = store.prepare_index_params()
-    for field, settings in (("dense_vector", INDEX_CONFIG["dense"]),
-                            ("sparse_vector", INDEX_CONFIG["sparse"])):
+    config = index_config(benchmark)
+    for field, settings in (("dense_vector", config["dense"]),
+                            ("sparse_vector", config["sparse"])):
         indexes.add_index(field_name=field, **settings)
     store.create_collection(collection_name=name, schema=schema, index_params=indexes)
 
@@ -115,7 +121,7 @@ def index_jsonl(store: MilvusClient, model, name: str, corpus: Path,
                 "max_model_tokens": MAX_MODEL_TOKENS,
                 "schema_version": SCHEMA_VERSION,
                 "vector_dim": VECTOR_DIM,
-                "index_config": INDEX_CONFIG,
+                "index_config": index_config(benchmark),
                 "index_code_sha256": file_sha256(Path(__file__)),
                 "model_files_sha256": {item["filename"]: item["sha256"]
                                         for item in model_manifest["files"]},
@@ -134,7 +140,7 @@ def index_jsonl(store: MilvusClient, model, name: str, corpus: Path,
         return marker
     if exists:
         store.drop_collection(name)
-    create_collection(store, name)
+    create_collection(store, name, benchmark=benchmark)
     created_at = datetime.now(timezone.utc).isoformat()
     batch = []
     count = 0

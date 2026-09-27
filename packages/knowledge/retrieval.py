@@ -2,7 +2,7 @@
 
 import re
 
-from packages.knowledge.milvus_store import encode
+from packages.knowledge.milvus_store import BENCHMARK_COLLECTION, encode
 
 FIELDS = ("text", "doc_id", "chunk_id", "title", "section", "page",
           "source_type", "source_name", "source_url", "product_code", "content_hash")
@@ -11,7 +11,8 @@ FIELDS = ("text", "doc_id", "chunk_id", "title", "section", "page",
 def search_vector(store, collection: str, vector: dict, field: str,
                   *, limit: int = 20, product_code: str | None = None) -> list[dict]:
     if field == "dense_vector":
-        params = {"metric_type": "COSINE", "params": {"ef": 128}}
+        params = {"metric_type": "COSINE", "params": ({}
+                  if collection == BENCHMARK_COLLECTION else {"ef": 128})}
     elif field == "sparse_vector":
         params = {"metric_type": "IP", "params": {"drop_ratio_search": 0.0}}
     else:
