@@ -57,7 +57,15 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 
 源码审查发现，原 index marker 只覆盖语料和模型权重，无法证明旧 Milvus collection 使用当前索引参数及编码实现；PDF 每页重新设为“前言”，会把跨页条款续文标错章节。已将 schema 版本、向量维度、实际建索引参数、索引源码 SHA-256、全部模型文件 SHA-256 与编码依赖版本纳入 marker 校验，并增加错误 marker 拒绝复用的单元测试。PDF parser 在换页时保留上一条款标题，直到遇到新标题；两页续文测试验证页码与 section 均正确。
 
-在干净的源码提交 `ccd84c9` 上执行 `uv run --locked python -m evaluation.rag.run --rebuild`，两个 collection 均从头建立，实际行数分别为 21,953 和 365；Milvus 返回的 dense HNSW/COSINE (`M=16`, `efConstruction=200`) 与 sparse `SPARSE_INVERTED_INDEX`/IP (`drop_ratio_build=0.0`) 均与 marker 一致。报告记录 `git_worktree_dirty=false`，5 个源码哈希及逐题排名哈希均重新核对一致。完整测试为 **21 passed**。本次 dense Recall@10 为 **0.3047**、hybrid 为 **0.3604**、hybrid_rerank 为 **0.4043**，后者 Hit@10 为 **0.4102**。前两项与初次报告不同；旧 collection 缺少足够的构建 provenance，无法判定差异的唯一原因，因此以本次强制重建的实际结果为准。256 题留出集未用于调参，512 token 限制及训练数据来源仍是已记录的评测限制。M2.1 修正完成，未进入 M3。
+在干净的源码提交 `ccd84c9` 上执行 `uv run --locked python -m evaluation.rag.run --rebuild`，两个 collection 均从头建立，实际行数分别为 21,953 和 365；Milvus 返回的 dense HNSW/COSINE (`M=16`, `efConstruction=200`) 与 sparse `SPARSE_INVERTED_INDEX`/IP (`drop_ratio_build=0.0`) 均与 marker 一致。报告记录 `git_worktree_dirty=false`，5 个源码哈希及逐题排名哈希均重新核对一致。完整测试为 **21 passed**。本次 dense Recall@10 为 **0.3047**、hybrid 为 **0.3604**、hybrid_rerank 为 **0.4043**，后者 Hit@10 为 **0.4102**。前两项与初次报告不同；旧 collection 缺少足够的构建 provenance，无法判定差异的唯一原因。当次 HNSW 报告现已由 M2.2 的精确检索报告取代。256 题留出集未用于调参，512 token 限制及训练数据来源仍是已记录的评测限制。M2.1 修正完成，未进入 M3。
+
+## M2.2 模型字节与评测复现收尾（2026-09-27）
+
+审查确认索引 marker 原先只比对模型 manifest 所写的 SHA-256，未重新读取本地模型文件。正式评测及运行时知识检索现在加载模型前校验 BGE-M3 和 BGE-Reranker-v2-m3 的固定 repo/revision、完整文件列表、实际加载路径、文件大小、逐文件 SHA-256；报告保存两组已验证的文件哈希，并纳入验证实现的源码 SHA。单元测试验证字节被改动和 manifest 指向错误路径时均会失败。
+
+先在干净源码提交 `f3e0daf` 上保持 HNSW 配置再次 `--rebuild`：与上一轮相比，256 题中 dense 排名变化 3 题、sparse 0 题、hybrid 1 题、rerank 13 题；完整 rankings SHA 不同。不能将全部重排变化归因于 HNSW，但该配置下的排名级复现未通过。随后仅把评测集合 dense 索引改为精确 `FLAT/COSINE`，运行时知识集合继续用 `HNSW/COSINE`；两者 sparse 都是 `SPARSE_INVERTED_INDEX/IP`。Milvus 实际 `describe_index` 和两集合行数（21,953 / 365）与配置一致。
+
+在干净源码提交 `91addef` 上**连续两次**强制重建并运行四组消融。两次的 `rag_rankings.jsonl` SHA-256 都是 `7dc23f5af2b6aa89dbad69550b4714666bb3ccd8f4563c14da1eae61bb25ea88`，四条路线的逐题排名差异均为 0；报告均记录 `git_worktree_dirty=false`。最终报告以第二次重建为准：dense / sparse / hybrid / hybrid_rerank 的 Recall@10 分别为 **0.3203 / 0.3525 / 0.3682 / 0.4082**，最终重排的 MRR@10 为 **0.1951**、Hit@10 为 **0.4141**。这些是固定 256 条本地 query holdout 的结果，模型预训练及数据集来源的限制仍适用；未调 512 token、候选数或 RRF 参数。M2 评测封存，未进入 M3。
 
 ## 关键实施细节
 

@@ -1,23 +1,20 @@
 {
-  "base_git_commit": "ccd84c9b5abfcf98f039889f5e3af248f7766f9b",
+  "base_git_commit": "91addef14e23d4144412cd062c1dcd67e4018975",
   "benchmark_index": {
     "collection": "insur_qa_corpus",
     "corpus_sha256": "f300e2c94c11addc045ff0983897053920df3b8bc23b26484bc431ea5db7e63d",
-    "created_at": "2026-09-27T03:57:47.932193+00:00",
+    "created_at": "2026-09-27T04:30:18.994546+00:00",
     "encoder_dependencies": {
       "FlagEmbedding": "1.4.2",
       "torch": "2.14.0",
       "transformers": "5.17.0"
     },
-    "index_code_sha256": "97a67bbc6b821915d65873d9246733e02d945e0b5a38ced3abfefb6bb9179b1d",
+    "index_code_sha256": "88046ede83930a932f22f44f2120538e08c30a0945d1eb822476140fc0baeaad",
     "index_config": {
       "dense": {
-        "index_type": "HNSW",
+        "index_type": "FLAT",
         "metric_type": "COSINE",
-        "params": {
-          "M": 16,
-          "efConstruction": 200
-        }
+        "params": {}
       },
       "sparse": {
         "index_type": "SPARSE_INVERTED_INDEX",
@@ -57,10 +54,12 @@
   ],
   "code_sha256": {
     "evaluation/rag/dataset.py": "aff251078ce90010fff810f9fd737d33af92f14d7d25aebb3439de2d8a824501",
-    "evaluation/rag/run.py": "59ca9fdb90257d72b8f2747f2c087c937597c16fb9fc9730ef96b5d8dbcc3a48",
+    "evaluation/rag/run.py": "6c319a18c51b975125630823f817122deda65f128671e3a61289251abc861034",
+    "packages/domain/hf_download.py": "c3334aa97f780cf463a616db08b36cb837c3b9dd42c3d90e0c42569fa6c9d5a6",
     "packages/knowledge/documents.py": "36a9a83d8ad154973f23e9ef0fa6bd473dd76418da25863e830d102af12aadb3",
-    "packages/knowledge/milvus_store.py": "97a67bbc6b821915d65873d9246733e02d945e0b5a38ced3abfefb6bb9179b1d",
-    "packages/knowledge/retrieval.py": "3d494477bf1b2452350a113c8ffb09d58565712fa45b62dde9295d8706c65383"
+    "packages/knowledge/milvus_store.py": "88046ede83930a932f22f44f2120538e08c30a0945d1eb822476140fc0baeaad",
+    "packages/knowledge/retrieval.py": "d677c532cd616eba92f07a7cdfc69a1b7d4f69bc97ce1f264c1876904475b0ad",
+    "scripts/download_m2_models.py": "1ca432ec3dd012e7605921220e86dc602c9f19aebec1914c35fb9fefb4f04970"
   },
   "dataset_manifest": {
     "development_queries": 19686,
@@ -91,19 +90,29 @@
     "unique_queries": 19942
   },
   "dataset_revision": "b2493e3c706d47ea378545a82dea85e00cd60a48",
-  "evaluation_seconds": 20.03679202099738,
-  "generated_at": "2026-09-27T04:00:00.020799+00:00",
+  "embedder_files_sha256": {
+    "colbert_linear.pt": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb",
+    "config.json": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa",
+    "pytorch_model.bin": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+    "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+    "sparse_linear.pt": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9",
+    "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+    "tokenizer.json": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08",
+    "tokenizer_config.json": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4"
+  },
+  "evaluation_seconds": 22.23700841700338,
+  "generated_at": "2026-09-27T04:32:32.481777+00:00",
   "git_worktree_dirty": false,
   "knowledge_index": {
     "collection": "insurance_knowledge",
     "corpus_sha256": "ff0c4768619cbcbfdfaaa449ca47ffc554bdd12ffe7268e71f33ba131688abc8",
-    "created_at": "2026-09-27T03:59:36.691237+00:00",
+    "created_at": "2026-09-27T04:32:06.932092+00:00",
     "encoder_dependencies": {
       "FlagEmbedding": "1.4.2",
       "torch": "2.14.0",
       "transformers": "5.17.0"
     },
-    "index_code_sha256": "97a67bbc6b821915d65873d9246733e02d945e0b5a38ced3abfefb6bb9179b1d",
+    "index_code_sha256": "88046ede83930a932f22f44f2120538e08c30a0945d1eb822476140fc0baeaad",
     "index_config": {
       "dense": {
         "index_type": "HNSW",
@@ -169,30 +178,38 @@
   "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
   "name": "Insur-QA local query holdout, full deduplicated passage corpus",
   "query_count": 256,
-  "rankings_sha256": "d9e2f03a25e000eac7a0d61ee5fcf64b3ca0f971bf56771b6f515b797ab2e007",
+  "rankings_sha256": "7dc23f5af2b6aa89dbad69550b4714666bb3ccd8f4563c14da1eae61bb25ea88",
   "rerank_input": "hybrid RRF top 20",
   "rerank_output": "top 10",
+  "reranker_files_sha256": {
+    "config.json": "13dcd6c31d9fec9d1d8e158702072f62d7fa7d312a64b9fe057bec9a08cfe41a",
+    "model.safetensors": "d9e3e081faff1eefb84019509b2f5558fd74c1a05a2c7db22f74174fcedb5286",
+    "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+    "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+    "tokenizer.json": "69564b696052886ed0ac63fa393e928384e0f8caada38c1f4864a9bfbf379c15",
+    "tokenizer_config.json": "7e4c1cc848840aeccdd763458c18dd525eb0f795c992e00ebe9c28554e7db2d4"
+  },
   "reranker_revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
   "results": {
     "dense": {
-      "Hit@10": 0.3125,
-      "MRR@10": 0.13836650545634918,
-      "Recall@1": 0.078125,
-      "Recall@10": 0.3046875,
-      "Recall@5": 0.2158203125
+      "Hit@10": 0.328125,
+      "MRR@10": 0.14613560267857145,
+      "Recall@1": 0.08203125,
+      "Recall@10": 0.3203125,
+      "Recall@5": 0.2314453125
     },
     "hybrid": {
-      "Hit@10": 0.3671875,
-      "MRR@10": 0.15335441468253974,
-      "Recall@1": 0.08203125,
-      "Recall@10": 0.3603515625,
-      "Recall@5": 0.23828125
+      "Hit@10": 0.375,
+      "MRR@10": 0.16484064980158739,
+      "Recall@1": 0.09375,
+      "Recall@10": 0.3681640625,
+      "Recall@5": 0.25390625
     },
     "hybrid_rerank": {
-      "Hit@10": 0.41015625,
-      "MRR@10": 0.19466920882936517,
+      "Hit@10": 0.4140625,
+      "MRR@10": 0.19505983382936518,
       "Recall@1": 0.1171875,
-      "Recall@10": 0.404296875,
+      "Recall@10": 0.408203125,
       "Recall@5": 0.27734375
     },
     "sparse": {
