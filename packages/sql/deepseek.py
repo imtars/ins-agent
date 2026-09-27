@@ -24,11 +24,15 @@ if asked for that exact measure, refuse. JSON response required."""
 
 
 class OpenAICompatibleSQLGenerator:
-    def __init__(self, *, provider: str, model: str, base_url: str, api_key: str):
+    def __init__(self, *, provider: str, model: str, base_url: str, api_key: str,
+                 max_tokens: int = 1200):
+        if not 1 <= max_tokens <= 16384:
+            raise ValueError("max_tokens must be between 1 and 16384")
         self.provider = provider
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
+        self.max_tokens = max_tokens
         self.response_models: list[str | None] = []
 
     async def generate(self, question: str, schema: str, feedback: str | None,
@@ -40,7 +44,7 @@ class OpenAICompatibleSQLGenerator:
                    "messages": [{"role": "system", "content": SYSTEM},
                                 {"role": "user", "content": message}],
                    "response_format": {"type": "json_object"},
-                   "temperature": 0, "max_tokens": 1200, "stream": False}
+                   "temperature": 0, "max_tokens": self.max_tokens, "stream": False}
         async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
             response = await client.post(f"{self.base_url}/chat/completions", json=payload,
                                          headers={"Authorization": f"Bearer {self.api_key}"})
@@ -58,6 +62,7 @@ class OpenAICompatibleSQLGenerator:
 def select_sql_generator(provider: str = "auto", *,
                          proxy_config: Path = Path.home() / ".cli-proxy-api/config.yaml",
                          fallback_key_file: Path = Path("/home/xubei/projects/jobs/dsv4_key"),
+                         max_tokens: int = 1200,
                          ) -> OpenAICompatibleSQLGenerator:
     """Choose one live provider for an entire run; never switch mid-evaluation."""
     if provider not in {"auto", "proxy", "deepseek"}:
@@ -77,7 +82,8 @@ def select_sql_generator(provider: str = "auto", *,
             if "gpt-6-luna" not in {item["id"] for item in response.json()["data"]}:
                 raise ValueError("local proxy does not offer gpt-6-luna")
             return OpenAICompatibleSQLGenerator(provider="CLIProxyAPI", model="gpt-6-luna",
-                                                 base_url=base_url, api_key=key)
+                                                 base_url=base_url, api_key=key,
+                                                 max_tokens=max_tokens)
         except (OSError, KeyError, IndexError, TypeError, ValueError,
                 httpx.HTTPError) as exc:
             if provider == "proxy":
@@ -92,7 +98,8 @@ def select_sql_generator(provider: str = "auto", *,
     if not key:
         raise ValueError("no available SQL evaluation provider or DeepSeek fallback key")
     return OpenAICompatibleSQLGenerator(provider="DeepSeek", model=settings.llm_model,
-                                         base_url="https://api.deepseek.com", api_key=key)
+                                         base_url="https://api.deepseek.com", api_key=key,
+                                         max_tokens=max_tokens)
 
 
 class DeepSeekSQLGenerator(OpenAICompatibleSQLGenerator):

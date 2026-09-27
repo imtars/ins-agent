@@ -1,6 +1,7 @@
 """Provider selection never needs the real local proxy or a credential in CI."""
 
 import asyncio
+import json
 
 import httpx
 import pytest
@@ -11,6 +12,7 @@ from packages.sql.deepseek import OpenAICompatibleSQLGenerator, select_sql_gener
 def test_generator_records_observed_response_model_without_credentials(monkeypatch):
     def respond(request):
         assert request.headers["Authorization"] == "Bearer test-key"
+        assert json.loads(request.read())["max_tokens"] == 8192
         return httpx.Response(200, json={"model": "proxy-reported-model",
                                           "choices": [{"finish_reason": "stop", "message": {
                                               "content": '{"decision":"refuse","sql":null}'}}]})
@@ -21,10 +23,17 @@ def test_generator_records_observed_response_model_without_credentials(monkeypat
         transport=transport, **kwargs))
     generator = OpenAICompatibleSQLGenerator(provider="test", model="requested-model",
                                               base_url="http://127.0.0.1:8317/v1",
-                                              api_key="test-key")
+                                              api_key="test-key", max_tokens=8192)
     result = asyncio.run(generator.generate("question", "schema", None, 0))
     assert result["decision"] == "refuse"
     assert generator.response_models == ["proxy-reported-model"]
+
+
+def test_generator_rejects_invalid_output_cap():
+    with pytest.raises(ValueError, match="max_tokens"):
+        OpenAICompatibleSQLGenerator(provider="test", model="test",
+                                     base_url="http://localhost", api_key="key",
+                                     max_tokens=0)
 
 
 def test_proxy_selection_uses_luna_and_does_not_read_fallback(tmp_path, monkeypatch):

@@ -85,8 +85,9 @@ async def checked_cases(engine) -> tuple[dict, dict]:
     return casebook, manifest
 
 
-async def evaluate(reader_url: str, provider: str = "auto") -> dict:
-    generator = select_sql_generator(provider)
+async def evaluate(reader_url: str, provider: str = "auto",
+                   max_tokens: int = 1200) -> dict:
+    generator = select_sql_generator(provider, max_tokens=max_tokens)
     engine = create_async_engine(reader_url)
     try:
         casebook, manifest = await checked_cases(engine)
@@ -129,6 +130,7 @@ async def evaluate(reader_url: str, provider: str = "auto") -> dict:
                   Path("packages/persistence/synthetic_loader.py"),
                   Path("evaluation/sql/run.py"))},
               "provider": generator.provider, "model": generator.model,
+              "generation_max_tokens": generator.max_tokens,
               "requested_model": generator.model,
               "observed_response_model_ids": sorted({model for model in generator.response_models
                                                      if model is not None}),
@@ -161,6 +163,7 @@ def main() -> None:
     parser.add_argument("--reader-url", default=os.environ.get("M3_READER_DATABASE_URL"))
     parser.add_argument("--check-gold", action="store_true")
     parser.add_argument("--provider", choices=("auto", "proxy", "deepseek"), default="auto")
+    parser.add_argument("--max-tokens", type=int, default=1200)
     args = parser.parse_args()
     if not args.reader_url:
         raise ValueError("set M3_READER_DATABASE_URL")
@@ -174,7 +177,7 @@ def main() -> None:
                 await engine.dispose()
         asyncio.run(check())
     else:
-        report = asyncio.run(evaluate(args.reader_url, args.provider))
+        report = asyncio.run(evaluate(args.reader_url, args.provider, args.max_tokens))
         print(json.dumps(report["metrics"], sort_keys=True))
 
 
