@@ -82,10 +82,6 @@ async def work_once(database_url: str, reader_url: str, milvus_uri: str,
     await queue.setup()
     await artifacts.setup()
     await reviews.setup()
-    job = await queue.claim(worker_id or f"{socket.gethostname()}:{os.getpid()}",
-                            lease_seconds)
-    if job is None:
-        return None
     engine = create_async_engine(reader_url)
     try:
         async with AsyncPostgresSaver.from_conn_string(
@@ -94,6 +90,10 @@ async def work_once(database_url: str, reader_url: str, milvus_uri: str,
             async with ClientGroup({"data": Client(data_server(engine)),
                     "knowledge": Client(build_real_server(milvus_uri))}) as tools:
                 model = select_chat_client(provider)
+                job = await queue.claim(worker_id or f"{socket.gethostname()}:{os.getpid()}",
+                                        lease_seconds)
+                if job is None:
+                    return None
 
                 async def assert_lease():
                     await queue.assert_lease(job)
