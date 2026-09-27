@@ -43,7 +43,7 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-本文件描述目标架构。M1 已实现 PostgreSQL 业务 schema、合成数据与公开数据 provenance；M2 已实现显式注册的条款语料、Milvus 检索和本地 holdout 评测。M3 的只读 SQL、gold case 与 110 题真实模型评测已完成。MCP、主 Graph、API 和前端仍未实现。真实接口和版本约束在每个里程碑的验收中确定。
+本文件描述目标架构。M1 已实现 PostgreSQL 业务 schema、合成数据与公开数据 provenance；M2 已实现显式注册的条款语料、Milvus 检索和本地 holdout 评测。M3 的只读 SQL、gold case 与 110 题真实模型评测已完成。M4 已将 SQL、analytics 和知识检索包装成两个 FastMCP stdio 服务，11 个工具有实际协议与依赖验收。主 Graph、API 和前端仍未实现。真实接口和版本约束在每个里程碑的验收中确定。
 
 ## 后续待验证的工程问题
 

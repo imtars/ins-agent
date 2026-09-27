@@ -1,7 +1,9 @@
 """Deterministic synthetic insurance measures; never ask an LLM to calculate them."""
 
 from datetime import date
+from collections import defaultdict
 from decimal import Decimal, ROUND_HALF_UP
+from typing import Literal
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -90,3 +92,47 @@ def measures(row: dict) -> dict:
 async def period_summary(engine: AsyncEngine, start: date, end: date, **filters) -> list[dict]:
     return [measures(row) for row in await execute_readonly(
         engine, period_sql(start, end, **filters), max_rows=200)]
+
+
+GroupBy = Literal["all", "product_code", "region"]
+GROWTH_METRICS = frozenset({"earned_premium", "incurred_amount", "paid_amount",
+                            "claim_count", "exposure_days"})
+
+
+def group_period_rows(rows: list[dict], group_by: GroupBy) -> list[dict]:
+    """Aggregate raw period_sql rows before rounding ratios or currency."""
+    if group_by not in ("all", "product_code", "region"):
+        raise ValueError("group_by must be all, product_code, or region")
+    grouped = defaultdict(lambda: {"product_code": None, "region": None,
+                                  "exposure_days": 0, "earned_premium": Decimal(0),
+                                  "claim_count": 0, "incurred_amount": Decimal(0),
+                                  "paid_amount": Decimal(0)})
+    for row in rows:
+        key = "all" if group_by == "all" else row[group_by]
+        target = grouped[key]
+        if group_by != "all":
+            target[group_by] = key
+        target["exposure_days"] += int(row["exposure_days"])
+        target["claim_count"] += int(row["claim_count"])
+        for field in ("earned_premium", "incurred_amount", "paid_amount"):
+            target[field] += Decimal(str(row[field]))
+    return [measures(grouped[key]) for key in sorted(grouped)]
+
+
+async def grouped_period_summary(engine: AsyncEngine, start: date, end: date,
+                                 *, group_by: GroupBy = "all",
+                                 product_code: str | None = None,
+                                 region: str | None = None) -> list[dict]:
+    rows = await execute_readonly(engine, period_sql(start, end,
+                                product_code=product_code, region=region), max_rows=200)
+    return group_period_rows(rows, group_by)
+
+
+def period_growth(previous: dict, current: dict, metric: str) -> dict:
+    if metric not in GROWTH_METRICS:
+        raise ValueError("unsupported growth metric")
+    before = Decimal(str(previous[metric]))
+    after = Decimal(str(current[metric]))
+    return {"metric": metric, "previous": str(before), "current": str(after),
+            "growth_rate": (str(((after - before) / abs(before)).quantize(
+                RATIO, ROUND_HALF_UP)) if before else None)}

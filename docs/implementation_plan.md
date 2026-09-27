@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M2 RAG 检索与评测已冻结；M3 SQL 阶段和 M3.1 同题回归已在本机实际验收，尚未进入 M4。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M3 已冻结；M4 FastMCP 已在本机实际验收，尚未进入 M5。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -80,6 +80,12 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 在 `schema_context()` 提供中文区域名到英文存储码的映射，同时列出产品类型和理赔状态的实际枚举；模型系统提示明确要求用存储码过滤。排名题明确要求 `branch_code`，季度赔付率题明确要求单列比例小数。仅这 20 题的问题文本改变；全部 110 题的 gold、参考 SQL、排序和容差完全一致，严格比较器未改。测试核对数据字典与实际数据库枚举一致，原题本和报告均归档；抽查失败后进一步明确映射方向，再从干净源码提交 `e8c92d7` 实际运行完整 110 题回归。
 
 最终[回归报告](../evaluation/reports/sql_evaluation.json)记录 `git_worktree_dirty=false`、源码/题本/原报告 SHA-256，`requested_model=gpt-6-luna`、`observed_response_model_ids=[gpt-6-luna]`、110 次响应均有模型 ID。可回答题执行成功及严格结果匹配均为 **100/100**，首轮也是 100/100；不可回答与危险请求均为 **5/5** 拒绝。两轮都未触发修复，修复成功率保持 `null`。独立核验 110 个 ID、逐类结果、源码与题本哈希；`--check-gold` 验证 110 题；完整本机测试在 M1 数据、下载文件、Milvus 与 M3 reader 可用时为 **44 passed**。DeepSeek 备用 key 未使用。**100% 是针对已分析错误的同题回归结果，不能称为未见题或泛化成绩**；代理返回的模型 ID 也不能证明底层权重版本。M3 工程验收与 M3.1 回归完成，可以进入 M4，本轮停在 M3.1。
+
+## M4 FastMCP 包装与验收（2026-09-27）
+
+在现有 FastMCP 4.0.10 锁定依赖上实现 `mcp-data` 与 `mcp-knowledge` 共 11 个工具。数据服务构造时拒绝非 `insurance_reader` URL；任意 SQL 继续走 M3 的 AST 校验、数据库只读事务、5 秒超时与 200 行上限。新统计能力放在 `packages/sql/analytics.py`，MCP 仅调用它，先合计原始暴露与金额再计算理赔率、赔付率和增长率。知识服务的检索仍走 M2 的 BGE-M3 dense/sparse、RRF 和 reranker；文档/chunk 读取只使用显式注册的运行时知识源，启动时验证模型文件、源文件与索引 marker，不暴露 Insur-QA benchmark collection。详细输入、输出和错误规则见 [工具契约](mcp_tools.md)。
+
+使用 FastMCP `Client` 通过真实 reader 数据库调用全部 7 个数据工具；使用真实 Milvus 2.6、BGE-M3 与 reranker 调用全部 4 个知识工具，并验证检索证据与 chunk、公开草案 draft 状态、非法参数和未知文档的错误。两个 stdio 进程实际启动并完成工具调用；`ClientGroup` 列出 11 个 `data_` / `knowledge_` 命名空间工具并路由两端调用。完整本机测试在 M1/M2/M3/M4 真实依赖变量齐备时为 **50 passed**；这是 local acceptance，不是 CI status。M4 PASS，停止在 M4，尚未实现 LangGraph 节点。
 
 ## 关键实施细节
 

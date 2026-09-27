@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M2 已冻结，M3.1 SQL 回归修正已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融，以及 SQL 只读执行与固定 gold case。M3 的 110 题真实模型评测和 M3.1 同题回归均已运行；MCP、Graph、API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M3 已冻结，M4 FastMCP 已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测和两个 MCP 工具服务。Graph、API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -94,12 +94,24 @@ uv run --locked python -m evaluation.sql.run --provider proxy
 
 本机 CLIProxyAPI + `gpt-6-luna` 的[初始诊断报告](evaluation/reports/sql_evaluation_m3_v1.json)保留 100 道可回答题中 85 道严格结果匹配的原始成绩。M3.1 补充了业务字段值字典，明确 10 道排名题的 `branch_code` 输出和 10 道比率题的比例小数输出；gold、严格比较规则及其余 90 道题均未改变。在**同一 110 题回归集**上重新运行的[逐题报告](evaluation/reports/sql_evaluation.json)记录可回答题 100/100 执行成功且严格结果匹配，5/5 不可回答题与 5/5 危险请求均拒绝。没有触发修复，修复成功率为 `null`。这次 100% 是已分析过错误后的回归成绩，**不是未见题或泛化准确率**。报告记录请求的模型 ID、代理响应提供的模型 ID、源码和题本哈希；服务端版本未锁定，跨时结果可能变化。
 
+## M4 FastMCP 工具服务
+
+先按 M3 建好 `insurance_reader`，按 M2 建好运行时知识索引并下载模型。以下两个 stdio 服务可由 MCP 客户端分别启动；数据服务只接受 reader URL，知识服务启动时校验模型字节、注册文档和已有索引。
+
+```bash
+M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_demo' uv run --locked python -m services.mcp_data.server
+MILVUS_URI=http://127.0.0.1:19530 uv run --locked python -m services.mcp_knowledge.server
+```
+
+数据服务提供 7 个工具，知识服务提供 4 个工具；参数、返回字段、边界和错误规则见 [M4 工具契约](docs/mcp_tools.md)。M4 已通过真实 PostgreSQL、Milvus、BGE 模型和 stdio/ClientGroup 本机验收。完整本机测试需要设置 `M1_TEST_DATABASE_URL`、`M1_VERIFY_DOWNLOADS=1`、`M2_TEST_MILVUS_URI`、`M3_TEST_READER_DATABASE_URL`、`M4_TEST_MILVUS_URI`，然后执行 `uv run --locked pytest -q`；不设置外部依赖变量时相应集成测试会跳过。
+
 ## 设计文档
 
 - [架构与阶段边界](docs/architecture.md)
 - [数据来源与许可边界](docs/data_sources.md)
 - [合成数据的语义与限制](docs/synthetic_assumptions.md)
 - [评测方法](docs/evaluation.md)
+- [M4 MCP 工具契约](docs/mcp_tools.md)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)
