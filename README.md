@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。当前完成 **M1.1：数据语义修正**，并冻结 M1 数据基础；已有可重建的合成运营数据与产品文档，以及公共数据下载 provenance。尚无 RAG、Agent、API 或前端实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。当前完成 **M2：文档检索与本地 holdout 评测**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引和四组检索消融。Agent、MCP、API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -34,7 +34,42 @@ uv run --locked python -m scripts.download_insur_qa --verify
 M1_TEST_DATABASE_URL='postgresql+asyncpg://insurance_app:change-me-local-only@127.0.0.1:5432/insurance_m1_demo' M1_VERIFY_DOWNLOADS=1 uv run --locked pytest -q
 ```
 
-完整 pytest 的集成测试需要已迁移、已导入数据的专用数据库，以及已下载的公共文件；不设置两个环境变量时相关集成检查会跳过。`.env.example` 仅供本地演示，公开服务前需改密码。Milvus 及应用服务属于后续阶段。
+M1 集成测试需要已迁移、已导入数据的专用数据库，以及已下载的公共文件；不设置两个环境变量时相关集成检查会跳过。`.env.example` 仅供本地演示，公开服务前需改密码。
+
+## 本地构建与评测 M2
+
+要求可运行 BGE-M3 与 BGE-Reranker-v2-m3 的 NVIDIA GPU、约 5 GB 模型下载空间，以及已按上节下载的 Insur-QA 和五份公开草案附件。`data/synthetic/manifest.json` 是开发者 provenance，**不会进入运行时知识库**。知识库只读取 `data/synthetic/documents/*.md` 中 manifest 列出的 12 份文件及 `public_docs.yaml` 明确列出的 5 份附件；Insur-QA 完整去重语料进入独立评测 collection。
+
+```bash
+uv sync --locked
+docker compose -f deploy/milvus-compose.yml -p ins-agent-milvus up -d
+uv run --locked python -m scripts.download_m2_models
+uv run --locked python -m evaluation.rag.run
+```
+
+模型下载默认禁用代理。直连源站失败后可试 `--endpoint https://hf-mirror.com`；本机镜像直连也超时，实际使用 `--endpoint https://hf-mirror.com --transport system` 下载，revision 和逐文件 SHA-256 见 `data/manifests/bge-*_download.json`。已有模型可执行 `uv run --locked python -m scripts.download_m2_models --verify`。Milvus Compose 采用官方 2.6.24 配置；官方 MinIO 镜像已不可拉取，本项目改用报告相同 MinIO release 的镜像，详见 [实施记录](docs/implementation_plan.md)。服务端口仅绑定本机。
+
+首次 `evaluation.rag.run` 会验证原始 Insur-QA SHA-256，生成完整去重语料与固定 256 题本地 holdout，解析文档，建立两个 Milvus collection，然后运行 dense、sparse、RRF hybrid、hybrid 加 reranker。后续运行按语料和模型哈希复用索引；需要重建时传 `--rebuild`。自动生成的 [评测表](evaluation/reports/rag_ablation.md)、[完整参数与结果](evaluation/reports/rag_ablation.json)和逐题排名 ID 都在 `evaluation/reports/`。这是从作者标为训练数据的文件划出的本地 holdout，不能称为官方独立测试集。
+
+<!-- RAG_ABLATION_START -->
+本地 holdout：256 题；完整语料：21953 passages。
+
+| Pipeline | Recall@1 | Recall@5 | Recall@10 | MRR@10 |
+| --- | ---: | ---: | ---: | ---: |
+| dense | 0.0820 | 0.2314 | 0.3203 | 0.1461 |
+| sparse | 0.0742 | 0.2461 | 0.3525 | 0.1485 |
+| hybrid | 0.0938 | 0.2539 | 0.3682 | 0.1655 |
+| hybrid_rerank | 0.1172 | 0.2773 | 0.4043 | 0.1947 |
+<!-- RAG_ABLATION_END -->
+
+可直接检查带来源、章节和 chunk ID 的检索证据：
+
+```bash
+uv run --locked python -m scripts.search_knowledge '健康尊享版等待期是多少天？' --product-code product_006
+M2_TEST_MILVUS_URI=http://127.0.0.1:19530 uv run --locked pytest -q
+```
+
+完整集成测试同时设置 M1 的两个环境变量和 `M2_TEST_MILVUS_URI`。不设置时依赖外部数据库、下载文件或 Milvus 的检查会跳过。
 
 ## 设计文档
 
@@ -47,4 +82,4 @@ M1_TEST_DATABASE_URL='postgresql+asyncpg://insurance_app:change-me-local-only@12
 - [实施计划与验收](docs/implementation_plan.md)
 - [ADR 0001：渐进式实施](docs/adr/0001-staged-foundation.md)
 
-项目没有真实保险公司生产验证；任何性能数字都必须由后续评测脚本生成。
+项目没有真实保险公司生产验证；任何性能数字都必须由对应评测脚本生成。

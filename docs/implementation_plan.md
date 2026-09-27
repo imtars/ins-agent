@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。当前已完成 M1.1 数据语义修正，尚未进入 M2。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。当前已完成 M2 RAG 检索与评测，尚未进入 M3。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -42,6 +42,16 @@ M1_TEST_DATABASE_URL='postgresql+asyncpg://insurance_app:change-me-local-only@12
 ```
 
 验收结果：15 passed。数据库和第三方原始下载文件只保存在本机；默认无数据库/下载文件环境变量时，相关集成测试会跳过。本项目尚无 CI 可独立复现上述本地验收。
+
+## M2 RAG 验收记录（2026-09-27）
+
+保持 M1.1 synthetic 总哈希 `0d84ea6e0a252bd3f5212ddd610918bfd69f9ebbc49864b6a9a87aa56b5b3be0` 不变。运行时知识入口明确注册 12 份 synthetic Markdown 和 5 份已核验中保协草案附件，按标题/条款结构切块，长段回退为 900 字符、120 字符重叠；实际解析得到 365 块，带 `doc_id`、章节、页码（DOCX/Markdown 无页码）、来源、`product_code` 和内容哈希。`data/synthetic/manifest.json` 只用于验证文件名与 SHA-256，**不进入向量语料**。公开草案没有 `product_code`；Insur-QA 单独放入 `insur_qa_corpus`，不混进运行时 `insurance_knowledge`。
+
+Insur-QA Retriever 原始文件 SHA-256 与 M1 provenance 一致。20,857 行中实际有 1 行空 query，记录后排除；NFKC/空白规范化与去重得到 19,942 个 query、21,953 个唯一 passage。按固定 query 哈希规则选 256 题本地 holdout，其余 19,686 题为开发集；全部正负 passage 都进入检索语料。300 个超过 1,800 字符的 passage 在模型输入和 Milvus `text` 中截断，完整规范化文本保留在本地 processed JSONL。四组都检索同一 collection：dense 与 BGE-M3 sparse 各取 top 20，RRF `k=60` 融合后取 top 20，再用 BGE-Reranker-v2-m3 重排。每题全部正例 ID 都参与 Recall@k 计算。
+
+Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个 collection 的真实记录数分别为 21,953 和 365。官方 2.6.24 Compose 中的 Docker Hub MinIO 镜像目前无法拉取，Quay 同名 tag 在本机返回 unauthorized；使用并固定 `tobi312/minio` 的同 release 镜像与 digest，容器内版本实际核对。BGE 模型源站与 `hf-mirror.com` 直连均超时；经镜像和系统代理按固定 revision 下载，逐文件 SHA-256 已核验。上述真实数据源差异与替代来源见 [核对记录](research_notes.md)。
+
+`uv run --locked python -m evaluation.rag.run` 实际完成 dense、sparse、hybrid、hybrid_rerank 四组评测，逐题排名和自动生成的 Recall@1/5/10、MRR@10 见 [报告](../evaluation/reports/rag_ablation.md)与 [参数及哈希](../evaluation/reports/rag_ablation.json)。例如 hybrid_rerank 的 Recall@10 为 0.4043、MRR@10 为 0.1947；这是固定 256 题的**本地 query holdout**，原始文件被作者标为训练数据，不能称为官方独立测试集或无污染泛化结果。真实知识检索命令返回 `product_006` 的“等待期 15 天”章节和可追踪证据 ID。设置 M1 数据库、下载文件与 M2 Milvus 环境变量后，完整 `pytest -q` 为 **19 passed**；`docker compose config --quiet` 与 `git diff --check` 同时通过。M2 门槛满足，尚未实现 SQL Agent 或后续阶段。
 
 ## 关键实施细节
 

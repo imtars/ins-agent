@@ -37,15 +37,15 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | --- | --- | --- |
 | `packages/domain` | 配置、Pydantic 领域契约 | M0/M6 |
 | `packages/persistence` | 数据模型、作业、artifact | M1/M8 |
-| `packages/retrieval` | 文档解析、BGE-M3、Milvus 检索 | M2 |
+| `packages/knowledge`, `evaluation/rag` | 文档解析、BGE-M3、Milvus 检索与评测 | M2 |
 | `packages/agent` | SQL/RAG 子图和主 LangGraph | M3/M5 |
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-本文件描述目标架构。M1 已实现 PostgreSQL 业务 schema、合成数据与公开数据 provenance；Agent、检索、MCP、API 和前端仍未实现。真实接口和版本约束在每个里程碑的验收中确定。
+本文件描述目标架构。M1 已实现 PostgreSQL 业务 schema、合成数据与公开数据 provenance；M2 已实现显式注册的条款语料、Milvus 检索和本地 holdout 评测。Agent、MCP、API 和前端仍未实现。真实接口和版本约束在每个里程碑的验收中确定。
 
 ## 后续待验证的工程问题
 
-- M2：Milvus 2.6 的官方 Compose 配置及资源需求；独立跑四组消融后才能选默认检索链。
+- M3：SQL 查询的业务指标口径、权限边界和可执行 gold case。
 - M5/M7：LangGraph fan-out/fan-in 与 Postgres checkpointer 在目标版本的恢复语义，尤其是 `interrupt()` 节点的重放。
 - M8：worker lease、checkpoint 与 artifact 写入之间的幂等事务边界。

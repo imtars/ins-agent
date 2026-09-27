@@ -1,0 +1,139 @@
+{
+  "base_git_commit": "c610f00e8f8cf4a0ef6d14cee6b2128ab1bd8ea1",
+  "benchmark_index": {
+    "collection": "insur_qa_corpus",
+    "corpus_sha256": "f300e2c94c11addc045ff0983897053920df3b8bc23b26484bc431ea5db7e63d",
+    "created_at": "2026-09-26T18:10:16.904302+00:00",
+    "max_index_chars": 1800,
+    "max_model_tokens": 512,
+    "milvus_version": "2.6.24",
+    "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "model_weights_sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+    "row_count": 21953,
+    "truncated_passages": 300
+  },
+  "candidate_limit_each_search": 20,
+  "caveats": [
+    "Source is labeled retriever training data, not an official test split.",
+    "The 256-query holdout is selected by a fixed hash rule; remaining queries are development data.",
+    "Corpus includes all unique positive and negative passages from all source rows; a passage can be positive for one query and negative for another.",
+    "Passages above 1800 Unicode characters are truncated for indexing and reranking; full source text remains in the local processed corpus.",
+    "Public benchmark and model pretraining overlap cannot be ruled out."
+  ],
+  "code_sha256": {
+    "evaluation/rag/dataset.py": "aff251078ce90010fff810f9fd737d33af92f14d7d25aebb3439de2d8a824501",
+    "evaluation/rag/run.py": "96497b8433a497cc2763424f17e4d7fdfa91502a85793daabc8cd33a8ce59080",
+    "packages/knowledge/documents.py": "7dda4929afbae7fcf0ce7714501aad7b52149abf90feae556d121bc9dbaaaa96",
+    "packages/knowledge/milvus_store.py": "56de8fecd0de8e34f6377ed4c193d45c855cae6bc7bceaa0458637abbd93fdaa",
+    "packages/knowledge/retrieval.py": "3d494477bf1b2452350a113c8ffb09d58565712fa45b62dde9295d8706c65383"
+  },
+  "dataset_manifest": {
+    "development_queries": 19686,
+    "files": {
+      "corpus.jsonl": {
+        "bytes": 18033682,
+        "sha256": "f300e2c94c11addc045ff0983897053920df3b8bc23b26484bc431ea5db7e63d"
+      },
+      "development.jsonl": {
+        "bytes": 5046883,
+        "sha256": "79fb7a9cf6ca2d93581122321d81d3ed86bf434cf0ad7fe78725329908b3b910"
+      },
+      "holdout.jsonl": {
+        "bytes": 65316,
+        "sha256": "9487bacea698feeada50704c4b08b8002a55db7c77188fef65369af72571aaf8"
+      }
+    },
+    "holdout_size": 256,
+    "normalization": "Unicode NFKC followed by whitespace collapse and trim",
+    "passages_both_positive_and_negative_across_queries": 7926,
+    "skipped_empty_queries": 1,
+    "source_rows": 20857,
+    "source_sha256": "f24348f270a49f9f720e001312de7afbc3cdac58f9b64eb440f68d11cb183ac4",
+    "split_rule": "sha256(normalized_query) first 64 bits modulo 10 == 0; smallest 256 hashes",
+    "unique_negative_passages": 20758,
+    "unique_passages": 21953,
+    "unique_positive_passages": 9121,
+    "unique_queries": 19942
+  },
+  "dataset_revision": "b2493e3c706d47ea378545a82dea85e00cd60a48",
+  "evaluation_seconds": 19.577736587998515,
+  "generated_at": "2026-09-27T03:32:31.496130+00:00",
+  "git_worktree_dirty": true,
+  "knowledge_index": {
+    "collection": "insurance_knowledge",
+    "corpus_sha256": "14669a3c2183a65b4281d1aefd01edee25c3b7c6e5588c5c7304538a5b9aa424",
+    "created_at": "2026-09-27T03:31:40.144623+00:00",
+    "max_index_chars": 1800,
+    "max_model_tokens": 512,
+    "milvus_version": "2.6.24",
+    "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "model_weights_sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+    "row_count": 365,
+    "truncated_passages": 0
+  },
+  "knowledge_sources": {
+    "chunk_counts": {
+      "iachina_2026_participating_annuity_draft": 60,
+      "iachina_2026_participating_endowment_draft": 59,
+      "iachina_2026_participating_whole_life_draft": 56,
+      "iachina_2026_term_life_draft": 35,
+      "iachina_2026_whole_life_draft": 35,
+      "product_001": 10,
+      "product_002": 10,
+      "product_003": 10,
+      "product_004": 10,
+      "product_005": 10,
+      "product_006": 10,
+      "product_007": 10,
+      "product_008": 10,
+      "product_009": 10,
+      "product_010": 10,
+      "product_011": 10,
+      "product_012": 10
+    },
+    "corpus_path": "data/processed/rag/knowledge.jsonl",
+    "corpus_sha256": "14669a3c2183a65b4281d1aefd01edee25c3b7c6e5588c5c7304538a5b9aa424",
+    "source_count": 17
+  },
+  "metric_definition": "Macro mean of per-query fraction of all positive IDs found at k; MRR@10 uses the first positive ID and zero beyond rank 10.",
+  "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+  "name": "Insur-QA local query holdout, full deduplicated passage corpus",
+  "query_count": 256,
+  "rankings_sha256": "984c6ee55dcae55c75c94c086d68f69792c3b682b6db07f9a90fff164825086f",
+  "rerank_input": "hybrid RRF top 20",
+  "rerank_output": "top 10",
+  "reranker_revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+  "results": {
+    "dense": {
+      "MRR@10": 0.14613560267857145,
+      "Recall@1": 0.08203125,
+      "Recall@10": 0.3203125,
+      "Recall@5": 0.2314453125
+    },
+    "hybrid": {
+      "MRR@10": 0.16549169146825404,
+      "Recall@1": 0.09375,
+      "Recall@10": 0.3681640625,
+      "Recall@5": 0.25390625
+    },
+    "hybrid_rerank": {
+      "MRR@10": 0.19466920882936517,
+      "Recall@1": 0.1171875,
+      "Recall@10": 0.404296875,
+      "Recall@5": 0.27734375
+    },
+    "sparse": {
+      "MRR@10": 0.1485274057539683,
+      "Recall@1": 0.07421875,
+      "Recall@10": 0.3525390625,
+      "Recall@5": 0.24609375
+    }
+  },
+  "rrf_k": 60,
+  "software_versions": {
+    "FlagEmbedding": "1.4.2",
+    "pymilvus": "2.6.17",
+    "torch": "2.14.0",
+    "transformers": "5.17.0"
+  }
+}

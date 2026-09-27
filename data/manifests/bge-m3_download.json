@@ -1,0 +1,66 @@
+{
+  "endpoint": "https://hf-mirror.com",
+  "files": [
+    {
+      "bytes": 687,
+      "filename": "config.json",
+      "local_path": "data/models/bge-m3/config.json",
+      "sha256": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa",
+      "upstream_sha256": null
+    },
+    {
+      "bytes": 2271145830,
+      "filename": "pytorch_model.bin",
+      "local_path": "data/models/bge-m3/pytorch_model.bin",
+      "sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+      "upstream_sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38"
+    },
+    {
+      "bytes": 2100674,
+      "filename": "colbert_linear.pt",
+      "local_path": "data/models/bge-m3/colbert_linear.pt",
+      "sha256": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb",
+      "upstream_sha256": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb"
+    },
+    {
+      "bytes": 3516,
+      "filename": "sparse_linear.pt",
+      "local_path": "data/models/bge-m3/sparse_linear.pt",
+      "sha256": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9",
+      "upstream_sha256": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9"
+    },
+    {
+      "bytes": 17098108,
+      "filename": "tokenizer.json",
+      "local_path": "data/models/bge-m3/tokenizer.json",
+      "sha256": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08",
+      "upstream_sha256": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08"
+    },
+    {
+      "bytes": 444,
+      "filename": "tokenizer_config.json",
+      "local_path": "data/models/bge-m3/tokenizer_config.json",
+      "sha256": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4",
+      "upstream_sha256": null
+    },
+    {
+      "bytes": 5069051,
+      "filename": "sentencepiece.bpe.model",
+      "local_path": "data/models/bge-m3/sentencepiece.bpe.model",
+      "sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+      "upstream_sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865"
+    },
+    {
+      "bytes": 964,
+      "filename": "special_tokens_map.json",
+      "local_path": "data/models/bge-m3/special_tokens_map.json",
+      "sha256": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+      "upstream_sha256": null
+    }
+  ],
+  "model": "bge-m3",
+  "repo_id": "BAAI/bge-m3",
+  "retrieved_at": "2026-09-26T17:41:32.010278+00:00",
+  "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+  "transport": "system"
+}

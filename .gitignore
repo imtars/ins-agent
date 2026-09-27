@@ -15,7 +15,11 @@ data/raw/public/*
 !data/raw/public/.gitkeep
 data/raw/benchmarks/
 data/processed/
+data/models/
 data/synthetic/generated/
 evaluation/reports/*
 !evaluation/reports/.gitkeep
+!evaluation/reports/rag_ablation.json
+!evaluation/reports/rag_ablation.md
+!evaluation/reports/rag_rankings.jsonl
 volumes/

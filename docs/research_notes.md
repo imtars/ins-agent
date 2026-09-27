@@ -23,3 +23,7 @@
 中保协两份 2026 年修订寿险草案和三份分红型草案的来源页、附件直链均已实际验证；下载后的 SHA-256、抓取时间见 `data/manifests/public_docs_download.json`。五份文件都仍标为 `draft`。
 
 M1.1 再次直连下载五份附件，固定 SHA-256 未变化。静态 `public_docs.yaml` 增加来源页未标明许可证的记录及本地研究使用说明；实际 `retrieved_at` 只保留在本次下载 provenance 中。未因公开征求意见附件而推断可重新分发的许可。
+
+## M2 实际源站与容器核对
+
+2026-09-27，BGE 模型源站和 `hf-mirror.com` 直连超时；镜像经系统网络代理下载成功，并按文件核对 SHA-256。Milvus 官方 2.6.24 Compose 可从 GitHub 获取，但其中的 Docker Hub `minio/minio:RELEASE.2024-12-18T13-15-44Z` 已无法拉取；[Milvus 上游 issue](https://github.com/milvus-io/milvus/issues/53430) 也记录了该仓库不可用。Quay 同名 tag 在本机匿名拉取返回 unauthorized。项目仅替换为 `tobi312/minio` 同一 release 的镜像；容器内 `minio --version` 实测为 `RELEASE.2024-12-18T13-15-44Z`，etcd 与 Milvus 仍使用官方 Compose 的版本。该镜像不是官方发布渠道，实际部署时应重新评估来源。
