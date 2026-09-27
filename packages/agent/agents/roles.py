@@ -8,7 +8,7 @@ from fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from packages.agent.contracts import ContractViolation
-from packages.agent.evidence import validate_claim_evidence
+from packages.agent.evidence import label_source_scope, validate_claim_evidence
 from packages.agent.models import (AnalysisResult, KnowledgeQuery, RagArtifact,
                                    SQL_TOOL_OUTPUTS, SearchOutput, SqlArtifact,
                                    TaskPlan, ToolProposal, VerificationResult)
@@ -201,7 +201,7 @@ class SynthesisAnalystAgent:
                    "allowed_source_ids": allowed}
         raw = await self.model.complete_json("synthesis", system, encode(payload),
                                              max_tokens=1500)
-        return AnalysisResult.model_validate(raw)
+        return label_source_scope(AnalysisResult.model_validate(raw), sql, rag)
 
 
 class VerificationAgent:

@@ -19,6 +19,36 @@ def numbers(value: str) -> set[Decimal]:
     return found
 
 
+def label_source_scope(analysis: AnalysisResult, sql: list[SqlArtifact],
+                       rag: list[RagArtifact]) -> AnalysisResult:
+    """Attach provenance labels derived from current artifacts, never from the LLM."""
+    notices = []
+    if sql:
+        notices.append("运营结果为合成演示数据。")
+    kinds = {evidence.source_type for item in rag for evidence in item.evidence}
+    if "synthetic_product" in kinds:
+        notices.append("合成产品条款仅用于演示。")
+    if "public_consultation_draft" in kinds:
+        notices.append("公开资料为征求意见稿，未与合成产品自动绑定。")
+    sql_ids = {item.artifact_id for item in sql}
+    evidence_by_id = {evidence.evidence_id: evidence
+                      for item in rag for evidence in item.evidence}
+    claims = []
+    for claim in analysis.claims:
+        text = claim.text
+        if len(claim.source_ids) == 1:
+            source_id = claim.source_ids[0]
+            if source_id in sql_ids:
+                text = "合成运营数据：" + text
+            elif source_id in evidence_by_id:
+                source = evidence_by_id[source_id]
+                prefix = ("合成演示产品条款：" if source.source_type == "synthetic_product"
+                          else "公开征求意见稿：")
+                text = prefix + text
+        claims.append({**claim.model_dump(), "text": text})
+    return AnalysisResult(summary="".join(notices) + analysis.summary, claims=claims)
+
+
 def validate_claim_evidence(plan: TaskPlan, sql: list[SqlArtifact],
                             rag: list[RagArtifact], analysis: AnalysisResult) -> list[str]:
     """Require a current source, exact RAG quote, and source-backed numerals per claim."""

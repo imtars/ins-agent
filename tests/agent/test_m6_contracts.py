@@ -6,10 +6,11 @@ from types import SimpleNamespace
 
 import pytest
 
+from packages.agent.agents.roles import VerificationAgent
 from packages.agent.contracts import (ContractViolation, NODE_CONTRACTS,
                                      NodeContract, VerifierInput, VerifierOutput,
                                      checked_node, validate_registry)
-from packages.agent.evidence import validate_claim_evidence
+from packages.agent.evidence import label_source_scope, validate_claim_evidence
 from packages.agent.graph import build_workflow, run_query
 from packages.agent.models import (AnalysisResult, Evidence, RagArtifact,
                                    SqlArtifact, TaskPlan)
@@ -135,11 +136,28 @@ def test_each_claim_needs_current_numeric_or_exact_quote_support():
         return validate_claim_evidence(plan, [sql], [rag], analysis)
 
     assert issues() == []
+    labeled = label_source_scope(AnalysisResult(summary="简报", claims=[
+        {"text": "有 30000 张保单。", "source_ids": ["sql:1"]},
+        {"text": text, "source_ids": [evidence.evidence_id],
+         "evidence_quote": text}]), [sql], [rag])
+    assert "运营结果为合成演示数据" in labeled.summary
+    assert labeled.claims[0].text.startswith("合成运营数据：")
+    assert labeled.claims[1].text.startswith("合成演示产品条款：")
+    assert validate_claim_evidence(plan, [sql], [rag], labeled) == []
     assert any("number absent" in item for item in issues(sql_text="有 99999 张保单。"))
     assert any("exact quote" in item for item in issues(quote="等待期为 30 天"))
     assert any("number absent" in item for item in issues(rag_text=text + "另有 30 天。"))
     assert any("unknown source" in item for item in issues(sql_id="sql:other"))
     assert any("summary" in item for item in issues(summary="赔付率为 9.9999"))
+    class NeverPassModel:
+        async def complete_json(self, *args, **kwargs):
+            raise AssertionError("unsupported claim must be blocked before LLM verifier")
+
+    unsupported = AnalysisResult(summary="简报", claims=[
+        {"text": "有 99999 张保单。", "source_ids": ["sql:1"]}])
+    verdict = asyncio.run(VerificationAgent(NeverPassModel()).verify(
+        plan, [sql], [rag], unsupported))
+    assert verdict.status == "BLOCK"
     analysis = AnalysisResult(summary="合成数据简报", claims=[
         {"text": "有 30000 张保单。", "source_ids": ["sql:1", evidence.evidence_id]}])
     assert any("exactly one source" in item for item in validate_claim_evidence(

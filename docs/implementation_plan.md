@@ -109,6 +109,8 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 
 Verifier 批准前逐条校验 claim 的当前来源 ID：SQL 数字必须在所引工具产物/参数中出现；RAG claim 必须在正文与 `evidence_quote` 放入所引 evidence 的同一段原文，且数字来自该证据；摘要不能新增结果数字。确定性注入测试覆盖注册表缺项、无 producer、缺字段、错误 schema、无效工具输出、未知引用 ID、错误数字和虚构引文。详细边界与语义限制见 [M6 契约说明](handoff_contracts.md)。固定四题的真实依赖验收独立写入 [M6 报告](../evaluation/reports/m6_contract_demo.json)，不覆盖 M5/M5.1 历史报告。
 
+首轮真实连续试跑在混合题由 LLM Verifier 返回 `REVISE`：摘要未明确说明运营数据为合成数据，条款 claim 未标明其来源是合成演示产品。验收脚本按 strict PASS 规则失败，没有写出报告。修正为由当前 SQL/RAG artifact 的已验证来源字段确定性地给摘要和各 claim 加上来源标识；不改数值、引文或 citation 判定。混合题单独复测 `PASS`，随后再从新干净提交执行四题完整验收。
+
 ## 关键实施细节
 
 **M1。** 建表顺序为分支、代理、客户、产品、保单、理赔、赔付；外键、日期、保费/赔款非负约束由迁移定义。生成器将批量记录排序后序列化并计算 hash，配置和生成器版本一并写入 manifest。公开文档 URL 必须从来源页核实，不能只从聊天摘录复制。
