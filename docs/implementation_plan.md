@@ -115,6 +115,8 @@ Verifier 批准前逐条校验 claim 的当前来源 ID：SQL 数字必须在所
 
 第三轮本机 CLIProxyAPI 在混合题 Synthesis 返回 HTTP 429；立即重试又在 Planner 返回 429，均未写报告。按用户已有的备用密钥配置，改用 DeepSeek `deepseek-flash` 实测，密钥请求有效且响应模型 ID 正确。首次 DeepSeek 连续试跑的 SQL 题 `PASS`，RAG 题的 Synthesis 因输出上限达到 `finish_reason=length` 停止。核对 DeepSeek 官方文档后发现该模型默认开启思考模式；曾试过对 DeepSeek 关闭思考的短 JSON smoke 请求，随后按用户要求改为显式开启思考、`reasoning_effort=high`，并将输出上限设为至少 8,192 token。CLIProxyAPI 请求不变。provider 参数和请求体均有测试，再从干净提交用 DeepSeek 执行四题完整验收。
 
+显式 `high` 的首轮完整 DeepSeek 试跑在纯 SQL 题由 Verifier 返回 `REVISE`：Synthesis 摘要提及公开咨询草案与合成产品的关系，而本轮没有检索任何公开资料。严格验收未写报告。Synthesis 现在只按本轮实际 SQL/RAG 产物列出可描述的来源种类；没有公开草案 evidence 时，不再要求提及公开草案。新增纯 SQL 的 prompt/摘要回归测试后重新运行。
+
 ## 关键实施细节
 
 **M1。** 建表顺序为分支、代理、客户、产品、保单、理赔、赔付；外键、日期、保费/赔款非负约束由迁移定义。生成器将批量记录排序后序列化并计算 hash，配置和生成器版本一并写入 manifest。公开文档 URL 必须从来源页核实，不能只从聊天摘录复制。

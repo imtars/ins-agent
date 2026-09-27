@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from packages.agent.agents.roles import VerificationAgent
+from packages.agent.agents.roles import SynthesisAnalystAgent, VerificationAgent
 from packages.agent.contracts import (ContractViolation, NODE_CONTRACTS,
                                      NodeContract, VerifierInput, VerifierOutput,
                                      checked_node, validate_registry)
@@ -180,3 +180,16 @@ def test_each_claim_needs_current_numeric_or_exact_quote_support():
     with pytest.raises(ValueError, match="cannot bind synthetic product"):
         Evidence.model_validate({**evidence.model_dump(),
                                  "source_type": "public_consultation_draft"})
+
+    class InspectSynthesis:
+        async def complete_json(self, role, system, user, *, max_tokens=1200):
+            assert "SQL results are synthetic operational data" in system
+            assert "Current source scope: SQL results are synthetic operational data." in system
+            assert "Retrieved public documents are consultation drafts" not in system
+            return {"summary": "合成业务查询", "claims": [
+                {"text": "有 30000 张保单。", "source_ids": ["sql:1"]}]}
+
+    pure_sql = TaskPlan(intent="count", route="SQL", sql_tasks=["count"])
+    summary = asyncio.run(SynthesisAnalystAgent(InspectSynthesis()).compose(
+        pure_sql, [sql], []))
+    assert "运营结果为合成演示数据" in summary.summary
