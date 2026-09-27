@@ -57,13 +57,13 @@ def definitions() -> list[dict]:
         region = list(region_names)[n % 4]
         limit = n // 4 + 1
         add("group_topn", f"{n+1:03d}",
-            f"{region_names[region]}部区域保单数最多的前 {limit} 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。",
+            f"{region_names[region]}部区域保单数最多的前 {limit} 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。",
             f"SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id WHERE b.region='{region}' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT {limit}", ordered=True)
 
     for n in range(1, 11):
         product = f"product_{n:03d}"
         add("q2_loss_ratio", f"{n:03d}",
-            f"产品 {product} 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。",
+            f"产品 {product} 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如 0.81，而非 81%），不附加计算中间列。",
             f"WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='{product}'), earned AS (SELECT sum(annual_premium*days/365) AS amount FROM covered), incurred AS (SELECT sum(c.claim_amount) AS amount FROM claims c JOIN covered p ON c.policy_id=p.id WHERE c.claim_date>=DATE '2026-04-01' AND c.claim_date<DATE '2026-07-01' AND c.status<>'denied') SELECT round(coalesce(incurred.amount,0)/nullif(earned.amount,0),4) AS incurred_loss_ratio FROM earned,incurred", tolerance="0.0001")
 
     for n, question in enumerate((

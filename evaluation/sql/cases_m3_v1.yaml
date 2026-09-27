@@ -807,7 +807,7 @@ cases:
   - claim_count: 1825
 - id: group_topn_001
   category: group_topn
-  question: 北部区域保单数最多的前 1 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 北部区域保单数最多的前 1 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='north' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 1
@@ -818,7 +818,7 @@ cases:
     policy_count: 2606
 - id: group_topn_002
   category: group_topn
-  question: 南部区域保单数最多的前 1 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 南部区域保单数最多的前 1 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='south' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 1
@@ -829,7 +829,7 @@ cases:
     policy_count: 2657
 - id: group_topn_003
   category: group_topn
-  question: 东部区域保单数最多的前 1 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 东部区域保单数最多的前 1 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='east' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 1
@@ -840,7 +840,7 @@ cases:
     policy_count: 2461
 - id: group_topn_004
   category: group_topn
-  question: 西部区域保单数最多的前 1 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 西部区域保单数最多的前 1 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='west' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 1
@@ -851,7 +851,7 @@ cases:
     policy_count: 2612
 - id: group_topn_005
   category: group_topn
-  question: 北部区域保单数最多的前 2 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 北部区域保单数最多的前 2 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='north' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 2
@@ -864,7 +864,7 @@ cases:
     policy_count: 2478
 - id: group_topn_006
   category: group_topn
-  question: 南部区域保单数最多的前 2 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 南部区域保单数最多的前 2 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='south' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 2
@@ -877,7 +877,7 @@ cases:
     policy_count: 2476
 - id: group_topn_007
   category: group_topn
-  question: 东部区域保单数最多的前 2 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 东部区域保单数最多的前 2 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='east' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 2
@@ -890,7 +890,7 @@ cases:
     policy_count: 2436
 - id: group_topn_008
   category: group_topn
-  question: 西部区域保单数最多的前 2 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 西部区域保单数最多的前 2 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='west' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 2
@@ -903,7 +903,7 @@ cases:
     policy_count: 2537
 - id: group_topn_009
   category: group_topn
-  question: 北部区域保单数最多的前 3 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 北部区域保单数最多的前 3 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='north' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 3
@@ -918,7 +918,7 @@ cases:
     policy_count: 2430
 - id: group_topn_010
   category: group_topn
-  question: 南部区域保单数最多的前 3 家分支，其 branch_code 和保单数分别是多少？数量相同时按 branch_code 升序。只返回 branch_code 和保单数。
+  question: 南部区域保单数最多的前 3 家分支分别是哪家、各有多少张保单？数量相同时按 branch_code 升序。
   expected_status: success
   reference_sql: SELECT b.branch_code,count(*) AS policy_count FROM policies p JOIN branches b ON p.branch_id=b.id
     WHERE b.region='south' GROUP BY b.branch_code ORDER BY policy_count DESC,b.branch_code ASC LIMIT 3
@@ -933,8 +933,7 @@ cases:
     policy_count: 2354
 - id: q2_loss_ratio_001
   category: q2_loss_ratio
-  question: 产品 product_001 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_001 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_001'),
@@ -948,8 +947,7 @@ cases:
   - incurred_loss_ratio: '0.5392'
 - id: q2_loss_ratio_002
   category: q2_loss_ratio
-  question: 产品 product_002 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_002 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_002'),
@@ -963,8 +961,7 @@ cases:
   - incurred_loss_ratio: '0.8107'
 - id: q2_loss_ratio_003
   category: q2_loss_ratio
-  question: 产品 product_003 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_003 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_003'),
@@ -978,8 +975,7 @@ cases:
   - incurred_loss_ratio: '1.0039'
 - id: q2_loss_ratio_004
   category: q2_loss_ratio
-  question: 产品 product_004 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_004 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_004'),
@@ -993,8 +989,7 @@ cases:
   - incurred_loss_ratio: '0.5886'
 - id: q2_loss_ratio_005
   category: q2_loss_ratio
-  question: 产品 product_005 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_005 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_005'),
@@ -1008,8 +1003,7 @@ cases:
   - incurred_loss_ratio: '1.0183'
 - id: q2_loss_ratio_006
   category: q2_loss_ratio
-  question: 产品 product_006 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_006 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_006'),
@@ -1023,8 +1017,7 @@ cases:
   - incurred_loss_ratio: '1.3449'
 - id: q2_loss_ratio_007
   category: q2_loss_ratio
-  question: 产品 product_007 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_007 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_007'),
@@ -1038,8 +1031,7 @@ cases:
   - incurred_loss_ratio: '0.4830'
 - id: q2_loss_ratio_008
   category: q2_loss_ratio
-  question: 产品 product_008 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_008 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_008'),
@@ -1053,8 +1045,7 @@ cases:
   - incurred_loss_ratio: '0.6302'
 - id: q2_loss_ratio_009
   category: q2_loss_ratio
-  question: 产品 product_009 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_009 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_009'),
@@ -1068,8 +1059,7 @@ cases:
   - incurred_loss_ratio: '0.7320'
 - id: q2_loss_ratio_010
   category: q2_loss_ratio
-  question: 产品 product_010 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。只返回该比值一个字段，以比例小数表示（例如
-    0.81，而非 81%），不附加计算中间列。
+  question: 产品 product_010 在 2026 年第二季度的已发生赔款除以按保单有效天数分摊的已赚保费，赔付率是多少？季度为 4 月 1 日（含）至 7 月 1 日（不含）。
   expected_status: success
   reference_sql: WITH covered AS (SELECT p.id,p.annual_premium,GREATEST(0,LEAST(p.end_date,DATE '2026-07-01')-GREATEST(p.start_date,DATE
     '2026-04-01')) AS days FROM policies p JOIN products d ON p.product_id=d.id WHERE d.product_code='product_010'),

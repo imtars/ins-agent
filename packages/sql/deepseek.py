@@ -13,6 +13,8 @@ Return JSON only: {"decision":"query","sql":"SELECT ..."} or
 {"decision":"refuse","sql":null}. Refuse unsafe writes and questions not answerable
 from the listed business columns. Use only the supplied schema. Never use a
 generator manifest or assume real customer facts. Use one SELECT/CTE statement.
+Translate natural-language category labels to stored codes using the supplied
+business value dictionary before writing WHERE conditions.
 For quarterly earned premium, allocate policy annual_premium by overlap days / 365;
 policy end_date is exclusive. For claim count use claim_date in the interval.
 For incurred claim amount include settled and open claims, excluding denied claims.
@@ -27,6 +29,7 @@ class OpenAICompatibleSQLGenerator:
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
+        self.response_models: list[str | None] = []
 
     async def generate(self, question: str, schema: str, feedback: str | None,
                        attempt: int) -> dict:
@@ -43,6 +46,9 @@ class OpenAICompatibleSQLGenerator:
                                          headers={"Authorization": f"Bearer {self.api_key}"})
             response.raise_for_status()
             body = response.json()
+        response_model = body.get("model")
+        self.response_models.append(response_model if isinstance(response_model, str)
+                                    and response_model else None)
         choice = body["choices"][0]
         if choice["finish_reason"] != "stop":
             raise RuntimeError(f"LLM completion did not finish: {choice['finish_reason']}")

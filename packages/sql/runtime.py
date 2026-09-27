@@ -11,6 +11,19 @@ from packages.sql.security import BUSINESS_TABLES, validate_sql
 
 MAX_ROWS = 200
 STATEMENT_TIMEOUT_MS = 5_000
+REGION_LABELS = {"north": "北部", "south": "南部", "east": "东部", "west": "西部"}
+PRODUCT_TYPES = ("motor", "health", "accident", "life")
+CLAIM_STATUSES = ("open", "settled", "denied")
+
+
+def business_value_context() -> str:
+    """Document stored categorical values that column types cannot convey."""
+    regions = ", ".join(f"{label} -> '{code}'" for code, label in REGION_LABELS.items())
+    return ("Stored business values (translate labels to codes for SQL filters):\n"
+            f"branches.region: {regions}; the column stores only English codes. "
+            "For example, 北部 means WHERE branches.region = 'north', never '北部'.\n"
+            f"products.product_type: {', '.join(PRODUCT_TYPES)}\n"
+            f"claims.status: {', '.join(CLAIM_STATUSES)}")
 
 
 def require_reader(engine: AsyncEngine) -> None:
@@ -47,7 +60,8 @@ async def schema_context(engine: AsyncEngine) -> str:
                  for table, column, target, target_column in foreign_keys
                  if table in BUSINESS_TABLES and target in BUSINESS_TABLES]
     return ("\n".join(f"{table}({', '.join(grouped[table])})" for table in sorted(grouped))
-            + "\nForeign keys:\n" + "\n".join(relations))
+            + "\nForeign keys:\n" + "\n".join(relations)
+            + "\n" + business_value_context())
 
 
 def json_value(value):

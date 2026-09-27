@@ -10,6 +10,22 @@ import yaml
 from packages.domain.synthetic import SyntheticConfig, generate
 
 
+def test_m31_question_contract_changes_preserve_reference_results():
+    old = yaml.safe_load(Path("evaluation/sql/cases_m3_v1.yaml").read_text(encoding="utf-8"))
+    new = yaml.safe_load(Path("evaluation/sql/cases.yaml").read_text(encoding="utf-8"))
+    assert old["dataset_sha256"] == new["dataset_sha256"]
+    assert old["case_count"] == new["case_count"] == 110
+    changed = []
+    for before, after in zip(old["cases"], new["cases"], strict=True):
+        assert before["id"] == after["id"]
+        assert {key: value for key, value in before.items() if key != "question"} == {
+            key: value for key, value in after.items() if key != "question"}
+        if before["question"] != after["question"]:
+            changed.append(before["category"])
+    assert changed.count("group_topn") == 10
+    assert changed.count("q2_loss_ratio") == 10
+
+
 def test_110_gold_results_match_independent_python_oracle():
     casebook = yaml.safe_load(Path("evaluation/sql/cases.yaml").read_text(encoding="utf-8"))
     assert casebook["case_count"] == 110

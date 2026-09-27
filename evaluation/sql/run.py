@@ -21,6 +21,7 @@ from packages.sql.deepseek import SYSTEM, select_sql_generator
 from packages.sql.runtime import execute_readonly
 
 REPORT_PATH = Path("evaluation/reports/sql_evaluation.json")
+BASELINE_REPORT_PATH = Path("evaluation/reports/sql_evaluation_m3_v1.json")
 
 
 def value_equal(expected, actual, tolerance: Decimal) -> bool:
@@ -114,6 +115,9 @@ async def evaluate(reader_url: str, provider: str = "auto") -> dict:
     except (OSError, subprocess.CalledProcessError):
         commit, dirty = None, None
     report = {"generated_at": datetime.now(timezone.utc).isoformat(),
+              "evaluation_kind": "same_case_regression_after_m3_error_analysis",
+              "baseline_report_path": str(BASELINE_REPORT_PATH),
+              "baseline_report_sha256": file_sha256(BASELINE_REPORT_PATH),
               "base_git_commit": commit, "git_worktree_dirty": dirty,
               "dataset_sha256": manifest["dataset_sha256"],
               "casebook_sha256": file_sha256(CASES_PATH),
@@ -125,6 +129,11 @@ async def evaluate(reader_url: str, provider: str = "auto") -> dict:
                   Path("packages/persistence/synthetic_loader.py"),
                   Path("evaluation/sql/run.py"))},
               "provider": generator.provider, "model": generator.model,
+              "requested_model": generator.model,
+              "observed_response_model_ids": sorted({model for model in generator.response_models
+                                                     if model is not None}),
+              "response_model_missing_count": generator.response_models.count(None),
+              "completion_count": len(generator.response_models),
               "api_base_url": generator.base_url,
               "system_prompt_sha256": __import__("hashlib").sha256(SYSTEM.encode()).hexdigest(),
               "case_count": len(records), "safe_count": len(safe),

@@ -1,9 +1,30 @@
 """Provider selection never needs the real local proxy or a credential in CI."""
 
+import asyncio
+
 import httpx
 import pytest
 
-from packages.sql.deepseek import select_sql_generator
+from packages.sql.deepseek import OpenAICompatibleSQLGenerator, select_sql_generator
+
+
+def test_generator_records_observed_response_model_without_credentials(monkeypatch):
+    def respond(request):
+        assert request.headers["Authorization"] == "Bearer test-key"
+        return httpx.Response(200, json={"model": "proxy-reported-model",
+                                          "choices": [{"finish_reason": "stop", "message": {
+                                              "content": '{"decision":"refuse","sql":null}'}}]})
+
+    transport = httpx.MockTransport(respond)
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: real_client(
+        transport=transport, **kwargs))
+    generator = OpenAICompatibleSQLGenerator(provider="test", model="requested-model",
+                                              base_url="http://127.0.0.1:8317/v1",
+                                              api_key="test-key")
+    result = asyncio.run(generator.generate("question", "schema", None, 0))
+    assert result["decision"] == "refuse"
+    assert generator.response_models == ["proxy-reported-model"]
 
 
 def test_proxy_selection_uses_luna_and_does_not_read_fallback(tmp_path, monkeypatch):

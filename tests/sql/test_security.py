@@ -11,7 +11,8 @@ import yaml
 
 from packages.sql.analytics import measures, period_summary
 from packages.sql.agent import answer_question
-from packages.sql.runtime import execute_readonly, schema_context
+from packages.sql.runtime import (CLAIM_STATUSES, PRODUCT_TYPES, REGION_LABELS,
+                                  business_value_context, execute_readonly, schema_context)
 from packages.sql.security import UnsafeSQL, validate_sql
 from evaluation.sql.run import rows_equal
 
@@ -60,6 +61,13 @@ def test_result_evaluator_uses_values_tolerance_and_requested_order():
                                      reversed_rows[0]], "0.0001", ordered=False)
 
 
+def test_business_value_dictionary_documents_stored_codes():
+    context = business_value_context()
+    assert all(f"{label} -> '{code}'" in context for code, label in REGION_LABELS.items())
+    assert all(kind in context for kind in PRODUCT_TYPES)
+    assert all(status in context for status in CLAIM_STATUSES)
+
+
 class StubGenerator:
     def __init__(self, responses):
         self.responses = responses
@@ -104,6 +112,13 @@ def test_actual_reader_permissions_and_quarterly_metrics():
             schema = await schema_context(engine)
             assert "policies(" in schema and "claim_payments(" in schema
             assert "claims.policy_id -> policies.id" in schema
+            assert business_value_context() in schema
+            region_rows = await execute_readonly(engine, "SELECT DISTINCT region FROM branches")
+            type_rows = await execute_readonly(engine, "SELECT DISTINCT product_type FROM products")
+            status_rows = await execute_readonly(engine, "SELECT DISTINCT status FROM claims")
+            assert {row["region"] for row in region_rows} == set(REGION_LABELS)
+            assert {row["product_type"] for row in type_rows} == set(PRODUCT_TYPES)
+            assert {row["status"] for row in status_rows} == set(CLAIM_STATUSES)
             assert await execute_readonly(engine, "SELECT count(*) AS n FROM policies") == [{"n": 30000}]
             rows = await period_summary(engine, date(2026, 4, 1), date(2026, 7, 1),
                                         region="south")
