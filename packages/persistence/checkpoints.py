@@ -7,7 +7,8 @@ ALLOWED_STATE_MODELS = tuple(("packages.agent.models", name) for name in (
     "TaskPlan", "SqlArtifact", "RagArtifact", "Evidence", "ToolAttempt",
     "AnalysisResult", "AnalysisClaim", "VerificationResult", "ApprovalResult",
     "PublicationReceipt",
-))
+)) + (("packages.persistence.artifacts", "ArtifactRef"),
+      ("packages.persistence.reviews", "ReviewDecision"))
 
 
 def checkpoint_serializer() -> JsonPlusSerializer:

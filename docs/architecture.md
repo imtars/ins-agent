@@ -43,10 +43,10 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-当前已实现 M7 持久化模式：原 M5/M6 主图和两个 MCP 专家边界保持不变；仅在 Verifier `PASS` 后进入 `human_review`，以 PostgreSQL checkpoint 保存中断位置，由同一 `run_id/thread_id` 恢复到审核决定和受保护的 publish 节点。审批决定与幂等发布回执存在独立 PostgreSQL 表，不存进 M1 业务数据库；checkpoint 不充当作业队列。M7 checkpoint 目前仍保存 M6 的完整 SQL/RAG 状态，目标架构中的小型引用和版本化 `run_artifacts` 留给 M8。最小本机 API 仅供 M7 进程重启验收，使用服务端 reviewer 身份和 token。完整 JWT/RBAC、worker/lease、版本化 run artifact、定向重跑和前端尚未实现，分别属于 M8/M10。M0–M6 历史验收保持冻结。
+M7 历史图及其 checkpoint/审核表保留。M8 新图保留五角色和 M4 MCP 专家调用，但 checkpoint 中的 SQL/RAG/Analysis/Verification 只保存 `ArtifactRef`；完整内容和规范化 SHA-256 存入版本化 `run_artifacts`。`agent_jobs` 的租约管理与 checkpoint 分开，worker 通过 `FOR UPDATE SKIP LOCKED` 认领并续租，崩溃后的新 worker 用相同 `run_id/thread_id` 恢复。审核记录绑定具体 analysis artifact ID、版本和哈希，发布路径只接受仍为最新版本的已批准产物。完整 JWT/RBAC 与前端属于 M10，M9 故障注入仍未实现。
 
 ## 后续待验证的工程问题
 
 - M3 后续质量判断：初始诊断的错误已用于 M3.1 同题回归修正；回归分数不能冒称独立泛化结果。若未来需要泛化结论，须另设未参与开发的题本。
 - M7：真实两进程验收已验证 PostgreSQL checkpoint、`interrupt()` 恢复和发布幂等；详见 [M7 本机报告](../evaluation/reports/m7_durable_demo.json)。
-- M8：worker lease、checkpoint 与 artifact 写入之间的幂等事务边界。
+- M8：真实 worker 崩溃、lease expiry 恢复和 RAG 定向重跑见 [M8 本机报告](../evaluation/reports/m8_runner_replay.json)；同一阶段 artifact 写入以 `(run_id, stage, generation)` 幂等。

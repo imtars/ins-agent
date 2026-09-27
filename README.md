@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M7 已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M7 仅增加本地审核控制入口，完整 API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M7 已完成本机验收；M8 待真实进程验收**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和带 PostgreSQL checkpoint 的 Agent 图。M8 增加本机 worker 与定向重跑，完整 API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -149,6 +149,23 @@ uv run --locked python -m scripts.run_m7_demo --provider deepseek
 
 本次真实验收在进程重启前收到 5 次 `deepseek-flash` 响应并暂停；重启后模型调用为 0，审核完成后 PostgreSQL 中仅有 1 条对应发布回执。独立复核报告的 7 份源码哈希和历史 M6 报告哈希，完整本机测试 **75 passed**。此为固定题目、本机服务与数据库验收，不是 CI、未见题准确率或完整生产鉴权验证。
 
+## M8 后台 worker 与定向重跑
+
+M8 使用独立 PostgreSQL 数据库保存 `agent_jobs`、LangGraph checkpoint、`run_artifacts`、`m8_reviews` 和 `m8_publications`。本机 API 只入队和读取状态；worker 用 `FOR UPDATE SKIP LOCKED` 认领 job，并持续续租。失去 lease 的 worker 不再写入。相同 UUID 始终用作 `run_id/thread_id`；租约到期后新 worker 从 checkpoint 继续。节点 checkpoint 只保留版本化 artifact 引用，节点结果写入 `run_artifacts`，同一 `(run_id, stage, generation)` 的重试复用原结果。
+
+Reviewer 拒绝后可选择 `sql`、`rag`、`synthesis` 重跑；只选 `rag` 时原 SQL artifact 的 ID、版本、内容哈希保持不变。每轮新的 Synthesis 与 Verifier 使用当前 artifact 集。审核请求必须带当前 analysis 的 artifact ID、版本与哈希；发布时再次核对 PostgreSQL 中当前 analysis、存储的审核决定和 Verifier `PASS`。M7 原 API 和历史报告保持不变。M8 本机 token 仍不是 M10 的 JWT/RBAC。
+
+本机验收命令（需要已可用的 M1 PostgreSQL、M4 MCP 数据源、Milvus/BGE 和 DeepSeek key）：
+
+```bash
+docker compose exec -T postgres createdb -U insurance_app insurance_m8_demo
+export M8_DATABASE_URL='postgresql://insurance_app:change-me-local-only@127.0.0.1:5432/insurance_m8_demo'
+export M8_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_acceptance'
+uv run --locked python -m scripts.run_m8_demo
+```
+
+脚本在干净源码提交上启动独立 API/worker 进程，故意让第一个 worker 在 Planner checkpoint 后退出，等租约到期后由另一个 worker 接管；随后拒绝并只重跑 RAG，验证 SQL 引用完全一致，再批准当前 analysis 并验证发布回执。只有全部断言通过才写 [M8 本机报告](evaluation/reports/m8_runner_replay.json)。`M8_TEST_DATABASE_URL` 应指向专用测试数据库，完整 pytest 中的 M8 集成测试会清理其中遗留的活跃测试作业。
+
 ## 设计文档
 
 - [架构与阶段边界](docs/architecture.md)
@@ -161,6 +178,7 @@ uv run --locked python -m scripts.run_m7_demo --provider deepseek
 - [M6 契约说明](docs/handoff_contracts.md)
 - [M6 本机报告](evaluation/reports/m6_contract_demo.json)
 - [M7 本机报告](evaluation/reports/m7_durable_demo.json)
+- [M8 本机报告](evaluation/reports/m8_runner_replay.json)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)
