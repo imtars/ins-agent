@@ -120,6 +120,9 @@ async def evaluate(reader_url: str) -> dict:
               "code_sha256": {str(path): file_sha256(path) for path in (
                   Path("packages/sql/security.py"), Path("packages/sql/runtime.py"),
                   Path("packages/sql/agent.py"), Path("packages/sql/deepseek.py"),
+                  Path("packages/sql/analytics.py"),
+                  Path("evaluation/sql/prepare_cases.py"),
+                  Path("packages/persistence/synthetic_loader.py"),
                   Path("evaluation/sql/run.py"))},
               "provider": "DeepSeek", "model": generator.model,
               "system_prompt_sha256": __import__("hashlib").sha256(SYSTEM.encode()).hexdigest(),
