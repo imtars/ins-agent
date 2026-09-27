@@ -17,10 +17,12 @@ import httpx
 from psycopg import Connection
 
 from packages.persistence.approvals import psycopg_url
-from scripts.run_m5_demo import DEMOS
-
-
 REPORT_PATH = Path("evaluation/reports/m7_durable_demo.json")
+DEMO_QUERY = (
+    "请生成 2026 年第二季度合成产品 product_006 的业务与条款综合简报，"
+    "只列出已发生赔付率、理赔频率（次/在保保单年）以及疾病责任等待期，"
+    "分别引用运营数据和产品条款。"
+)
 
 
 def free_port() -> int:
@@ -105,7 +107,7 @@ def main() -> None:
         with httpx.Client(base_url=f"http://127.0.0.1:{port}", timeout=300,
                           trust_env=False) as client:
             first_health = wait_ready(client, first)
-            created = client.post("/runs", json={"query": DEMOS["report"][0]})
+            created = client.post("/runs", json={"query": DEMO_QUERY})
             created.raise_for_status()
             start_record = created.json()
             run_id = start_record["run_id"]
@@ -118,7 +120,11 @@ def main() -> None:
                     or waiting_record["next"] != ["human_review"]
                     or waiting_record["verification"]["status"] != "PASS"
                     or "publish" in waiting_record["trace"]):
-                raise RuntimeError("run did not interrupt after a PASS verification")
+                raise RuntimeError(
+                    "run did not interrupt after a PASS verification: "
+                    f"status={waiting_record['status']} "
+                    f"next={waiting_record['next']} "
+                    f"issues={waiting_record['verification']['issues']}")
             print(f"paused run {run_id} at human_review", flush=True)
     finally:
         stop_api(first)
@@ -178,6 +184,7 @@ def main() -> None:
     report = {"generated_at": datetime.now(timezone.utc).isoformat(),
               "base_git_commit": base_commit, "git_worktree_dirty": False,
               "code_sha256": source_hashes(), "run_id": run_id,
+              "query": DEMO_QUERY,
               "thread_id": start_record["thread_id"],
               "provider": provenance, "first_process_health": first_health,
               "second_process_initial_health": second_health,
