@@ -1,0 +1,144 @@
+{
+  "artifact_refs": {
+    "analysis": {
+      "artifact_id": "7d09559b-4189-4fa4-a021-6bbaf8771421",
+      "content_hash": "f12ab3e1d6d7dafbec7a554765acffcdb7133d924c3e9f6c7ed6c9cd247433b4",
+      "generation": 1,
+      "run_id": "9dd66399-137c-4695-b184-82dbb9100ed6",
+      "stage": "analysis",
+      "version": 1
+    },
+    "rag": {
+      "artifact_id": "e9a469eb-ab08-47c1-80fd-43e1ec2c5278",
+      "content_hash": "b180383c2c47f4726694cdbcef2473ab7c1b74121bda13056c06a5bdbde8fc07",
+      "generation": 1,
+      "run_id": "9dd66399-137c-4695-b184-82dbb9100ed6",
+      "stage": "rag",
+      "version": 1
+    },
+    "sql": {
+      "artifact_id": "0c448e14-016f-4858-90ca-9b2700393e8e",
+      "content_hash": "9686ee2190ed75b71c83c1f05ebc4911b2e9d2a9c541f945e23656e23bd9e8e7",
+      "generation": 1,
+      "run_id": "9dd66399-137c-4695-b184-82dbb9100ed6",
+      "stage": "sql",
+      "version": 1
+    },
+    "verification": {
+      "artifact_id": "0d8c4f9c-e296-4c40-9389-34f7d31b7f1d",
+      "content_hash": "6379e68cbfd578d875761a025c60335b7e61ca184a28204643ecdf22cfed37d5",
+      "generation": 1,
+      "run_id": "9dd66399-137c-4695-b184-82dbb9100ed6",
+      "stage": "verification",
+      "version": 1
+    }
+  },
+  "artifact_stages": [
+    "analysis",
+    "rag",
+    "sql",
+    "verification"
+  ],
+  "base_git_commit": "d83bec69a6a31a204e7d9525ef1374af55152ea8",
+  "degraded_flags": [],
+  "event_types": [
+    "workflow.queued",
+    "workflow.started",
+    "planner.started",
+    "dependency.retry",
+    "planner.completed",
+    "fork.started",
+    "fork.completed",
+    "rag.started",
+    "sql.started",
+    "sql.completed",
+    "rag.completed",
+    "synthesis.started",
+    "synthesis.completed",
+    "verification.started",
+    "verification.completed",
+    "human_review.started",
+    "workflow.interrupted"
+  ],
+  "final_event_types": [
+    "workflow.queued",
+    "workflow.started",
+    "planner.started",
+    "dependency.retry",
+    "planner.completed",
+    "fork.started",
+    "fork.completed",
+    "rag.started",
+    "sql.started",
+    "sql.completed",
+    "rag.completed",
+    "synthesis.started",
+    "synthesis.completed",
+    "verification.started",
+    "verification.completed",
+    "human_review.started",
+    "workflow.interrupted",
+    "review.decided",
+    "workflow.resumed",
+    "human_review.started",
+    "human_review.completed",
+    "publish.started",
+    "publish.completed",
+    "workflow.completed"
+  ],
+  "final_trace": [
+    "planner",
+    "fork",
+    "knowledge_researcher",
+    "data_analyst",
+    "synthesis",
+    "verifier",
+    "human_review",
+    "publish"
+  ],
+  "first_worker_model_ids": [
+    "deepseek-flash",
+    "deepseek-flash",
+    "deepseek-flash",
+    "deepseek-flash",
+    "deepseek-flash"
+  ],
+  "generated_at": "2026-09-27T14:13:24.920015+00:00",
+  "git_worktree_dirty": false,
+  "jwt_rbac": "analyst review 403; reviewer approved current artifact; stale/duplicate 409",
+  "publication_count": 1,
+  "report_after_review_published": true,
+  "report_preview_published": false,
+  "retry_events": [
+    {
+      "attempt": 1,
+      "created_at": "2026-09-27T14:13:02.290627+00:00",
+      "event_type": "dependency.retry",
+      "id": 4,
+      "job_id": "24b08e8a-1a0b-4e0d-8ea6-54ffdd2417f5",
+      "node": null,
+      "payload": {
+        "attempt": 1,
+        "boundary": "llm:planner",
+        "error_code": "dependency_timeout"
+      },
+      "run_id": "9dd66399-137c-4695-b184-82dbb9100ed6"
+    }
+  ],
+  "review_status": "WAITING_APPROVAL",
+  "run_id": "9dd66399-137c-4695-b184-82dbb9100ed6",
+  "second_worker_model_ids": [],
+  "source_sha256": {
+    "apps/api/m10.py": "0da271b12b8b626680d85e10206f2aac66293fa1cff3a9e0889af837b899667a",
+    "apps/api/m8.py": "92aa3a157b10eb1cf0906ab0066091060f4b4975a796a031edb7852890a687dd",
+    "apps/api/run_control.py": "787536d1f0a6b083580862357e7575e31a8479f17f090092d41e9f3241447791",
+    "apps/runner/worker.py": "8f887bbb46f154937f9769baea4bea9c7efb5916b82a4774874958d9e9c0b227",
+    "apps/web/src/App.vue": "ab8dcdb7c6a2a13634933080b943fbb0f4fb726f9de78e7919c6012c2cd1948a",
+    "packages/persistence/auth.py": "c2d1f9b9b809636b430e55cbeb93b21dfabbd45878731c9b99c7e322a0801a05",
+    "packages/persistence/events.py": "b47970893bc0b9fa318017125e2ee36bf98ce7e24d1a32de089cbec403b2dd80",
+    "packages/persistence/reviews.py": "b93a7c358f3f265306a182c3f8571e8ee94673b76f823649c93926527524bdca",
+    "scripts/run_m10_demo.py": "ba88fbce0784474d2a02049d763cfd7dfd463d2bfac6b4c7adf5c6e8acb8fdae"
+  },
+  "sse_first_event": "event: workflow.queued",
+  "status": "PUBLISHED"
+}

@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M9 已通过本机验收；M10 的 API/UI 正在本机验收，M11 尚未开始。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M10 已通过本机阶段验收；M11 尚未开始。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -159,7 +159,9 @@ M10 通过共用 `RunControl` 复用 M8 的创建、状态读取与版本绑定�
 
 M10 只核验 M2 已注册文档的 SHA-256，保留公开草案 `draft` 状态；新文件上传与重建知识索引尚未实现。评测接口读取已有 RAG/SQL 报告和文件哈希，明确返回 `existing_report`，不会把历史报告伪装成新评测。模型 token 使用量未持久化，UI 当前显示可用的 attempts、tool arguments、results、trace、retry events 和 degraded flags。M9 的文本错误分类未在本阶段修改；将来若接入第三方 MCP 服务，再考虑机器可读业务错误码。
 
-M10 gate：从空专用数据库启动 HTTP API、登录 analyst、创建综合 run、拒绝 analyst 审核、DeepSeek worker 经真实 PostgreSQL/Milvus/BGE/MCP 执行并在注入一次 Planner timeout 后留下持久化 retry event、读取预览/artifact/SSE、reviewer 拒绝过期版本而批准当前版本、再次执行 worker、确认唯一 publication 与报告 `published=true`；并运行完整 pytest 与 Vue build。演示脚本只在全部断言通过后写独立 [M10 报告](../evaluation/reports/m10_api_ui_demo.json)。状态与结果以实际脚本输出和报告为准。
+M10 gate：从空专用数据库启动 HTTP API、登录 analyst、创建综合 run、拒绝 analyst 审核、DeepSeek worker 经真实 PostgreSQL/Milvus/BGE/MCP 执行并在注入一次 Planner timeout 后留下持久化 retry event、读取预览/artifact/SSE、reviewer 拒绝过期版本而批准当前版本、再次执行 worker、确认唯一 publication 与报告 `published=true`；并运行完整 pytest 与 Vue build。演示脚本只在全部断言通过后写独立 [M10 报告](../evaluation/reports/m10_api_ui_demo.json)。
+
+最终从干净源码提交 `d83bec6` 和空 `insurance_m10_demo_final` 数据库运行：综合路径在人工审核前生成 SQL/RAG/analysis/verification 四类 artifact，DeepSeek 5 次响应均报告 `deepseek-flash`；一次本地注入的 Planner timeout 写入 `dependency.retry`，并由同一 worker 恢复。SSE 首条为 `workflow.queued`。analyst 审核 403，旧哈希及重复审核 409；reviewer 批准当前 analysis 后，第二个 worker 无模型调用，事件链记录 `workflow.resumed → publish.completed → workflow.completed`。数据库中对应 run 只有一条 publication，报告 `published=true`。独立按基线提交重算 9 个源码 SHA-256，核对报告事件数及 PostgreSQL 发布行数均匹配。Vue build 通过；含真实 PostgreSQL/Milvus/BGE 的完整本机 pytest **107 passed**，不是 CI。M10 阶段 gate PASS。新文档上传/索引、按需重算评测和 token 使用量仍是显式限制，不应对外说成已完成。
 
 ## 关键实施细节
 

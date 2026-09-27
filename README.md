@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M9 已完成本机验收；M10 API/UI 已实现，验收状态见下文**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务、带 PostgreSQL checkpoint 的 Agent 图、JWT API 和 Vue 工作台。不能用于真实保险业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M10 已完成本机阶段验收；M11 尚未开始**。M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务、带 PostgreSQL checkpoint 的 Agent 图、JWT API 和 Vue 工作台。不能用于真实保险业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -215,6 +215,8 @@ cd apps/web && npm ci && npm run dev
 
 `POST /api/documents` 仅核验固定 M2 注册表中的现有文档及 SHA-256；不会上传新文档、更新 Milvus 或把公开草案绑定 synthetic 产品。`POST /api/evaluations/rag|sql` 返回现有固定报告及哈希，状态是 `existing_report`，不会假装重新跑评测。真正的新文档入库、按需重跑评测与 token 使用量采集尚未完成，属于当前限制。M10 本机端到端验收使用 `M10_DATABASE_URL`/`M10_READER_DATABASE_URL` 执行 `uv run --locked python -m scripts.run_m10_demo`，报告写入 `evaluation/reports/m10_api_ui_demo.json`；完整测试另设置 `M10_TEST_DATABASE_URL` 指向专用测试库。M10 的验收数字与结果见 [实施计划](docs/implementation_plan.md)。
 
+本机从干净提交 `d83bec6` 和独立空库进行真实 HTTP/JWT/DeepSeek/MCP 演示：analyst 创建综合 run，受控 Planner 超时触发 1 次持久化 `dependency.retry`，5 次模型响应均报告 `deepseek-flash`，SQL/RAG/analysis/verification 四类 artifact 齐备；analyst 审核返回 403，过期版本和重复审核返回 409，reviewer 批准后第二个 worker 无模型调用，最终报告 `published=true` 且数据库只有 1 条 publication。SSE 回放首条事件成功，最终事件链含 `workflow.resumed`、`publish.completed`、`workflow.completed`。报告源码哈希、事件数和数据库发布行数已独立复核。Vue 生产构建通过，完整本机 pytest **107 passed**。这些是本机验收，不是 CI、未见题准确率或公网部署验证。M10 阶段 gate PASS；没有进入 M11。
+
 ## 设计文档
 
 - [架构与阶段边界](docs/architecture.md)
@@ -230,6 +232,7 @@ cd apps/web && npm ci && npm run dev
 - [M8 本机报告](evaluation/reports/m8_runner_replay.json)
 - [M9 故障报告](evaluation/reports/m9_fault_injection.json)
 - [M10 API 契约](docs/m10_api.md)
+- [M10 本机端到端报告](evaluation/reports/m10_api_ui_demo.json)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)
