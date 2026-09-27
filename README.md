@@ -130,6 +130,8 @@ M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-l
 
 该脚本只在四题均 `PASS` 且所有 claim 的确定性证据检查通过后生成 [M6 本机报告](evaluation/reports/m6_contract_demo.json)；原 M5/M5.1 报告不覆盖。本机 CLIProxyAPI 当前返回 429，因此 M6 使用此前配置的 DeepSeek 备用 key；JSON 请求显式设置 `reasoning_effort=high`，并给 DeepSeek 至少 8,192 token 的输出上限。设齐上述测试依赖变量后，`uv run --locked pytest -q` 执行完整本机测试。
 
+本次从干净提交连续验收结果：SQL、RAG、BOTH、REPORT 四路全部 `PASS`，确定性证据问题均为空；DeepSeek 返回 20 次 `deepseek-flash` model ID，缺失 0、JSON 解析失败 0。完整本机真实依赖测试为 **72 passed**。这些是本机验收结果，不是 CI 或新题泛化成绩。
+
 ## 设计文档
 
 - [架构与阶段边界](docs/architecture.md)

@@ -125,6 +125,8 @@ Verifier 批准前逐条校验 claim 的当前来源 ID：SQL 数字必须在所
 
 随后简报单题还暴露 Planner 过度拆分：一次生成 6 个 SQL task、4 个 RAG task，超出问题本身所需，并使 Synthesis 生成没有业务数字的 SQL claim。Planner 现在要求合并单个分析工具可返回的相关指标，每个分支最多两个 task，超限时最多修正一次。Synthesis 对确定性证据检查失败也最多修正一次，只可引用同一批产物；仍失败则由原 Verifier 校验返回 `BLOCK`，不会放宽数值或引用规则。两条界限有确定性测试。
 
+最终从干净基线 `8c3639ef69700c4045314001bc5d4286f2f7ff76` 连续执行四条真实 DeepSeek 路径：SQL `1 SQL / 0 RAG`、RAG `0 / 1`、BOTH `1 / 1`、REPORT `2 / 2`，四条均 `PASS`，每条只经过一次 Synthesis 和 Verifier，确定性 evidence issues 全部为空。报告记录 `git_worktree_dirty=false`、10 个节点的输入/输出 schema hash、8 份源码 SHA-256、20 次模型调用均报告 `deepseek-flash`，model ID 缺失 0、JSON 解析失败 0；独立复算源码与 schema hash、逐题证据校验均吻合。完整本机真实依赖 pytest 为 **72 passed**。这是固定四题的本机流程与契约验收，不是 CI 或新题泛化成绩。M6 PASS，可冻结并进入 M7；本轮未实现 M7。
+
 ## 关键实施细节
 
 **M1。** 建表顺序为分支、代理、客户、产品、保单、理赔、赔付；外键、日期、保费/赔款非负约束由迁移定义。生成器将批量记录排序后序列化并计算 hash，配置和生成器版本一并写入 manifest。公开文档 URL 必须从来源页核实，不能只从聊天摘录复制。
