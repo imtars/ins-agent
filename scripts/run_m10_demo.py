@@ -167,6 +167,12 @@ def main():
                                      token=analyst_token).json()
                 if not published["published"]:
                     raise RuntimeError("report remains unpublished")
+                final_events = response(client, "GET", f"/api/runs/{run_id}/events",
+                                        token=analyst_token).json()["events"]
+                final_types = [event["event_type"] for event in final_events]
+                if not {"review.decided", "workflow.resumed", "publish.completed",
+                        "workflow.completed"} <= set(final_types):
+                    raise RuntimeError(f"post-review event chain is incomplete: {final_types}")
                 with Connection.connect(args.database_url) as conn:
                     count = conn.execute("SELECT count(*) FROM m8_publications WHERE run_id=%s",
                                          (run_id,)).fetchone()[0]
@@ -185,6 +191,8 @@ def main():
               "artifact_refs": state["refs"], "degraded_flags": state["degraded_flags"],
               "retry_events": [e for e in events if e["event_type"] == "dependency.retry"],
               "event_types": [e["event_type"] for e in events],
+              "final_event_types": final_types,
+              "final_trace": final["trace"],
               "sse_first_event": first_event_line,
               "first_worker_model_ids": first["model_response_ids"],
               "second_worker_model_ids": second["model_response_ids"],
