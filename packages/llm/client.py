@@ -16,11 +16,15 @@ class JsonModel(Protocol):
 
 
 class JsonChatClient:
-    def __init__(self, *, provider: str, model: str, base_url: str, api_key: str):
+    def __init__(self, *, provider: str, model: str, base_url: str, api_key: str,
+                 deepseek_max_tokens_floor: int = 8192):
+        if not 1 <= deepseek_max_tokens_floor <= 65536:
+            raise ValueError("DeepSeek token floor must be between 1 and 65536")
         self.provider = provider
         self.model = model
         self.base_url = base_url.rstrip("/")
         self._api_key = api_key
+        self.deepseek_max_tokens_floor = deepseek_max_tokens_floor
         self.response_models: list[str | None] = []
         self.roles_called: list[str] = []
         self.parse_failures: list[str] = []
@@ -39,7 +43,7 @@ class JsonChatClient:
             if self.provider == "DeepSeek":
                 payload["thinking"] = {"type": "enabled"}
                 payload["reasoning_effort"] = "high"
-                payload["max_tokens"] = max(max_tokens, 8192)
+                payload["max_tokens"] = max(max_tokens, self.deepseek_max_tokens_floor)
             async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
                 response = await client.post(f"{self.base_url}/chat/completions", json=payload,
                                              headers={"Authorization": f"Bearer {self._api_key}"})
@@ -66,6 +70,7 @@ class JsonChatClient:
 def select_chat_client(provider: str = "auto", *,
                        proxy_config: Path = Path.home() / ".cli-proxy-api/config.yaml",
                        fallback_key_file: Path = Path("/home/xubei/projects/jobs/dsv4_key"),
+                       deepseek_max_tokens_floor: int = 8192,
                        ) -> JsonChatClient:
     if provider not in {"auto", "proxy", "deepseek"}:
         raise ValueError("provider must be auto, proxy, or deepseek")
@@ -96,4 +101,5 @@ def select_chat_client(provider: str = "auto", *,
     if not key:
         raise ValueError("no available M5 model provider or DeepSeek fallback key")
     return JsonChatClient(provider="DeepSeek", model=settings.llm_model,
-                          base_url="https://api.deepseek.com", api_key=key)
+                          base_url="https://api.deepseek.com", api_key=key,
+                          deepseek_max_tokens_floor=deepseek_max_tokens_floor)

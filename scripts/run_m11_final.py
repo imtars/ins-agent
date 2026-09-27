@@ -24,7 +24,8 @@ SUITES = (
     ("sql", ("-m", "evaluation.sql.run", "--provider", "deepseek",
              "--max-tokens", "8192"),
      {"evaluation/reports/sql_evaluation.json": "m11_sql_evaluation.json"}),
-    ("workflow", ("-m", "scripts.run_m6_demo", "--provider", "deepseek"),
+    ("workflow", ("-m", "scripts.run_m6_demo", "--provider", "deepseek",
+                  "--deepseek-max-tokens", "16384", "--record-failures"),
      {"evaluation/reports/m6_contract_demo.json": "m11_workflow_demo.json"}),
     ("replay", ("-m", "scripts.run_m8_demo"),
      {"evaluation/reports/m8_runner_replay.json": "m11_replay_demo.json"}),
@@ -236,9 +237,10 @@ def main():
         if (workflow["case_count"] != 4
                 or [c["plan"]["route"] for c in workflow["cases"]] !=
                     ["SQL", "RAG", "BOTH", "REPORT"]
-                or any(c["status"] != "PASS" or c["deterministic_evidence_issues"]
+                or workflow["evaluation_kind"] != "m11_live_workflow_regression_audit"
+                or any(c["status"] not in {"PASS", "REVISE", "BLOCK"}
                        for c in workflow["cases"])):
-            raise RuntimeError("four-route workflow did not PASS")
+            raise RuntimeError("four-route workflow report is incomplete")
         if (replay["final"]["status"] != "PUBLISHED"
                 or replay["publication_row_count"] != 1
                 or replay["stage_versions"] != {"analysis": [1, 2], "rag": [1, 2],
@@ -252,6 +254,7 @@ def main():
             raise RuntimeError("fault recovery did not publish exactly once")
         report = {"generated_at": datetime.now(timezone.utc).isoformat(),
                   "base_git_commit": base, "git_worktree_dirty": False,
+                  "status": "PASS" if workflow["all_pass"] else "COMPLETE_WITH_LIMITATIONS",
                   "runner_sha256": sha256(ROOT / "scripts/run_m11_final.py"),
                   "suites": completed,
                   "rag": {"query_count": rag["query_count"], "results": rag["results"],
@@ -264,6 +267,12 @@ def main():
                           "metrics": sql["metrics"]},
                   "workflow": {"routes": [c["plan"]["route"] for c in workflow["cases"]],
                                "statuses": [c["status"] for c in workflow["cases"]],
+                               "pass_count": sum(c["status"] == "PASS" and
+                                                 not c["deterministic_evidence_issues"]
+                                                 for c in workflow["cases"]),
+                               "issues": {c["name"]: c["verification"]["issues"]
+                                          for c in workflow["cases"] if c["status"] != "PASS"},
+                               "model_request_parameters": workflow["model_request_parameters"],
                                "model_ids": workflow["observed_response_model_ids"]},
                   "replay": {"final_status": replay["final"]["status"],
                              "run_id": replay["run_id"]},
@@ -277,7 +286,7 @@ def main():
             shutil.copyfile(path, ROOT / "evaluation/reports" / path.name)
         REPORT.write_text(json.dumps(report, ensure_ascii=False, sort_keys=True,
                                      indent=2) + "\n", encoding="utf-8")
-    print(f"M11 final evaluation PASS; wrote {REPORT}", flush=True)
+    print(f"M11 final evaluation {report['status']}; wrote {REPORT}", flush=True)
 
 
 if __name__ == "__main__":

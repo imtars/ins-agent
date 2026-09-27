@@ -37,8 +37,11 @@ def assert_accepted(record: dict, expected_route: str) -> None:
         raise RuntimeError(f"M5 demo route or verification failed: {record['name']}")
 
 
-async def run(reader_url: str, milvus_uri: str, provider: str, only: str | None) -> dict:
-    model = select_chat_client(provider)
+async def run(reader_url: str, milvus_uri: str, provider: str, only: str | None,
+              *, deepseek_max_tokens_floor: int = 8192,
+              strict: bool = True) -> dict:
+    model = select_chat_client(provider,
+        deepseek_max_tokens_floor=deepseek_max_tokens_floor)
     engine = create_async_engine(reader_url)
     try:
         knowledge = knowledge_server(milvus_uri)
@@ -66,7 +69,8 @@ async def run(reader_url: str, milvus_uri: str, provider: str, only: str | None)
                       f"sql={len(record['sql_results'])} rag={len(record['rag_results'])} "
                       f"status={record['status']} trace={record['trace']} "
                       f"issues={record['verification']['issues']}", flush=True)
-                assert_accepted(record, expected_route)
+                if strict:
+                    assert_accepted(record, expected_route)
     finally:
         await engine.dispose()
     return {"generated_at": datetime.now(timezone.utc).isoformat(),

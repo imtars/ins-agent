@@ -81,3 +81,22 @@ def test_provider_specific_thinking_parameter(monkeypatch, provider, thinking, t
     assert requests[0].get("reasoning_effort") == ("high" if provider == "DeepSeek"
                                                   else None)
     assert requests[0]["max_tokens"] == tokens
+
+
+def test_deepseek_evaluation_token_floor_is_explicit(monkeypatch):
+    requests = []
+
+    def respond(request):
+        requests.append(json.loads(request.content))
+        return httpx.Response(200, json={"model": "deepseek-flash",
+            "choices": [{"finish_reason": "stop", "message": {"content": '{"ok":true}'}}]})
+
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: real_client(
+        transport=httpx.MockTransport(respond), **kwargs))
+    model = JsonChatClient(provider="DeepSeek", model="deepseek-flash",
+        base_url="https://api.deepseek.com", api_key="test-key",
+        deepseek_max_tokens_floor=16384)
+    assert asyncio.run(model.complete_json("verifier", "Return JSON", "test",
+                                           max_tokens=700)) == {"ok": True}
+    assert requests[0]["max_tokens"] == 16384

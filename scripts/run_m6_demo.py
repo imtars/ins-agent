@@ -32,14 +32,21 @@ def main() -> None:
     parser.add_argument("--milvus-uri", default=os.environ.get("MILVUS_URI",
                                                                 "http://127.0.0.1:19530"))
     parser.add_argument("--provider", choices=("auto", "proxy", "deepseek"), default="auto")
+    parser.add_argument("--deepseek-max-tokens", type=int, default=8192)
+    parser.add_argument("--record-failures", action="store_true",
+                        help="M11 audit: save all four live outcomes without claiming acceptance")
     args = parser.parse_args()
     if not args.reader_url:
         raise ValueError("M3_READER_DATABASE_URL is required")
     validate_registry(MAIN_NODES, SUBGRAPH_NODES)
-    report = asyncio.run(run(args.reader_url, args.milvus_uri, args.provider, None))
+    report = asyncio.run(run(args.reader_url, args.milvus_uri, args.provider, None,
+                             deepseek_max_tokens_floor=args.deepseek_max_tokens,
+                             strict=not args.record_failures))
+    report["evaluation_kind"] = ("m11_live_workflow_regression_audit"
+                                 if args.record_failures else "m6_strict_acceptance")
     report["model_request_parameters"] = (
         {"thinking": {"type": "enabled"}, "reasoning_effort": "high",
-         "minimum_max_tokens": 8192}
+         "minimum_max_tokens": args.deepseek_max_tokens}
         if report["provider"] == "DeepSeek" else
         {"thinking": "provider_default", "max_tokens": "role_specific"})
     for case in report["cases"]:
@@ -49,8 +56,11 @@ def main() -> None:
             [RagArtifact.model_validate(item) for item in case["rag_results"]],
             AnalysisResult.model_validate(case["analysis"]))
         case["deterministic_evidence_issues"] = issues
-        if issues:
+        if issues and not args.record_failures:
             raise RuntimeError(f"M6 evidence contract failed: {case['name']}: {issues}")
+    report["all_pass"] = all(case["status"] == "PASS" and
+                             not case["deterministic_evidence_issues"]
+                             for case in report["cases"])
     report["contract_registry"] = [{
         "name": name,
         "requires": sorted(contract.requires),
@@ -68,6 +78,7 @@ def main() -> None:
         Path("packages/agent/models.py"), Path("packages/agent/contracts.py"),
         Path("packages/agent/evidence.py"), Path("packages/agent/agents/roles.py"),
         Path("packages/agent/graph.py"), Path("scripts/run_m6_demo.py"),
+        Path("packages/llm/client.py"),
         Path("services/mcp_data/server.py"), Path("services/mcp_knowledge/server.py"))}
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2,
