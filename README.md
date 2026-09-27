@@ -47,19 +47,19 @@ uv run --locked python -m scripts.download_m2_models
 uv run --locked python -m evaluation.rag.run
 ```
 
-模型下载默认禁用代理。直连源站失败后可试 `--endpoint https://hf-mirror.com`；本机镜像直连也超时，实际使用 `--endpoint https://hf-mirror.com --transport system` 下载，revision 和逐文件 SHA-256 见 `data/manifests/bge-*_download.json`。已有模型可执行 `uv run --locked python -m scripts.download_m2_models --verify`。Milvus Compose 采用官方 2.6.24 配置；官方 MinIO 镜像已不可拉取，本项目改用报告相同 MinIO release 的镜像，详见 [实施记录](docs/implementation_plan.md)。服务端口仅绑定本机。
+模型下载默认禁用代理。直连源站失败后可试 `--endpoint https://hf-mirror.com`；本机镜像直连也超时，实际使用 `--endpoint https://hf-mirror.com --transport system` 下载，revision 和逐文件 SHA-256 见 `data/manifests/bge-*_download.json`。已有模型可执行 `uv run --locked python -m scripts.download_m2_models --verify`。Milvus Compose 采用官方 2.6.24 配置；官方 MinIO 镜像已不可拉取，本项目使用固定 digest 的第三方同 release 重新打包镜像，详见 [实施记录](docs/implementation_plan.md)。服务端口仅绑定本机。
 
-首次 `evaluation.rag.run` 会验证原始 Insur-QA SHA-256，生成完整去重语料与固定 256 题本地 holdout，解析文档，建立两个 Milvus collection，然后运行 dense、sparse、RRF hybrid、hybrid 加 reranker。后续运行按语料和模型哈希复用索引；需要重建时传 `--rebuild`。自动生成的 [评测表](evaluation/reports/rag_ablation.md)、[完整参数与结果](evaluation/reports/rag_ablation.json)和逐题排名 ID 都在 `evaluation/reports/`。这是从作者标为训练数据的文件划出的本地 holdout，不能称为官方独立测试集。
+首次 `evaluation.rag.run` 会验证原始 Insur-QA SHA-256，生成完整去重语料与固定 256 题本地 holdout，解析文档，建立两个 Milvus collection，然后运行 dense、sparse、RRF hybrid、hybrid 加 reranker。后续运行仅在语料、模型文件、编码依赖、索引配置与索引代码哈希都匹配时复用索引；需要重建时传 `--rebuild`。自动生成的 [评测表](evaluation/reports/rag_ablation.md)、[完整参数与结果](evaluation/reports/rag_ablation.json)和逐题排名 ID 都在 `evaluation/reports/`。这是从作者标为训练数据的文件划出的本地 holdout，不能称为官方独立测试集。
 
 <!-- RAG_ABLATION_START -->
 本地 holdout：256 题；完整语料：21953 passages。
 
-| Pipeline | Recall@1 | Recall@5 | Recall@10 | MRR@10 |
-| --- | ---: | ---: | ---: | ---: |
-| dense | 0.0820 | 0.2314 | 0.3203 | 0.1461 |
-| sparse | 0.0742 | 0.2461 | 0.3525 | 0.1485 |
-| hybrid | 0.0938 | 0.2539 | 0.3682 | 0.1655 |
-| hybrid_rerank | 0.1172 | 0.2773 | 0.4043 | 0.1947 |
+| Pipeline | Recall@1 | Recall@5 | Recall@10 | MRR@10 | Hit@10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| dense | 0.0781 | 0.2158 | 0.3047 | 0.1384 | 0.3125 |
+| sparse | 0.0742 | 0.2461 | 0.3525 | 0.1485 | 0.3555 |
+| hybrid | 0.0820 | 0.2383 | 0.3604 | 0.1534 | 0.3672 |
+| hybrid_rerank | 0.1172 | 0.2773 | 0.4043 | 0.1947 | 0.4102 |
 <!-- RAG_ABLATION_END -->
 
 可直接检查带来源、章节和 chunk ID 的检索证据：

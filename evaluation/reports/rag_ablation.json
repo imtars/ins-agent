@@ -1,16 +1,51 @@
 {
-  "base_git_commit": "c610f00e8f8cf4a0ef6d14cee6b2128ab1bd8ea1",
+  "base_git_commit": "ccd84c9b5abfcf98f039889f5e3af248f7766f9b",
   "benchmark_index": {
     "collection": "insur_qa_corpus",
     "corpus_sha256": "f300e2c94c11addc045ff0983897053920df3b8bc23b26484bc431ea5db7e63d",
-    "created_at": "2026-09-26T18:10:16.904302+00:00",
+    "created_at": "2026-09-27T03:57:47.932193+00:00",
+    "encoder_dependencies": {
+      "FlagEmbedding": "1.4.2",
+      "torch": "2.14.0",
+      "transformers": "5.17.0"
+    },
+    "index_code_sha256": "97a67bbc6b821915d65873d9246733e02d945e0b5a38ced3abfefb6bb9179b1d",
+    "index_config": {
+      "dense": {
+        "index_type": "HNSW",
+        "metric_type": "COSINE",
+        "params": {
+          "M": 16,
+          "efConstruction": 200
+        }
+      },
+      "sparse": {
+        "index_type": "SPARSE_INVERTED_INDEX",
+        "metric_type": "IP",
+        "params": {
+          "drop_ratio_build": 0.0
+        }
+      }
+    },
     "max_index_chars": 1800,
     "max_model_tokens": 512,
     "milvus_version": "2.6.24",
+    "model_files_sha256": {
+      "colbert_linear.pt": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb",
+      "config.json": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa",
+      "pytorch_model.bin": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+      "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+      "sparse_linear.pt": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9",
+      "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+      "tokenizer.json": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08",
+      "tokenizer_config.json": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4"
+    },
     "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
     "model_weights_sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
     "row_count": 21953,
-    "truncated_passages": 300
+    "schema_version": 1,
+    "truncated_passages": 300,
+    "vector_dim": 1024
   },
   "candidate_limit_each_search": 20,
   "caveats": [
@@ -22,9 +57,9 @@
   ],
   "code_sha256": {
     "evaluation/rag/dataset.py": "aff251078ce90010fff810f9fd737d33af92f14d7d25aebb3439de2d8a824501",
-    "evaluation/rag/run.py": "96497b8433a497cc2763424f17e4d7fdfa91502a85793daabc8cd33a8ce59080",
-    "packages/knowledge/documents.py": "7dda4929afbae7fcf0ce7714501aad7b52149abf90feae556d121bc9dbaaaa96",
-    "packages/knowledge/milvus_store.py": "56de8fecd0de8e34f6377ed4c193d45c855cae6bc7bceaa0458637abbd93fdaa",
+    "evaluation/rag/run.py": "59ca9fdb90257d72b8f2747f2c087c937597c16fb9fc9730ef96b5d8dbcc3a48",
+    "packages/knowledge/documents.py": "36a9a83d8ad154973f23e9ef0fa6bd473dd76418da25863e830d102af12aadb3",
+    "packages/knowledge/milvus_store.py": "97a67bbc6b821915d65873d9246733e02d945e0b5a38ced3abfefb6bb9179b1d",
     "packages/knowledge/retrieval.py": "3d494477bf1b2452350a113c8ffb09d58565712fa45b62dde9295d8706c65383"
   },
   "dataset_manifest": {
@@ -56,20 +91,55 @@
     "unique_queries": 19942
   },
   "dataset_revision": "b2493e3c706d47ea378545a82dea85e00cd60a48",
-  "evaluation_seconds": 19.577736587998515,
-  "generated_at": "2026-09-27T03:32:31.496130+00:00",
-  "git_worktree_dirty": true,
+  "evaluation_seconds": 20.03679202099738,
+  "generated_at": "2026-09-27T04:00:00.020799+00:00",
+  "git_worktree_dirty": false,
   "knowledge_index": {
     "collection": "insurance_knowledge",
-    "corpus_sha256": "14669a3c2183a65b4281d1aefd01edee25c3b7c6e5588c5c7304538a5b9aa424",
-    "created_at": "2026-09-27T03:31:40.144623+00:00",
+    "corpus_sha256": "ff0c4768619cbcbfdfaaa449ca47ffc554bdd12ffe7268e71f33ba131688abc8",
+    "created_at": "2026-09-27T03:59:36.691237+00:00",
+    "encoder_dependencies": {
+      "FlagEmbedding": "1.4.2",
+      "torch": "2.14.0",
+      "transformers": "5.17.0"
+    },
+    "index_code_sha256": "97a67bbc6b821915d65873d9246733e02d945e0b5a38ced3abfefb6bb9179b1d",
+    "index_config": {
+      "dense": {
+        "index_type": "HNSW",
+        "metric_type": "COSINE",
+        "params": {
+          "M": 16,
+          "efConstruction": 200
+        }
+      },
+      "sparse": {
+        "index_type": "SPARSE_INVERTED_INDEX",
+        "metric_type": "IP",
+        "params": {
+          "drop_ratio_build": 0.0
+        }
+      }
+    },
     "max_index_chars": 1800,
     "max_model_tokens": 512,
     "milvus_version": "2.6.24",
+    "model_files_sha256": {
+      "colbert_linear.pt": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb",
+      "config.json": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa",
+      "pytorch_model.bin": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+      "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+      "sparse_linear.pt": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9",
+      "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+      "tokenizer.json": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08",
+      "tokenizer_config.json": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4"
+    },
     "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
     "model_weights_sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
     "row_count": 365,
-    "truncated_passages": 0
+    "schema_version": 1,
+    "truncated_passages": 0,
+    "vector_dim": 1024
   },
   "knowledge_sources": {
     "chunk_counts": {
@@ -92,37 +162,41 @@
       "product_012": 10
     },
     "corpus_path": "data/processed/rag/knowledge.jsonl",
-    "corpus_sha256": "14669a3c2183a65b4281d1aefd01edee25c3b7c6e5588c5c7304538a5b9aa424",
+    "corpus_sha256": "ff0c4768619cbcbfdfaaa449ca47ffc554bdd12ffe7268e71f33ba131688abc8",
     "source_count": 17
   },
-  "metric_definition": "Macro mean of per-query fraction of all positive IDs found at k; MRR@10 uses the first positive ID and zero beyond rank 10.",
+  "metric_definition": "Recall@k is the macro mean of the per-query fraction of all positive IDs found at k. MRR@10 uses the first positive ID and zero beyond rank 10. Hit@10 is the fraction of queries with at least one positive ID in the top 10.",
   "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
   "name": "Insur-QA local query holdout, full deduplicated passage corpus",
   "query_count": 256,
-  "rankings_sha256": "984c6ee55dcae55c75c94c086d68f69792c3b682b6db07f9a90fff164825086f",
+  "rankings_sha256": "d9e2f03a25e000eac7a0d61ee5fcf64b3ca0f971bf56771b6f515b797ab2e007",
   "rerank_input": "hybrid RRF top 20",
   "rerank_output": "top 10",
   "reranker_revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
   "results": {
     "dense": {
-      "MRR@10": 0.14613560267857145,
-      "Recall@1": 0.08203125,
-      "Recall@10": 0.3203125,
-      "Recall@5": 0.2314453125
+      "Hit@10": 0.3125,
+      "MRR@10": 0.13836650545634918,
+      "Recall@1": 0.078125,
+      "Recall@10": 0.3046875,
+      "Recall@5": 0.2158203125
     },
     "hybrid": {
-      "MRR@10": 0.16549169146825404,
-      "Recall@1": 0.09375,
-      "Recall@10": 0.3681640625,
-      "Recall@5": 0.25390625
+      "Hit@10": 0.3671875,
+      "MRR@10": 0.15335441468253974,
+      "Recall@1": 0.08203125,
+      "Recall@10": 0.3603515625,
+      "Recall@5": 0.23828125
     },
     "hybrid_rerank": {
+      "Hit@10": 0.41015625,
       "MRR@10": 0.19466920882936517,
       "Recall@1": 0.1171875,
       "Recall@10": 0.404296875,
       "Recall@5": 0.27734375
     },
     "sparse": {
+      "Hit@10": 0.35546875,
       "MRR@10": 0.1485274057539683,
       "Recall@1": 0.07421875,
       "Recall@10": 0.3525390625,

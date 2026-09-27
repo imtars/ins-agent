@@ -51,7 +51,13 @@ Insur-QA Retriever 原始文件 SHA-256 与 M1 provenance 一致。20,857 行中
 
 Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个 collection 的真实记录数分别为 21,953 和 365。官方 2.6.24 Compose 中的 Docker Hub MinIO 镜像目前无法拉取，Quay 同名 tag 在本机返回 unauthorized；使用并固定 `tobi312/minio` 的同 release 镜像与 digest，容器内版本实际核对。BGE 模型源站与 `hf-mirror.com` 直连均超时；经镜像和系统代理按固定 revision 下载，逐文件 SHA-256 已核验。上述真实数据源差异与替代来源见 [核对记录](research_notes.md)。
 
-`uv run --locked python -m evaluation.rag.run` 实际完成 dense、sparse、hybrid、hybrid_rerank 四组评测，逐题排名和自动生成的 Recall@1/5/10、MRR@10 见 [报告](../evaluation/reports/rag_ablation.md)与 [参数及哈希](../evaluation/reports/rag_ablation.json)。例如 hybrid_rerank 的 Recall@10 为 0.4043、MRR@10 为 0.1947；这是固定 256 题的**本地 query holdout**，原始文件被作者标为训练数据，不能称为官方独立测试集或无污染泛化结果。真实知识检索命令返回 `product_006` 的“等待期 15 天”章节和可追踪证据 ID。设置 M1 数据库、下载文件与 M2 Milvus 环境变量后，完整 `pytest -q` 为 **19 passed**；`docker compose config --quiet` 与 `git diff --check` 同时通过。M2 门槛满足，尚未实现 SQL Agent 或后续阶段。
+`uv run --locked python -m evaluation.rag.run` 实际完成 dense、sparse、hybrid、hybrid_rerank 四组评测，逐题排名和自动生成的 Recall@1/5/10、MRR@10 见 [报告](../evaluation/reports/rag_ablation.md)与 [参数及哈希](../evaluation/reports/rag_ablation.json)。例如当次 hybrid_rerank 的 Recall@10 为 0.4043、MRR@10 为 0.1947；这是固定 256 题的**本地 query holdout**，原始文件被作者标为训练数据，不能称为官方独立测试集或无污染泛化结果。真实知识检索命令返回 `product_006` 的“等待期 15 天”章节和可追踪证据 ID。设置 M1 数据库、下载文件与 M2 Milvus 环境变量后，当次完整 `pytest -q` 为 **19 passed**；`docker compose config --quiet` 与 `git diff --check` 同时通过。此为 M2 初次验收记录，最终报告以后续 M2.1 强制重建结果为准。
+
+## M2.1 索引来源与引用修正（2026-09-27）
+
+源码审查发现，原 index marker 只覆盖语料和模型权重，无法证明旧 Milvus collection 使用当前索引参数及编码实现；PDF 每页重新设为“前言”，会把跨页条款续文标错章节。已将 schema 版本、向量维度、实际建索引参数、索引源码 SHA-256、全部模型文件 SHA-256 与编码依赖版本纳入 marker 校验，并增加错误 marker 拒绝复用的单元测试。PDF parser 在换页时保留上一条款标题，直到遇到新标题；两页续文测试验证页码与 section 均正确。
+
+在干净的源码提交 `ccd84c9` 上执行 `uv run --locked python -m evaluation.rag.run --rebuild`，两个 collection 均从头建立，实际行数分别为 21,953 和 365；Milvus 返回的 dense HNSW/COSINE (`M=16`, `efConstruction=200`) 与 sparse `SPARSE_INVERTED_INDEX`/IP (`drop_ratio_build=0.0`) 均与 marker 一致。报告记录 `git_worktree_dirty=false`，5 个源码哈希及逐题排名哈希均重新核对一致。完整测试为 **21 passed**。本次 dense Recall@10 为 **0.3047**、hybrid 为 **0.3604**、hybrid_rerank 为 **0.4043**，后者 Hit@10 为 **0.4102**。前两项与初次报告不同；旧 collection 缺少足够的构建 provenance，无法判定差异的唯一原因，因此以本次强制重建的实际结果为准。256 题留出集未用于调参，512 token 限制及训练数据来源仍是已记录的评测限制。M2.1 修正完成，未进入 M3。
 
 ## 关键实施细节
 
