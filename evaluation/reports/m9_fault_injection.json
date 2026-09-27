@@ -1,0 +1,82 @@
+{
+  "base_git_commit": "fe1785d77821df7687b27bf7cdeaaaa50035d0f8",
+  "code_sha256": {
+    "apps/runner/worker.py": "2639168a31ef4738ff0ba683cb59f1787fb23b9f25988fd5d13d643d95eff8c2",
+    "packages/agent/agents/roles.py": "d5719a665fb83d4a0f9d7d810a22bee7514bf11474bc9c10c2a61a1358f800e9",
+    "packages/agent/faults.py": "cbc6ef3f477d677513a4aaf18c48b99d3a52a1960e0d808faadf6ddbf6d959e3",
+    "packages/agent/m8_graph.py": "80522e2a3b26c06173abbb9dd1f4984d893bf2e60dcd36a2bd5b403f50f339a4",
+    "packages/agent/models.py": "39dc43e5e424cf2120d56fb6ae886c4f696bf754eced093b660302ba4552e143",
+    "packages/knowledge/retrieval.py": "26fb585411676a018108d86afafad4e068c5e4d735eef408e7f4f2f0a224cb38",
+    "packages/persistence/jobs.py": "5b8d17f31119ef47abb7bfa236346613dd3695a913ebacd31071cd9c016e5216",
+    "scripts/run_m9_faults.py": "80ebd7d0f3e2e113d77fe3b44a6ad28c2eb02c2e780dbafe13107c6c399fe327",
+    "services/mcp_knowledge/server.py": "9a7cf1a9a969e1cc87d66ca01af7ee584a687e82a1732356677ae7c12191b7c2",
+    "tests/fault/test_durable_faults.py": "c6695a84e833c135c55cd69db53bc612775c98d2d819244bccc6d7307772f374",
+    "tests/fault/test_fault_policy.py": "d722889f8a3b04a059094456daacd3e528ecd096ddc304452ec27111ca00a348",
+    "tests/fault/test_reranker_fallback.py": "93b721c891131c02f633908b00bf630a7bd94f9639402d243b1f1adca9afe849"
+  },
+  "fault_suite_summary": "28 passed in 17.50s",
+  "fault_suite_uses_stub_llm_for_deterministic_cases": true,
+  "generated_at": "2026-09-27T13:42:03.078531+00:00",
+  "git_worktree_dirty": false,
+  "live_fault_case": "llm_timeout once at planner",
+  "live_final_status": "PUBLISHED",
+  "live_first_worker": {
+    "attempt": 1,
+    "fault_case": "llm_timeout",
+    "fault_fired": 1,
+    "model_response_ids": [
+      "deepseek-flash",
+      "deepseek-flash",
+      "deepseek-flash",
+      "deepseek-flash",
+      "deepseek-flash"
+    ],
+    "retry_events": [
+      {
+        "attempt": 1,
+        "boundary": "llm:planner",
+        "error_code": "dependency_timeout"
+      }
+    ],
+    "run_id": "d1b6ee43-724c-43e4-b09a-5a3f4d247aaa",
+    "status": "WAITING_APPROVAL"
+  },
+  "live_resume_worker": {
+    "attempt": 1,
+    "fault_case": null,
+    "fault_fired": 0,
+    "model_response_ids": [],
+    "retry_events": [],
+    "run_id": "d1b6ee43-724c-43e4-b09a-5a3f4d247aaa",
+    "status": "COMPLETED"
+  },
+  "live_run_id": "d1b6ee43-724c-43e4-b09a-5a3f4d247aaa",
+  "live_status_before_review": "PASS",
+  "live_trace": [
+    "planner",
+    "fork",
+    "knowledge_researcher",
+    "data_analyst",
+    "synthesis",
+    "verifier",
+    "human_review",
+    "publish"
+  ],
+  "publication_row_count": 1,
+  "reranker_fault_uses_real_milvus_bge": true,
+  "stage_versions": {
+    "analysis": [
+      1
+    ],
+    "rag": [
+      1
+    ],
+    "sql": [
+      1
+    ],
+    "verification": [
+      1
+    ]
+  },
+  "thread_id": "d1b6ee43-724c-43e4-b09a-5a3f4d247aaa"
+}
