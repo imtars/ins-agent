@@ -93,6 +93,8 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 
 四条真实 demo 使用本机 CLIProxyAPI `gpt-6-luna`、M1 synthetic PostgreSQL reader、M2 Milvus/BGE 和 M4 FastMCP `ClientGroup`，完整逐条记录见 [M5 demo 报告](../evaluation/reports/m5_demo.json)。第一轮连续运行发现混合题把“已发生赔付率”错误选择成理赔频率，Verification 返回 `REVISE`；此反馈用于明确两种指标的工具语义，并增加错误工具选择的确定性修复测试。最终验收从修正后的干净源码提交重新运行，保留模型响应中的 `REVISE` 或 JSON 格式重试记录，不把四题 demo 当成准确率 benchmark。所有测试与路由结果均为本机验收，尚无 CI status；代理报告的模型 ID 不能证明底层权重版本。
 
+最终从干净提交 `c4004ed` 连续运行：SQL `1 SQL / 0 RAG`、RAG `0 / 1`、混合 `1 / 1`、简报 `2 / 2`，四题均在预期节点后各执行一次 Synthesis 和 Verification，状态均为 `PASS`。报告记录 `git_worktree_dirty=false`、源码 SHA-256、24 次模型响应（均报告 `gpt-6-luna`，模型 ID 缺失数 0），本次 JSON 解析重试数 0；混合题实际调用 `incurred_loss_ratio`，简报同时调用 `incurred_loss_ratio` 和 `claims_per_in_force_policy_year`。独立脚本复核四题路由、节点集合、产物数量、引用 ID、指标工具、源码哈希及报告基线提交。真实依赖环境下完整 `pytest -q` 为 **60 passed**。这只是四个预设流程示例的本机验收，不能推断回答准确率或泛化能力。M5 PASS，冻结；进入 M6 的流程门槛已满足，本轮不实现 M6。
+
 ## 关键实施细节
 
 **M1。** 建表顺序为分支、代理、客户、产品、保单、理赔、赔付；外键、日期、保费/赔款非负约束由迁移定义。生成器将批量记录排序后序列化并计算 hash，配置和生成器版本一并写入 manifest。公开文档 URL 必须从来源页核实，不能只从聊天摘录复制。
