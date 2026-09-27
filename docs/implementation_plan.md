@@ -1,6 +1,6 @@
 # 实施计划与验收
 
-本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M3 已冻结；M4 FastMCP 已在本机实际验收，尚未进入 M5。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
+本计划将 [PROJECT_SPEC.md](../PROJECT_SPEC.md) 落成可独立验收的任务。M0–M4 已冻结；M5 单进程 LangGraph 已在本机实际验收，尚未进入 M6。每一步失败都停在本阶段修复，不能以 mock 输出替代外部服务或评测结果。
 
 | 阶段 | 具体交付 | 进入下一阶段的门槛 |
 | --- | --- | --- |
@@ -86,6 +86,12 @@ Milvus 2.6.24、etcd 和同 release MinIO 实际启动并达到 healthy；两个
 在现有 FastMCP 4.0.10 锁定依赖上实现 `mcp-data` 与 `mcp-knowledge` 共 11 个工具。数据服务构造时拒绝非 `insurance_reader` URL；任意 SQL 继续走 M3 的 AST 校验、数据库只读事务、5 秒超时与 200 行上限。新统计能力放在 `packages/sql/analytics.py`，MCP 仅调用它，先合计原始暴露与金额再计算理赔率、赔付率和增长率。知识服务的检索仍走 M2 的 BGE-M3 dense/sparse、RRF 和 reranker；文档/chunk 读取只使用显式注册的运行时知识源，启动时验证模型文件、源文件与索引 marker，不暴露 Insur-QA benchmark collection。详细输入、输出和错误规则见 [工具契约](mcp_tools.md)。
 
 使用 FastMCP `Client` 通过真实 reader 数据库调用全部 7 个数据工具；使用真实 Milvus 2.6、BGE-M3 与 reranker 调用全部 4 个知识工具，并验证检索证据与 chunk、公开草案 draft 状态、非法参数和未知文档的错误。两个 stdio 进程实际启动并完成工具调用；`ClientGroup` 列出 11 个 `data_` / `knowledge_` 命名空间工具并路由两端调用。完整本机测试在 M1/M2/M3/M4 真实依赖变量齐备时为 **50 passed**；这是 local acceptance，不是 CI status。M4 PASS，停止在 M4，尚未实现 LangGraph 节点。
+
+## M5 单进程 LangGraph 编排与验收（2026-09-27）
+
+主图包含 Planner、SQL/RAG 两个专家子图、Synthesis 和 Verification。Planner 选择 `SQL`、`RAG`、`BOTH`、`REPORT`；后两条由 LangGraph 并行分支和显式 join 合流。Data Analyst 通过 M4 `data_` 工具获得 schema 与业务数值，Knowledge Researcher 通过 `knowledge_` 工具取得条款证据；Synthesis 和 Verification 没有工具调用入口。图在进程内保存本次状态、trace 和产物，不创建 checkpoint、worker、HITL 或持久化 run state。M5 有最小的 Pydantic 输出模型和来源 ID 检查；完整 handoff registry、逐声明证据验证与故障注入仍属于后续里程碑。
+
+四条真实 demo 使用本机 CLIProxyAPI `gpt-6-luna`、M1 synthetic PostgreSQL reader、M2 Milvus/BGE 和 M4 FastMCP `ClientGroup`，完整逐条记录见 [M5 demo 报告](../evaluation/reports/m5_demo.json)。第一轮连续运行发现混合题把“已发生赔付率”错误选择成理赔频率，Verification 返回 `REVISE`；此反馈用于明确两种指标的工具语义，并增加错误工具选择的确定性修复测试。最终验收从修正后的干净源码提交重新运行，保留模型响应中的 `REVISE` 或 JSON 格式重试记录，不把四题 demo 当成准确率 benchmark。所有测试与路由结果均为本机验收，尚无 CI status；代理报告的模型 ID 不能证明底层权重版本。
 
 ## 关键实施细节
 

@@ -4,7 +4,7 @@
 
 系统回答保险运营分析与条款知识问题，输入可以分别路由到 SQL、RAG 或两者。所有业务运营记录和与其通过 `product_code` 关联的产品文档均为合成演示数据。公开条款仅用于独立知识检索，除非有明确、已验证的产品映射，不得把公开条款套用到合成产品。
 
-五个依赖 LLM 的角色固定为 Planner、Data Analyst、Knowledge Researcher、Synthesis Analyst、Verification Agent。计算指标、SQL 校验、检索融合、引用检查、审批发布均由确定性代码执行。Provider 抽象位于 `packages/llm`；默认模型为 `deepseek-flash`，配置从环境读取。
+五个依赖 LLM 的角色固定为 Planner、Data Analyst、Knowledge Researcher、Synthesis Analyst、Verification Agent。计算指标、SQL 校验、检索融合由确定性代码执行。M5 仅实现基本来源 ID 检查与 Verification 角色；完整的逐声明证据校验、跨节点契约和审批发布属于后续阶段。Provider 抽象位于 `packages/llm`；本机优先 CLIProxyAPI `gpt-6-luna`，DeepSeek 为备用。
 
 ## 目标流程
 
@@ -43,10 +43,10 @@ SQL 和 RAG 子图在需要时并行执行，合流前必须各自完成明确�
 | `services/mcp_data`, `services/mcp_knowledge` | 对既有能力的 FastMCP 包装 | M4 |
 | `apps/api`, `apps/runner`, `apps/frontend` | HTTP、worker、Vue UI | M8/M10 |
 
-本文件描述目标架构。M1 已实现 PostgreSQL 业务 schema、合成数据与公开数据 provenance；M2 已实现显式注册的条款语料、Milvus 检索和本地 holdout 评测。M3 的只读 SQL、gold case 与 110 题真实模型评测已完成。M4 已将 SQL、analytics 和知识检索包装成两个 FastMCP stdio 服务，11 个工具有实际协议与依赖验收。主 Graph、API 和前端仍未实现。真实接口和版本约束在每个里程碑的验收中确定。
+上面的持久化、审批与发布流程描述目标架构。当前 M5 实现单进程、内存态主图：Planner 选择 SQL、RAG、BOTH、REPORT；SQL/RAG 子图分别由 Data Analyst/Knowledge Researcher 运行，混合路径并行后合流；Synthesis 仅消费结果，Verification 给出结论。两个专家角色只通过 M4 `ClientGroup` 调用命名空间工具，Graph 没有直连 `packages/sql` 或 `packages/knowledge`。`RunState` 在 M5 暂存本次结果与 trace；没有 checkpoint、数据库 run artifact、worker、HITL、API 和前端。M1–M4 的数据、检索、SQL 和 MCP 验收保持冻结。
 
 ## 后续待验证的工程问题
 
 - M3 后续质量判断：初始诊断的错误已用于 M3.1 同题回归修正；回归分数不能冒称独立泛化结果。若未来需要泛化结论，须另设未参与开发的题本。
-- M5/M7：LangGraph fan-out/fan-in 与 Postgres checkpointer 在目标版本的恢复语义，尤其是 `interrupt()` 节点的重放。
+- M7：Postgres checkpointer 在目标版本的恢复语义，尤其是 `interrupt()` 节点的重放。M5 只验证内存图的 fan-out/fan-in。
 - M8：worker lease、checkpoint 与 artifact 写入之间的幂等事务边界。

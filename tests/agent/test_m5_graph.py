@@ -7,7 +7,9 @@ from types import SimpleNamespace
 from fastmcp.exceptions import ToolError
 import pytest
 
+from packages.agent.agents.roles import DataAnalystAgent
 from packages.agent.graph import build_workflow, run_query
+from packages.agent.models import TaskPlan
 
 
 class StubModel:
@@ -136,3 +138,32 @@ def test_data_tool_repair_is_bounded_and_traced():
     with pytest.raises(RuntimeError, match="two repairs"):
         asyncio.run(run_query(build_workflow(model, ValidatingTools()), "route_sql"))
     assert model.proposals == 3
+
+
+def test_incurred_loss_ratio_cannot_be_replaced_by_claim_frequency():
+    class MetricModel:
+        calls = 0
+
+        async def complete_json(self, role, system, user, *, max_tokens=1200):
+            self.calls += 1
+            return {"tool": ("data_compute_claim_rate" if self.calls == 1 else
+                             "data_compute_loss_ratio"),
+                    "arguments": {"start_date": "2026-04-01", "end_date": "2026-07-01",
+                                  "product_code": "product_006"}}
+
+    class MetricTools(StubTools):
+        async def call_tool(self, name, arguments):
+            if name == "data_compute_loss_ratio":
+                self.calls.append(name)
+                return SimpleNamespace(structured_content={"metric": "incurred_loss_ratio",
+                                                           "value": 1.3449})
+            return await super().call_tool(name, arguments)
+
+    model, tools = MetricModel(), MetricTools()
+    plan = TaskPlan(intent="metric", route="SQL",
+                    sql_tasks=["查询 product_006 的已发生赔付率"])
+    artifact = asyncio.run(DataAnalystAgent(model, tools).run(plan))[0]
+    assert model.calls == 2
+    assert [attempt["status"] for attempt in artifact.attempts] == ["failed", "success"]
+    assert "data_compute_claim_rate" not in tools.calls
+    assert artifact.result["metric"] == "incurred_loss_ratio"

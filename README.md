@@ -1,6 +1,6 @@
 # Insurance Agent Harness
 
-保险业务知识与运营分析多智能体工作流项目。**M0–M3 已冻结，M4 FastMCP 已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测和两个 MCP 工具服务。Graph、API 和前端尚未实现，不能用于业务决策。
+保险业务知识与运营分析多智能体工作流项目。**M0–M4 已冻结，M5 LangGraph 已完成本机验收**；M1 合成数据基线保持不变。已有可重建的运营数据、条款知识索引、四组检索消融、SQL 真实模型评测、两个 MCP 工具服务和单进程 Agent 图。API 和前端尚未实现，不能用于业务决策。
 
 完整范围见 [PROJECT_SPEC.md](PROJECT_SPEC.md)，分阶段方案见 [docs/implementation_plan.md](docs/implementation_plan.md)。所有运营数据均由固定种子生成，明确标记为 synthetic。
 
@@ -105,6 +105,19 @@ MILVUS_URI=http://127.0.0.1:19530 uv run --locked python -m services.mcp_knowled
 
 数据服务提供 7 个工具，知识服务提供 4 个工具；参数、返回字段、边界和错误规则见 [M4 工具契约](docs/mcp_tools.md)。M4 已通过真实 PostgreSQL、Milvus、BGE 模型和 stdio/ClientGroup 本机验收。完整本机测试需要设置 `M1_TEST_DATABASE_URL`、`M1_VERIFY_DOWNLOADS=1`、`M2_TEST_MILVUS_URI`、`M3_TEST_READER_DATABASE_URL`、`M4_TEST_MILVUS_URI`，然后执行 `uv run --locked pytest -q`；不设置外部依赖变量时相应集成测试会跳过。
 
+## M5 LangGraph 编排
+
+`packages/agent` 实现五个角色和四条路由：纯 SQL、纯条款检索、SQL+RAG、综合简报。混合及简报路由并行执行 SQL/RAG 子图，待两侧结果完成后才进入 Synthesis，然后由 Verification 给出 `PASS`、`REVISE` 或 `BLOCK`。Data Analyst 与 Knowledge Researcher 仅通过 M4 `ClientGroup` 的命名空间工具访问数据；Synthesis 和 Verification 没有工具调用入口。当前图只在单进程内存中运行，没有 checkpoint、worker、人工审批或持久化 run state；严格的跨节点契约注册与完整证据校验留给 M6。
+
+在已建好的 M1 数据库、M2 知识索引和 M3 reader 上，运行四条真实依赖 demo：
+
+```bash
+export M3_READER_DATABASE_URL='postgresql+asyncpg://insurance_reader:change-me-reader-local-only@127.0.0.1:5432/insurance_m1_demo'
+uv run --locked python -m scripts.run_m5_demo --provider proxy
+```
+
+脚本连接本机 CLIProxyAPI 的 `gpt-6-luna`，通过 M4 FastMCP `ClientGroup` 调用真实 PostgreSQL 与 Milvus/BGE。默认 `--provider auto` 在启动前检测本机模型服务，不可用时才使用 DeepSeek 备用 key；不会将 key 写入报告。四条路径的计划、节点 trace、工具产物、引用、验证状态、模型响应 ID 和代码 SHA-256 记录在 [M5 本机 demo 报告](evaluation/reports/m5_demo.json)。这是流程验收，不是工作流准确率或未见题 benchmark；`REVISE` 表示图已走完但内容尚需修改。
+
 ## 设计文档
 
 - [架构与阶段边界](docs/architecture.md)
@@ -112,6 +125,7 @@ MILVUS_URI=http://127.0.0.1:19530 uv run --locked python -m services.mcp_knowled
 - [合成数据的语义与限制](docs/synthetic_assumptions.md)
 - [评测方法](docs/evaluation.md)
 - [M4 MCP 工具契约](docs/mcp_tools.md)
+- [M5 本机 demo 报告](evaluation/reports/m5_demo.json)
 - [外部资料核对](docs/research_notes.md)
 - [系统不变量](docs/invariants.md)
 - [实施计划与验收](docs/implementation_plan.md)
